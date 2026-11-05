@@ -1,0 +1,91 @@
+/** End-to-end Colyseus smoke test: one canonical room and authoritative movement. */
+import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import { setTimeout as sleep } from "node:timers/promises";
+import { Client } from "@colyseus/sdk";
+import { MERCATUM_ROOM_ID, MERCATUM_ROOM_NAME } from "@mercatum/shared";
+
+const PORT = 31237;
+const url = `http://127.0.0.1:${PORT}`;
+const server = spawn(process.execPath, ["dist/index.js"], {
+  cwd: process.cwd(),
+  env: { ...process.env, PORT: String(PORT) },
+  stdio: ["ignore", "pipe", "pipe"],
+});
+let serverLog = "";
+server.stdout?.on("data", (chunk: Buffer) => { serverLog += chunk.toString(); });
+server.stderr?.on("data", (chunk: Buffer) => { serverLog += chunk.toString(); });
+
+async function eventually(predicate: () => boolean | Promise<boolean>, description: string, timeout = 8_000) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    if (await predicate()) return;
+    await sleep(100);
+  }
+  throw new Error(`Timed out waiting for ${description}. Server log:\n${serverLog}`);
+}
+
+async function run() {
+  await eventually(async () => {
+    if (server.exitCode !== null) throw new Error(`Server exited: ${serverLog}`);
+    try {
+      return (await fetch(`${url}/health`)).ok;
+    } catch {
+      return false;
+    }
+  }, "Colyseus server health");
+
+  const client = new Client(url);
+  const explorerA = await client.joinById(MERCATUM_ROOM_ID);
+  const explorerB = await client.joinById(MERCATUM_ROOM_ID);
+
+  try {
+    assert.equal(explorerA.roomId, MERCATUM_ROOM_ID);
+    assert.equal(explorerA.roomId, explorerB.roomId);
+    await eventually(
+      () => explorerA.state.players.size === 2 && explorerB.state.players.size === 2,
+      "both players to be synchronized",
+    );
+
+    // A malicious client must not be able to instantiate an alternate market.
+    await assert.rejects(client.create(MERCATUM_ROOM_NAME));
+
+    explorerA.send("move", { to: { q: 1, r: 0 } });
+    await eventually(
+      () => explorerB.state.players.get(explorerA.sessionId)?.q === 1,
+      "movement to synchronize to explorer B",
+    );
+
+    const refusal = new Promise<string>((resolve) => {
+      explorerA.onMessage("move_rejected", (payload: { reason: string }) => resolve(payload.reason));
+    });
+    explorerA.send("move", { to: { q: 99, r: 99 } });
+    const reason = await Promise.race([
+      refusal,
+      sleep(3_000).then(() => { throw new Error("Missing rejection of invalid movement"); }),
+    ]);
+    assert.match(reason, /vecino/);
+  } finally {
+    await explorerA.leave();
+    await explorerB.leave();
+  }
+
+  // autoDispose=false: the world remains available even with zero clients.
+  const explorerC = await client.joinById(MERCATUM_ROOM_ID);
+  try {
+    assert.equal(explorerC.roomId, MERCATUM_ROOM_ID);
+  } finally {
+    await explorerC.leave();
+  }
+
+  console.log("Colyseus smoke test passed: canonical room, sync, validation, empty-room survival.");
+}
+
+try {
+  await run();
+} catch (error) {
+  console.error(error);
+  process.exitCode = 1;
+} finally {
+  server.kill("SIGTERM");
+}

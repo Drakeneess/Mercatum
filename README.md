@@ -2,18 +2,18 @@
 
 **Mercatum** es un prototipo web de exploración en un mercado paranormal persistente. El Mercado no es una mazmorra: existe y funciona independientemente de los jugadores.
 
-Este repositorio inicia el desarrollo con un mapa 2D de **61 hexágonos**, movimiento entre casillas adyacentes, un servidor WebSocket autoritativo y posiciones sincronizadas en una sesión multijugador.
+El prototipo incluye 61 hexágonos, movimiento entre vecinos, sincronización autoritativa de estado con **Colyseus 0.18** y una sola sala para todos los exploradores.
 
 ## Estructura
 
 ```text
 Mercatum/
 ├── apps/
-│   ├── web/            Next.js + React + SVG
-│   └── server/         Node.js + TypeScript + ws
+│   ├── web/             Next.js + React + SVG + @colyseus/sdk
+│   └── server/          Node.js + Colyseus (MercatumRoom)
 ├── packages/
-│   └── shared/         Coordenadas hexagonales y protocolo
-├── docs/               Notas técnicas y alcance
+│   └── shared/          Mapa, reglas hexagonales y Schema 5
+├── docs/                Documentación técnica
 ├── pnpm-workspace.yaml
 └── package.json
 ```
@@ -36,15 +36,15 @@ pnpm install
 pnpm dev
 ```
 
-Después, abre **http://localhost:3000**. El servidor WebSocket escucha en **ws://localhost:3001/ws** y ofrece una comprobación HTTP en **http://localhost:3001/health**.
+Abre **http://localhost:3000**. Colyseus escucha en **http://localhost:3001** y expone **http://localhost:3001/health**.
 
-Abre dos pestañas del navegador para comprobar que las posiciones de ambos exploradores se actualizan en tiempo real. Haz clic en una casilla contigua iluminada para avanzar.
+Abre dos pestañas para comprobar la sincronización de los exploradores. Selecciona una casilla vecina resaltada para moverte. Las casillas bloqueadas y los saltos entre hexágonos no adyacentes se rechazan en el servidor.
 
 ### Configuración opcional
 
-Los valores por defecto funcionan sin archivos `.env`. Puedes copiar `apps/web/.env.example` a `apps/web/.env.local` para ajustar `NEXT_PUBLIC_WS_URL`, y `apps/server/.env.example` a `apps/server/.env` para ajustar `PORT` y `ALLOWED_ORIGINS`.
+Los valores por defecto funcionan sin `.env`. Puedes copiar `apps/web/.env.example` a `apps/web/.env.local` para configurar `NEXT_PUBLIC_COLYSEUS_URL`. Para cambiar el puerto del backend, copia `apps/server/.env.example` a `apps/server/.env` y establece `PORT`.
 
-Si el frontend y el backend se alojan en dominios distintos, configura un origen permitido exacto para WebSocket y una URL `wss://` para conexiones públicas seguras.
+Colyseus gestiona el matchmaking HTTP y el transporte WebSocket en el mismo puerto. Si publicas la web por HTTPS, el backend deberá ser accesible mediante HTTPS/WSS y un proxy inverso adecuado. **No despliegues el prototipo públicamente sin autenticación y límites de abuso.**
 
 ## Comandos
 
@@ -52,19 +52,25 @@ Si el frontend y el backend se alojan en dominios distintos, configura un origen
 pnpm dev         # Compila shared e inicia web + server
 pnpm build       # Compila todos los paquetes
 pnpm typecheck   # Verifica TypeScript
-pnpm test        # Ejecuta pruebas del paquete shared
+pnpm test        # Ejecuta pruebas unitarias hexagonales
+pnpm --filter @mercatum/server smoke  # Prueba dos clientes reales (requiere build)
 ```
+
+## Una sala canónica
+
+El servidor crea `MercatumRoom` al iniciar, con ID fijo `mercatum-world`. El cliente solo usa `joinById()`; el backend deshabilita los métodos de matchmaking que podrían crear salas adicionales. El aforo de la única sala está limitado a 20 jugadores y `autoDispose = false` permite mantenerla incluso vacía.
+
+Las posiciones se sincronizan mediante `@colyseus/schema` 5; los comandos de movimiento y sus respuestas usan mensajes de Colyseus. `patchRate = 200` representa una frecuencia máxima de envío de parches, **no** un ciclo de simulación del mundo de 5 FPS.
 
 ## Alcance actual
 
 **Implementado**
-- Mapa hexagonal y obstáculos fijos.
-- Movimiento en tiempo real (no por turnos), solo a hexágonos adyacentes.
-- Validación de posición, casillas bloqueadas y velocidad mínima de movimiento en servidor.
-- Sesiones temporales simultáneas (máximo 20).
-- Sincronización de entradas, salidas y movimientos mediante WebSocket.
-- Reloj oficial fijo UTC−6, servido desde el backend.
-- Reconexión automática del cliente y endpoint de salud.
+- Mapa hexagonal de 61 casillas y obstáculos fijos.
+- Movimiento validado en servidor (adyacencia, obstáculos y cadencia mínima de 250 ms).
+- Sincronización incremental de jugadores, posiciones y reloj fijo UTC−6 mediante Schema.
+- Una sala precreada, sin creación de salas desde el cliente, máximo 20 conexiones.
+- Intentos de reconexión por nueva sesión desde el frontend y endpoint de salud.
+- Pruebas unitarias del mapa y prueba de integración Colyseus con varios clientes.
 
 **Todavía no implementado**
 - Inicio de sesión y personajes persistentes.
@@ -74,6 +80,6 @@ pnpm test        # Ejecuta pruebas del paquete shared
 - Múltiples pisos, elevadores y escaleras.
 - Permadeath y reglas de desconexión seguras.
 
-**Importante:** Esta fase no representa todavía un mundo persistente: las posiciones se pierden si se reinicia el servidor o se cierra la conexión. El sistema de exploración debe estabilizarse antes de incorporar datos permanentes y consecuencias irreversibles.
+**Importante:** la sala sobrevive a la salida del último jugador, pero **no a un reinicio del servidor**. Los jugadores reconectados reciben una nueva identidad; aún falta reconexión de sesión segura para el permadeath.
 
-Consulta [docs/architecture.md](docs/architecture.md) para límites del prototipo y pasos siguientes.
+Consulta [docs/architecture.md](docs/architecture.md).

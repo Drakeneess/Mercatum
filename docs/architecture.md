@@ -1,44 +1,63 @@
-# Arquitectura de Mercatum — Prototipo 0.1
+# Arquitectura de Mercatum — Prototipo 0.2 (Colyseus)
 
 ## Objetivo
 
-Demostrar el circuito completo entre interfaz SVG, mensajes WebSocket y simulación autoritativa de posiciones, sin introducir lógica de combate ni una base de datos prematuramente.
+La interfaz SVG y las reglas hexagonales se mantienen, mientras que la capa WebSocket propia se reemplaza por Colyseus 0.18. El servidor sigue siendo la única autoridad sobre posiciones y movimientos.
+
+## Mundo compartido
+
+- `apps/server/src/index.ts` configura Colyseus y crea una única sala `mercatum` con ID fijo `mercatum-world` al inicio.
+- El matchmaking expone únicamente `joinById` y `reconnect`. No se permite que el navegador cree instancias con `create` o `joinOrCreate`.
+- `apps/server/src/MercatumRoom.ts` tiene `maxClients = 20`, `autoDispose = false`, `patchRate = 200` y `maxMessagesPerSecond = 30`.
+- El cliente Next.js entra siempre a la sala canónica, o muestra un error y vuelve a intentar si no está disponible.
+
+## Estado sincronizado
+
+`packages/shared/src/schema.ts` define `MercatumState` y `MercatumPlayer` mediante el builder de `@colyseus/schema` 5. Solo los datos visibles globalmente se incluyen en este estado:
+
+- `players`: mapa sincronizado de exploradores con `name`, `q`, `r`.
+- `mercatumTime`: hora oficial `HH:mm` según UTC−6.
+
+No se publican posiciones de criaturas ocultas. Cuando existan, será obligatorio añadir filtrado por cliente (por ejemplo, StateView) o mensajes privados de percepción.
 
 ## Flujo de movimiento
 
-1. El navegador representa un mapa compartido con coordenadas axiales `(q, r)`.
+1. El navegador muestra el mapa con coordenadas axiales `(q, r)`.
 2. El explorador selecciona un hexágono contiguo.
-3. El cliente envía `{"type":"move","to":{"q":1,"r":0}}`.
-4. El servidor verifica tipo de datos, adyacencia, transitabilidad y tiempo desde el último movimiento.
-5. Si el movimiento es válido, el servidor actualiza la sesión en memoria y envía `player_moved` a todos los clientes.
-6. Si es inválido, responde únicamente al remitente con `move_rejected`.
+3. Envía `room.send("move", {to:{q:1,r:0}})`.
+4. `MercatumRoom` valida el tipo, la adyacencia, la transitabilidad y un intervalo mínimo de 250 ms.
+5. Si es válido, actualiza `player.q` y `player.r` en el Schema y envía `move_accepted` solo al solicitante.
+6. Colyseus entrega automáticamente el parche de estado al resto de exploradores.
+7. Si se rechaza, recibe `move_rejected` con el motivo. El cliente jamás actualiza la posición de forma optimista.
 
-Las posiciones que muestra el cliente llegan del servidor. El cliente no cambia su posición de forma optimista.
+El mapa sigue siendo estático en `packages/shared/src/world.ts`. No requiere sincronizar los 61 hexágonos en cada movimiento.
 
-## Mapa
+## Tiempo y coste
 
-El mapa inicial tiene radio 4, para un total de 61 hexágonos. Todos los hexágonos están en `packages/shared/src/world.ts`. Los vecinos y distancias se calculan en `packages/shared/src/hex.ts`. Las entradas, paredes y el primer puesto comercial son posiciones fijas para facilitar las pruebas.
+El servidor usa el reloj fijo `Etc/GMT+6`, independientemente del horario del navegador. Un temporizador de sala verifica la hora cada diez segundos y solo muta el estado si cambia el minuto mostrado.
 
-## Tiempo
+**No se añadió bucle de simulación de 60 FPS.** La entrega de parches cada 200 ms es una cadencia de red que puede evitar transmisiones cuando no cambia nada. Los futuros comportamientos de criaturas deberán utilizar un planificador de eventos con marcas de tiempo absolutas.
 
-El servidor envía la hora del Mercado en UTC−6 fijo usando `Etc/GMT+6`. El cliente no usa la hora de su sistema como autoridad. En esta fase el tiempo solo se muestra en la interfaz.
+## Pruebas
 
-## Restricciones de esta fase
+`pnpm --filter @mercatum/server smoke` inicia el servidor compilado y comprueba dos clientes, replicación de una posición, rechazo de salto inválido, bloqueo de creación de salas alternativas y supervivencia de la sala cuando no quedan jugadores. GitHub Actions ejecuta compilación, typecheck, pruebas unitarias y esta prueba de integración.
 
-- Las conexiones no están autenticadas. Cada conexión crea un operador temporal.
-- Reiniciar el servidor borra todos los exploradores conectados.
-- Reabrir la página crea otro personaje temporal; aún no hay reglas de desconexión.
-- El máximo de usuarios es 20 sesiones WebSocket, no una cola de admisión.
-- No existe IA de criaturas ni simulación de sectores vacíos.
-- La economía y el historial de objetos aún no se almacenan.
-- El servidor valida movimientos; no debe considerarse preparado para internet abierto sin autenticación, cuotas y protección operativa adicional.
+## Restricciones
+
+- Aún no hay autenticación: cada nueva conexión es un personaje efímero.
+- La reconexión automática del frontend vuelve a entrar con **nueva identidad**. No es la reconexión segura de Colyseus que hará falta para permadeath.
+- El estado de la sala sigue en memoria; reiniciar el proceso lo borra.
+- `autoDispose = false` no sustituye a PostgreSQL.
+- El límite de 20 clientes no constituye un sistema de colas.
+- No hay enemigos, economía ni simulación de sectores vacíos.
+- Se requiere autenticación, validación de orígenes, control de abuso y configuración de hosting antes de producción.
 
 ## Siguientes hitos
 
-1. Pruebas de sincronización y reconexión bajo latencia real.
-2. Modelo de estados/eventos para entidades autónomas, con tiempo de próxima acción.
-3. Persistencia selectiva con PostgreSQL.
-4. Definición de reglas de desconexión antes de activar permadeath.
-5. Comercio e inventarios registrados.
+1. Integrar reconexión por sesión con un protocolo seguro para personajes.
+2. Introducir planificador de eventos para criaturas (independiente de los ticks de red).
+3. Incorporar persistencia selectiva en PostgreSQL y recuperación tras reinicios.
+4. Implementar visibilidad limitada y percepción individual.
+5. Añadir inventario, comercio y registro de objetos.
 
-Regla de diseño: **los jugadores son temporales; el Mercado permanece**.
+**Los jugadores son temporales; el Mercado permanece.**
