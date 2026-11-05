@@ -5,7 +5,7 @@ import {
   hexDistance,
   hexKey,
   makeDemoMap,
-  MERCATUM_ROOM_ID,
+  MERCATUM_ROOM_NAME,
   type HexCoordinate,
   type HexTile,
   type MercatumState,
@@ -57,6 +57,7 @@ export default function Home() {
     "Esperando respuesta del servidor...",
   ]);
   const roomRef = useRef<Room<MercatumState> | null>(null);
+  const failedAttemptsRef = useRef(0);
 
   useEffect(() => {
     let mounted = true;
@@ -68,7 +69,10 @@ export default function Home() {
     }
 
     function retry() {
-      if (mounted) reconnectTimer = setTimeout(connect, 2_000);
+      if (!mounted) return;
+      failedAttemptsRef.current += 1;
+      const delay = Math.min(30_000, 2_000 * 2 ** Math.min(failedAttemptsRef.current - 1, 4));
+      reconnectTimer = setTimeout(() => void connect(), delay);
     }
 
     async function connect() {
@@ -76,8 +80,8 @@ export default function Home() {
       setConnection("connecting");
 
       try {
-        // The server disables create/joinOrCreate so there is ONE shared world.
-        const room = await client.joinById<MercatumState>(MERCATUM_ROOM_ID);
+        // join() selects an existing world without creating another.
+        const room = await client.join<MercatumState>(MERCATUM_ROOM_NAME);
         if (!mounted) {
           void room.leave();
           return;
@@ -86,6 +90,7 @@ export default function Home() {
         roomRef.current = room;
         setPlayerId(room.sessionId);
         setConnection("online");
+        failedAttemptsRef.current = 0;
         setNotice("Selecciona un hexágono vecino para desplazarte.");
         record("Acceso concedido. Has ingresado al Mercado.");
 
@@ -147,7 +152,13 @@ export default function Home() {
         setConnection("offline");
         setPlayerId(null);
         setPlayers([]);
-        record(error instanceof Error ? `No fue posible entrar: ${error.message}` : "No fue posible entrar.");
+        const code = typeof error === "object" && error !== null && "code" in error
+          ? Number(error.code) : null;
+        const reason = code === 521 || code === 522
+          ? "No se encuentra una sala Mercatum disponible. Revisa http://localhost:3001/health y reinicia el backend."
+          : error instanceof Error ? `No fue posible entrar: ${error.message}` : "No fue posible entrar.";
+        setNotice(reason);
+        record(reason);
         retry();
       }
     }

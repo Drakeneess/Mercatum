@@ -7,9 +7,9 @@ La interfaz SVG y las reglas hexagonales se mantienen, mientras que la capa WebS
 ## Mundo compartido
 
 - `apps/server/src/index.ts` configura Colyseus y crea una única sala `mercatum` con ID fijo `mercatum-world` al inicio.
-- El matchmaking expone únicamente `joinById` y `reconnect`. No se permite que el navegador cree instancias con `create` o `joinOrCreate`.
+- El matchmaking expone únicamente `join` y `reconnect`. No se permite que el navegador cree instancias con `create` o `joinOrCreate`.
 - `apps/server/src/MercatumRoom.ts` tiene `maxClients = 20`, `autoDispose = false`, `patchRate = 200` y `maxMessagesPerSecond = 30`.
-- El cliente Next.js entra siempre a la sala canónica, o muestra un error y vuelve a intentar si no está disponible.
+- El cliente Next.js llama a `join("mercatum")` para entrar en la única sala existente (sin crear otras) y aplica espera progresiva si no está disponible.
 
 ## Estado sincronizado
 
@@ -61,3 +61,7 @@ El servidor usa el reloj fijo `Etc/GMT+6`, independientemente del horario del na
 5. Añadir inventario, comercio y registro de objetos.
 
 **Los jugadores son temporales; el Mercado permanece.**
+
+## Diagnóstico del mundo
+
+`/health` consulta el estado real del matchmaking y muestra `worldReady`, `roomName`, `roomId`, `activeRoomIds` y número de jugadores. Al iniciar, el servidor también comprueba que la sala precreada tenga el ID esperado. Esto distingue un servidor HTTP disponible de un mundo realmente inicializado.

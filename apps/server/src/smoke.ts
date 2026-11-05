@@ -29,15 +29,18 @@ async function run() {
   await eventually(async () => {
     if (server.exitCode !== null) throw new Error(`Server exited: ${serverLog}`);
     try {
-      return (await fetch(`${url}/health`)).ok;
+      const response = await fetch(`${url}/health`);
+      if (!response.ok) return false;
+      const health = await response.json() as { worldReady?: boolean; roomId?: string };
+      return health.worldReady === true && health.roomId === MERCATUM_ROOM_ID;
     } catch {
       return false;
     }
   }, "Colyseus server health");
 
   const client = new Client(url);
-  const explorerA = await client.joinById(MERCATUM_ROOM_ID);
-  const explorerB = await client.joinById(MERCATUM_ROOM_ID);
+  const explorerA = await client.join(MERCATUM_ROOM_NAME);
+  const explorerB = await client.join(MERCATUM_ROOM_NAME);
 
   try {
     assert.equal(explorerA.roomId, MERCATUM_ROOM_ID);
@@ -49,6 +52,7 @@ async function run() {
 
     // A malicious client must not be able to instantiate an alternate market.
     await assert.rejects(client.create(MERCATUM_ROOM_NAME));
+    await assert.rejects(client.joinOrCreate(MERCATUM_ROOM_NAME));
 
     explorerA.send("move", { to: { q: 1, r: 0 } });
     await eventually(
@@ -71,7 +75,7 @@ async function run() {
   }
 
   // autoDispose=false: the world remains available even with zero clients.
-  const explorerC = await client.joinById(MERCATUM_ROOM_ID);
+  const explorerC = await client.join(MERCATUM_ROOM_NAME);
   try {
     assert.equal(explorerC.roomId, MERCATUM_ROOM_ID);
   } finally {
