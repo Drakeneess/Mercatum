@@ -44,7 +44,6 @@ function reject(client: Client, reason: string): void {
  * visibility is filtered for each player (otherwise their locations leak).
  */
 export class MercatumRoom extends Room<{ state: MercatumState }> {
-  roomId = MERCATUM_ROOM_ID;
   maxClients = MAX_PLAYERS;
   autoDispose = false;
   patchRate = 200;
@@ -54,6 +53,7 @@ export class MercatumRoom extends Room<{ state: MercatumState }> {
   private readonly lastMoveAt = new Map<string, number>();
 
   onCreate(): void {
+    this.roomId = MERCATUM_ROOM_ID;
     this.state.mercatumTime = mercatumClock();
     // The room is kept alive without players. No 60fps world simulation needed.
     this.clock.setInterval(() => {

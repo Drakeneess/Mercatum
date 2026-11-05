@@ -16,7 +16,7 @@ const server = defineServer({
     [MERCATUM_ROOM_NAME]: defineRoom(MercatumRoom),
   },
   routes: createRouter({
-    health: createEndpoint("/health", { method: "GET" }, () => ({
+    health: createEndpoint("/health", { method: "GET" }, async () => ({
       status: "ok",
       roomId: MERCATUM_ROOM_ID,
       connectedPlayers: matchMaker.stats.local.ccu,
