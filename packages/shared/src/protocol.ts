@@ -1,5 +1,8 @@
 import type { HexCoordinate } from "./hex.js";
-import type { HexTile } from "./world.js";
+
+/** Fixed canonical world: never create a fresh room for a new player. */
+export const MERCATUM_ROOM_NAME = "mercatum";
+export const MERCATUM_ROOM_ID = "mercatum-world";
 
 export interface PlayerSnapshot {
   readonly id: string;
@@ -7,19 +10,11 @@ export interface PlayerSnapshot {
   readonly position: HexCoordinate;
 }
 
-export type ClientMessage =
-  | { readonly type: "move"; readonly to: HexCoordinate };
+/** One-shot commands are Colyseus messages, not synchronized Schema fields. */
+export interface MoveRequest {
+  readonly to: HexCoordinate;
+}
 
-export type ServerMessage =
-  | {
-      readonly type: "welcome";
-      readonly playerId: string;
-      readonly map: readonly HexTile[];
-      readonly players: readonly PlayerSnapshot[];
-      readonly mercatumTime: string;
-    }
-  | { readonly type: "player_joined"; readonly player: PlayerSnapshot }
-  | { readonly type: "player_left"; readonly playerId: string }
-  | { readonly type: "player_moved"; readonly playerId: string; readonly to: HexCoordinate }
-  | { readonly type: "move_rejected"; readonly reason: string }
-  | { readonly type: "clock"; readonly mercatumTime: string };
+export interface MoveRejected {
+  readonly reason: string;
+}

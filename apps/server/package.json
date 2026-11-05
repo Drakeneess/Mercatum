@@ -11,12 +11,11 @@
   },
   "dependencies": {
     "@mercatum/shared": "workspace:*",
-    "dotenv": "^17.2.0",
-    "ws": "^8.22.1"
+    "colyseus": "^0.18.10",
+    "dotenv": "^17.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@types/ws": "^8.5.0",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3"
   }

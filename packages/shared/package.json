@@ -19,6 +19,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "pnpm build && node --test dist/hex.test.js"
   },
+  "dependencies": {
+    "@colyseus/schema": "^5.0.42"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.9.3"
