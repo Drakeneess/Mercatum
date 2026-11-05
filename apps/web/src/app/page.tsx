@@ -89,14 +89,13 @@ export default function Home() {
 
         roomRef.current = room;
         setPlayerId(room.sessionId);
-        setConnection("online");
-        failedAttemptsRef.current = 0;
-        setNotice("Selecciona un hexágono vecino para desplazarte.");
-        record("Acceso concedido. Has ingresado al Mercado.");
 
-        let knownPlayers = new Set<string>(room.state.players.keys());
-        function publishState(state: MercatumState) {
-          if (!mounted) return;
+        // A successful join does not guarantee that the first full Schema
+        // snapshot has arrived. In particular state.players may be undefined.
+        let knownPlayers: Set<string> | null = null;
+        let receivedInitialState = false;
+        function publishState(state: MercatumState | undefined) {
+          if (!mounted || roomRef.current !== room || !state?.players) return;
 
           const snapshot: PlayerSnapshot[] = [];
           state.players.forEach((player, id) => {
@@ -108,24 +107,35 @@ export default function Home() {
           });
 
           const nextIds = new Set(snapshot.map((player) => player.id));
-          for (const explorer of snapshot) {
-            if (!knownPlayers.has(explorer.id) && explorer.id !== room.sessionId) {
-              record(`${explorer.name} ha ingresado.`);
+          if (knownPlayers !== null) {
+            for (const explorer of snapshot) {
+              if (!knownPlayers.has(explorer.id) && explorer.id !== room.sessionId) {
+                record(`${explorer.name} ha ingresado.`);
+              }
             }
-          }
-          for (const id of knownPlayers) {
-            if (!nextIds.has(id) && id !== room.sessionId) {
-              record("Un explorador ha abandonado el Mercado.");
+            for (const id of knownPlayers) {
+              if (!nextIds.has(id) && id !== room.sessionId) {
+                record("Un explorador ha abandonado el Mercado.");
+              }
             }
           }
 
           knownPlayers = nextIds;
           setPlayers(snapshot);
           setMarketTime(state.mercatumTime);
+
+          if (!receivedInitialState) {
+            receivedInitialState = true;
+            failedAttemptsRef.current = 0;
+            setConnection("online");
+            setNotice("Selecciona un hexágono vecino para desplazarte.");
+            record("Acceso concedido. Has ingresado al Mercado.");
+          }
         }
 
-        publishState(room.state);
+        // Subscribe first: a state update could arrive during connection.
         room.onStateChange(publishState);
+        publishState(room.state);
         room.onMessage("move_accepted", (_message: MoveRequest) => {
           if (mounted) setNotice("Movimiento confirmado por el servidor.");
         });

@@ -104,3 +104,9 @@ La ruta `/health` ahora muestra `worldJoinable`, `roomLocked`, `roomPrivate`, `r
 ### Puertos de desarrollo
 
 Por defecto, el frontend Next.js utiliza **3500** (el puerto 3000 queda libre para otros proyectos) y Colyseus utiliza **3001**. Ejecuta `pnpm dev` desde la raíz y abre `http://localhost:3500`.
+
+### Colyseus: primer estado del cliente
+
+El handshake de `client.join("mercatum")` puede resolverse antes de que `room.state.players` esté disponible. El frontend registra `onStateChange` antes de consultar el estado, ignora snapshots incompletos y solo informa «ENLACE ACTIVO» una vez recibida la primera colección de jugadores. Esto evita el fallo `Cannot read properties of undefined (reading 'keys')` que se producía durante la conexión.
+
+Si `/health` todavía muestra `roomId: "mercatum-world"` y omite `worldJoinable`, entonces otro proceso está ejecutando una versión antigua del servidor. Identifica su PID usando `Get-NetTCPConnection -LocalPort 3001 -State Listen` y revisa su ruta con `Get-CimInstance Win32_Process -Filter "ProcessId = <PID>"` antes de detenerlo. Asegúrate de cerrar **solo** la instancia antigua de Mercatum.

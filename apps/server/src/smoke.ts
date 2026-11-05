@@ -53,7 +53,7 @@ async function run() {
     assert.equal(explorerA.roomId, health.roomId);
     assert.equal(explorerA.roomId, explorerB.roomId);
     await eventually(
-      () => explorerA.state.players.size === 2 && explorerB.state.players.size === 2,
+      () => explorerA.state?.players?.size === 2 && explorerB.state?.players?.size === 2,
       "both players to be synchronized",
     );
 
@@ -63,7 +63,7 @@ async function run() {
 
     explorerA.send("move", { to: { q: 1, r: 0 } });
     await eventually(
-      () => explorerB.state.players.get(explorerA.sessionId)?.q === 1,
+      () => explorerB.state?.players?.get(explorerA.sessionId)?.q === 1,
       "movement to synchronize to explorer B",
     );
 
