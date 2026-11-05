@@ -1,19 +1,22 @@
 "use client";
 
+import { Client, type Room } from "@colyseus/sdk";
 import {
   hexDistance,
   hexKey,
   makeDemoMap,
-  type ClientMessage,
+  MERCATUM_ROOM_ID,
   type HexCoordinate,
   type HexTile,
+  type MercatumState,
+  type MoveRejected,
+  type MoveRequest,
   type PlayerSnapshot,
-  type ServerMessage,
 } from "@mercatum/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const HEX_SIZE = 33;
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3001/ws";
+const COLYSEUS_URL = process.env.NEXT_PUBLIC_COLYSEUS_URL || "http://localhost:3001";
 type Connection = "connecting" | "online" | "offline";
 
 function hexCenter(position: HexCoordinate): { x: number; y: number } {
@@ -46,96 +49,116 @@ export default function Home() {
   const [connection, setConnection] = useState<Connection>("connecting");
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [players, setPlayers] = useState<readonly PlayerSnapshot[]>([]);
-  const [map, setMap] = useState<readonly HexTile[]>(() => makeDemoMap());
+  const map = useMemo(() => makeDemoMap(), []);
   const [marketTime, setMarketTime] = useState("--:--");
   const [notice, setNotice] = useState("Selecciona un hexágono vecino para desplazarte.");
   const [events, setEvents] = useState<string[]>([
     "Terminal de exploración iniciada.",
     "Esperando respuesta del servidor...",
   ]);
-  const socketRef = useRef<WebSocket | null>(null);
-  const playerIdRef = useRef<string | null>(null);
+  const roomRef = useRef<Room<MercatumState> | null>(null);
 
   useEffect(() => {
     let mounted = true;
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    const client = new Client(COLYSEUS_URL);
 
     function record(message: string) {
       if (mounted) setEvents((previous) => [message, ...previous].slice(0, 6));
     }
 
-    function connect() {
+    function retry() {
+      if (mounted) reconnectTimer = setTimeout(connect, 2_000);
+    }
+
+    async function connect() {
       if (!mounted) return;
       setConnection("connecting");
-      const socket = new WebSocket(WS_URL);
-      socketRef.current = socket;
 
-      socket.onopen = () => {
-        if (mounted) setConnection("online");
-      };
-
-      socket.onmessage = (event: MessageEvent<string>) => {
-        if (!mounted) return;
-        let message: ServerMessage;
-        try {
-          message = JSON.parse(event.data) as ServerMessage;
-        } catch {
-          record("Se recibió un mensaje ilegible del servidor.");
+      try {
+        // The server disables create/joinOrCreate so there is ONE shared world.
+        const room = await client.joinById<MercatumState>(MERCATUM_ROOM_ID);
+        if (!mounted) {
+          void room.leave();
           return;
         }
 
-        switch (message.type) {
-          case "welcome":
-            setPlayerId(message.playerId);
-            playerIdRef.current = message.playerId;
-            setPlayers(message.players);
-            setMap(message.map);
-            setMarketTime(message.mercatumTime);
-            record("Acceso concedido. Has ingresado al Mercado.");
-            break;
-          case "player_joined":
-            setPlayers((previous) => [...previous.filter((p) => p.id !== message.player.id), message.player]);
-            record(`${message.player.name} ha ingresado.`);
-            break;
-          case "player_left":
-            setPlayers((previous) => previous.filter((p) => p.id !== message.playerId));
-            record("Un explorador ha abandonado el Mercado.");
-            break;
-          case "player_moved":
-            setPlayers((previous) =>
-              previous.map((player) =>
-                player.id === message.playerId ? { ...player, position: message.to } : player,
-              ),
-            );
-            if (message.playerId === playerIdRef.current) setNotice("Movimiento confirmado por el servidor.");
-            break;
-          case "move_rejected":
-            setNotice(message.reason);
-            record(`Movimiento rechazado: ${message.reason}`);
-            break;
-          case "clock":
-            setMarketTime(message.mercatumTime);
-            break;
-        }
-      };
+        roomRef.current = room;
+        setPlayerId(room.sessionId);
+        setConnection("online");
+        setNotice("Selecciona un hexágono vecino para desplazarte.");
+        record("Acceso concedido. Has ingresado al Mercado.");
 
-      socket.onerror = () => socket.close();
-      socket.onclose = () => {
+        let knownPlayers = new Set<string>(room.state.players.keys());
+        function publishState(state: MercatumState) {
+          if (!mounted) return;
+
+          const snapshot: PlayerSnapshot[] = [];
+          state.players.forEach((player, id) => {
+            snapshot.push({
+              id,
+              name: player.name,
+              position: { q: player.q, r: player.r },
+            });
+          });
+
+          const nextIds = new Set(snapshot.map((player) => player.id));
+          for (const explorer of snapshot) {
+            if (!knownPlayers.has(explorer.id) && explorer.id !== room.sessionId) {
+              record(`${explorer.name} ha ingresado.`);
+            }
+          }
+          for (const id of knownPlayers) {
+            if (!nextIds.has(id) && id !== room.sessionId) {
+              record("Un explorador ha abandonado el Mercado.");
+            }
+          }
+
+          knownPlayers = nextIds;
+          setPlayers(snapshot);
+          setMarketTime(state.mercatumTime);
+        }
+
+        publishState(room.state);
+        room.onStateChange(publishState);
+        room.onMessage("move_accepted", (_message: MoveRequest) => {
+          if (mounted) setNotice("Movimiento confirmado por el servidor.");
+        });
+        room.onMessage("move_rejected", (message: MoveRejected) => {
+          if (!mounted) return;
+          setNotice(message.reason);
+          record(`Movimiento rechazado: ${message.reason}`);
+        });
+        room.onError((_code, message) => {
+          record(`Error de comunicación: ${message}`);
+        });
+        room.onLeave(() => {
+          if (!mounted) return;
+          if (roomRef.current === room) roomRef.current = null;
+          setConnection("offline");
+          setPlayerId(null);
+          setPlayers([]);
+          record("Conexión interrumpida. Se intentará reconectar.");
+          retry();
+        });
+
+      } catch (error) {
         if (!mounted) return;
         setConnection("offline");
         setPlayerId(null);
-        playerIdRef.current = null;
         setPlayers([]);
-        record("Conexión interrumpida. Se intentará reconectar.");
-        reconnectTimer = setTimeout(connect, 2_000);
-      };
+        record(error instanceof Error ? `No fue posible entrar: ${error.message}` : "No fue posible entrar.");
+        retry();
+      }
     }
 
-    connect();
+    void connect();
     return () => {
       mounted = false;
       if (reconnectTimer) clearTimeout(reconnectTimer);
-      socketRef.current?.close();
+      const room = roomRef.current;
+      roomRef.current = null;
+      if (room) void room.leave();
     };
   }, []);
 
@@ -147,7 +170,8 @@ export default function Home() {
   const currentPosition = me?.position;
 
   function requestMove(tile: HexTile) {
-    if (!currentPosition || connection !== "online" || socketRef.current?.readyState !== WebSocket.OPEN) {
+    const room = roomRef.current;
+    if (!currentPosition || connection !== "online" || !room) {
       setNotice("Necesitas una conexión activa para desplazarte.");
       return;
     }
@@ -160,8 +184,8 @@ export default function Home() {
       return;
     }
 
-    const message: ClientMessage = { type: "move", to: { q: tile.q, r: tile.r } };
-    socketRef.current.send(JSON.stringify(message));
+    const message: MoveRequest = { to: { q: tile.q, r: tile.r } };
+    room.send("move", message);
     setNotice("Esperando confirmación de movimiento...");
   }
 
