@@ -69,3 +69,7 @@ El servidor usa el reloj fijo `Etc/GMT+6`, independientemente del horario del na
 ## Diagnóstico de admisión
 
 El endpoint `/health` indica `worldReady` (sala registrada) y `worldJoinable` (sala no bloqueada ni privada) por separado. Expone los campos `roomLocked`, `roomClients` y `roomMaxClients`, además del `roomId` real asignado automáticamente. Los errores 521/522 se muestran en la interfaz sin eliminar el mensaje original. El ID ya no se fuerza dentro de `onCreate`, para evitar inconsistencias con las reservas del matchmaker.
+
+## Puertos locales
+
+Next.js: `http://localhost:3500`. Colyseus: `http://localhost:3001`. El puerto 3000 no se utiliza en Mercatum para evitar conflictos con proyectos locales paralelos.

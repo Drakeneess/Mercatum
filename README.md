@@ -36,7 +36,7 @@ pnpm install
 pnpm dev
 ```
 
-Abre **http://localhost:3000**. Colyseus escucha en **http://localhost:3001** y expone **http://localhost:3001/health**.
+Abre **http://localhost:3500**. Colyseus escucha en **http://localhost:3001** y expone **http://localhost:3001/health**.
 
 Abre dos pestañas para comprobar la sincronización de los exploradores. Selecciona una casilla vecina resaltada para moverte. Las casillas bloqueadas y los saltos entre hexágonos no adyacentes se rechazan en el servidor.
 
@@ -100,3 +100,7 @@ Detén ese proceso **solo si corresponde a una instancia anterior del servidor M
 ### Diagnóstico de sala bloqueada
 
 La ruta `/health` ahora muestra `worldJoinable`, `roomLocked`, `roomPrivate`, `roomClients` y `roomMaxClients`. Una sala puede existir (`worldReady: true`) y aun así no aceptar nuevas conexiones (`worldJoinable: false`). Los mensajes del cliente muestran el código y texto **originales** de Colyseus (por ejemplo, 521/522), en lugar de ocultarlos tras un mensaje genérico. Si el servidor está lleno, ciérrale pestañas antiguas antes de reiniciarlo. En desarrollo, el ID de la sala puede cambiar después de un reinicio: el cliente siempre usa el nombre `mercatum`.
+
+### Puertos de desarrollo
+
+Por defecto, el frontend Next.js utiliza **3500** (el puerto 3000 queda libre para otros proyectos) y Colyseus utiliza **3001**. Ejecuta `pnpm dev` desde la raíz y abre `http://localhost:3500`.
