@@ -54,6 +54,7 @@ export default function Home() {
     "Esperando respuesta del servidor...",
   ]);
   const socketRef = useRef<WebSocket | null>(null);
+  const playerIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -86,6 +87,7 @@ export default function Home() {
         switch (message.type) {
           case "welcome":
             setPlayerId(message.playerId);
+            playerIdRef.current = message.playerId;
             setPlayers(message.players);
             setMap(message.map);
             setMarketTime(message.mercatumTime);
@@ -105,7 +107,7 @@ export default function Home() {
                 player.id === message.playerId ? { ...player, position: message.to } : player,
               ),
             );
-            if (message.playerId === playerId) setNotice("Movimiento confirmado por el servidor.");
+            if (message.playerId === playerIdRef.current) setNotice("Movimiento confirmado por el servidor.");
             break;
           case "move_rejected":
             setNotice(message.reason);
@@ -122,6 +124,7 @@ export default function Home() {
         if (!mounted) return;
         setConnection("offline");
         setPlayerId(null);
+        playerIdRef.current = null;
         setPlayers([]);
         record("Conexión interrumpida. Se intentará reconectar.");
         reconnectTimer = setTimeout(connect, 2_000);
