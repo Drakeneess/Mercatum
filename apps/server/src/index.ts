@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { createEndpoint, createRouter, defineRoom, defineServer, matchMaker } from "colyseus";
-import { MERCATUM_ROOM_ID, MERCATUM_ROOM_NAME } from "@mercatum/shared";
+import { MERCATUM_ROOM_NAME } from "@mercatum/shared";
 import { MercatumRoom } from "./MercatumRoom.js";
 
 const port = Number(process.env.PORT ?? 3001);
@@ -18,12 +18,18 @@ const server = defineServer({
   routes: createRouter({
     health: createEndpoint("/health", { method: "GET" }, async () => {
       const rooms = await matchMaker.query({ name: MERCATUM_ROOM_NAME });
-      const ready = rooms.some((room) => room.roomId === MERCATUM_ROOM_ID);
+      const world = rooms[0];
+      const joinable = Boolean(world && !world.locked && !world.private);
       return {
-        status: ready ? "ok" : "world-not-ready",
-        worldReady: ready,
+        status: !world ? "world-not-ready" : joinable ? "ok" : "world-unavailable",
+        worldReady: Boolean(world),
+        worldJoinable: joinable,
         roomName: MERCATUM_ROOM_NAME,
-        roomId: MERCATUM_ROOM_ID,
+        roomId: world?.roomId ?? null,
+        roomLocked: world?.locked ?? null,
+        roomPrivate: world?.private ?? null,
+        roomClients: world?.clients ?? 0,
+        roomMaxClients: world?.maxClients ?? null,
         activeRoomIds: rooms.map((room) => room.roomId),
         connectedPlayers: matchMaker.stats.local.ccu,
       };
@@ -33,9 +39,9 @@ const server = defineServer({
 
 await server.listen(port);
 const world = await matchMaker.createRoom(MERCATUM_ROOM_NAME, {});
-if (world.roomId !== MERCATUM_ROOM_ID) {
-  throw new Error(`Unexpected world ID: ${world.roomId}; expected ${MERCATUM_ROOM_ID}`);
+if (!world.roomId) {
+  throw new Error("World initialization failed: missing Colyseus room ID.");
 }
 
 console.log(`[Mercatum] Colyseus listening on http://localhost:${port}`);
-console.log(`[Mercatum] Canonical room: ${MERCATUM_ROOM_ID}`);
+console.log(`[Mercatum] Canonical room: ${world.roomId}`);

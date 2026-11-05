@@ -58,7 +58,7 @@ pnpm --filter @mercatum/server smoke  # Prueba dos clientes reales (requiere bui
 
 ## Una sala canónica
 
-El servidor crea `MercatumRoom` al iniciar, con ID fijo `mercatum-world`. El cliente utiliza `join("mercatum")`: se une a una sala existente sin crear otras. El backend deshabilita `create` y `joinOrCreate`. El aforo de la única sala está limitado a 20 jugadores y `autoDispose = false` permite mantenerla incluso vacía.
+El servidor crea `MercatumRoom` al iniciar, con ID generado por Colyseus. El cliente utiliza `join("mercatum")`: se une a una sala existente sin crear otras. El backend deshabilita `create` y `joinOrCreate`. El aforo de la única sala está limitado a 20 jugadores y `autoDispose = false` permite mantenerla incluso vacía.
 
 Las posiciones se sincronizan mediante `@colyseus/schema` 5; los comandos de movimiento y sus respuestas usan mensajes de Colyseus. `patchRate = 200` representa una frecuencia máxima de envío de parches, **no** un ciclo de simulación del mundo de 5 FPS.
 
@@ -86,7 +86,7 @@ Consulta [docs/architecture.md](docs/architecture.md).
 
 ## Diagnóstico de errores 521/522
 
-Comprueba **http://localhost:3001/health**. El servidor correcto debe devolver `worldReady: true`, `roomName: "mercatum"`, `roomId: "mercatum-world"` y `activeRoomIds: ["mercatum-world"]`. Si el endpoint no existe o no indica que la sala está lista, probablemente estés utilizando otro proceso en el puerto 3001 o el arranque de la sala falló.
+Comprueba **http://localhost:3001/health**. El servidor correcto debe devolver `worldReady: true`, `roomName: "mercatum"`, un `roomId` generado por Colyseus y `activeRoomIds` con exactamente ese ID. Si el endpoint no existe o no indica que la sala está lista, probablemente estés utilizando otro proceso en el puerto 3001 o el arranque de la sala falló.
 
 En PowerShell, identifica primero quién utiliza el puerto:
 
@@ -96,3 +96,7 @@ Get-Process -Id <ID_DEL_PROCESO>
 ```
 
 Detén ese proceso **solo si corresponde a una instancia anterior del servidor Mercatum**, después ejecuta `pnpm dev` de nuevo. El cliente aplica espera progresiva de hasta 30 segundos entre intentos fallidos en lugar de saturar el matchmaking.
+
+### Diagnóstico de sala bloqueada
+
+La ruta `/health` ahora muestra `worldJoinable`, `roomLocked`, `roomPrivate`, `roomClients` y `roomMaxClients`. Una sala puede existir (`worldReady: true`) y aun así no aceptar nuevas conexiones (`worldJoinable: false`). Los mensajes del cliente muestran el código y texto **originales** de Colyseus (por ejemplo, 521/522), en lugar de ocultarlos tras un mensaje genérico. Si el servidor está lleno, ciérrale pestañas antiguas antes de reiniciarlo. En desarrollo, el ID de la sala puede cambiar después de un reinicio: el cliente siempre usa el nombre `mercatum`.

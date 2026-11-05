@@ -1,7 +1,6 @@
 import { Room, type Client } from "colyseus";
 import {
   ENTRY,
-  MERCATUM_ROOM_ID,
   MercatumPlayer,
   MercatumState,
   hexKey,
@@ -53,7 +52,6 @@ export class MercatumRoom extends Room<{ state: MercatumState }> {
   private readonly lastMoveAt = new Map<string, number>();
 
   onCreate(): void {
-    this.roomId = MERCATUM_ROOM_ID;
     this.state.mercatumTime = mercatumClock();
     // The room is kept alive without players. No 60fps world simulation needed.
     this.clock.setInterval(() => {

@@ -6,7 +6,7 @@ La interfaz SVG y las reglas hexagonales se mantienen, mientras que la capa WebS
 
 ## Mundo compartido
 
-- `apps/server/src/index.ts` configura Colyseus y crea una única sala `mercatum` con ID fijo `mercatum-world` al inicio.
+- `apps/server/src/index.ts` configura Colyseus y crea una única sala `mercatum` con ID generado por Colyseus al inicio.
 - El matchmaking expone únicamente `join` y `reconnect`. No se permite que el navegador cree instancias con `create` o `joinOrCreate`.
 - `apps/server/src/MercatumRoom.ts` tiene `maxClients = 20`, `autoDispose = false`, `patchRate = 200` y `maxMessagesPerSecond = 30`.
 - El cliente Next.js llama a `join("mercatum")` para entrar en la única sala existente (sin crear otras) y aplica espera progresiva si no está disponible.
@@ -64,4 +64,8 @@ El servidor usa el reloj fijo `Etc/GMT+6`, independientemente del horario del na
 
 ## Diagnóstico del mundo
 
-`/health` consulta el estado real del matchmaking y muestra `worldReady`, `roomName`, `roomId`, `activeRoomIds` y número de jugadores. Al iniciar, el servidor también comprueba que la sala precreada tenga el ID esperado. Esto distingue un servidor HTTP disponible de un mundo realmente inicializado.
+`/health` consulta el estado real del matchmaking y muestra `worldReady`, `roomName`, `roomId`, `activeRoomIds` y número de jugadores. Al iniciar, el servidor también comprueba que la sala precreada tenga un ID válido. Esto distingue un servidor HTTP disponible de un mundo realmente inicializado.
+
+## Diagnóstico de admisión
+
+El endpoint `/health` indica `worldReady` (sala registrada) y `worldJoinable` (sala no bloqueada ni privada) por separado. Expone los campos `roomLocked`, `roomClients` y `roomMaxClients`, además del `roomId` real asignado automáticamente. Los errores 521/522 se muestran en la interfaz sin eliminar el mensaje original. El ID ya no se fuerza dentro de `onCreate`, para evitar inconsistencias con las reservas del matchmaker.

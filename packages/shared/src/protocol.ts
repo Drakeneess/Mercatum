@@ -1,8 +1,7 @@
 import type { HexCoordinate } from "./hex.js";
 
-/** Fixed canonical world: never create a fresh room for a new player. */
+/** Canonical room name; the server precreates exactly one instance. */
 export const MERCATUM_ROOM_NAME = "mercatum";
-export const MERCATUM_ROOM_ID = "mercatum-world";
 
 export interface PlayerSnapshot {
   readonly id: string;

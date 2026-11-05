@@ -154,9 +154,11 @@ export default function Home() {
         setPlayers([]);
         const code = typeof error === "object" && error !== null && "code" in error
           ? Number(error.code) : null;
+        const detail = error instanceof Error ? error.message : String(error);
+        const codeLabel = Number.isFinite(code) ? ` (código ${code})` : "";
         const reason = code === 521 || code === 522
-          ? "No se encuentra una sala Mercatum disponible. Revisa http://localhost:3001/health y reinicia el backend."
-          : error instanceof Error ? `No fue posible entrar: ${error.message}` : "No fue posible entrar.";
+          ? `Matchmaking rechazado${codeLabel}: ${detail}. Revisa el campo worldJoinable de http://localhost:3001/health.`
+          : `Error de conexión${codeLabel}: ${detail}`;
         setNotice(reason);
         record(reason);
         retry();

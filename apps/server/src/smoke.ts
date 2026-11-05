@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 import { Client } from "@colyseus/sdk";
-import { MERCATUM_ROOM_ID, MERCATUM_ROOM_NAME } from "@mercatum/shared";
+import { MERCATUM_ROOM_NAME } from "@mercatum/shared";
 
 const PORT = 31237;
 const url = `http://127.0.0.1:${PORT}`;
@@ -31,19 +31,26 @@ async function run() {
     try {
       const response = await fetch(`${url}/health`);
       if (!response.ok) return false;
-      const health = await response.json() as { worldReady?: boolean; roomId?: string };
-      return health.worldReady === true && health.roomId === MERCATUM_ROOM_ID;
+      const health = await response.json() as { worldReady?: boolean; worldJoinable?: boolean; roomId?: string };
+      return health.worldReady === true && health.worldJoinable === true && Boolean(health.roomId);
     } catch {
       return false;
     }
   }, "Colyseus server health");
+
+  const health = await (await fetch(`${url}/health`)).json() as {
+    roomId: string; worldJoinable: boolean; roomLocked: boolean; activeRoomIds: string[];
+  };
+  assert.equal(health.worldJoinable, true);
+  assert.equal(health.roomLocked, false);
+  assert.deepEqual(health.activeRoomIds, [health.roomId]);
 
   const client = new Client(url);
   const explorerA = await client.join(MERCATUM_ROOM_NAME);
   const explorerB = await client.join(MERCATUM_ROOM_NAME);
 
   try {
-    assert.equal(explorerA.roomId, MERCATUM_ROOM_ID);
+    assert.equal(explorerA.roomId, health.roomId);
     assert.equal(explorerA.roomId, explorerB.roomId);
     await eventually(
       () => explorerA.state.players.size === 2 && explorerB.state.players.size === 2,
@@ -77,7 +84,7 @@ async function run() {
   // autoDispose=false: the world remains available even with zero clients.
   const explorerC = await client.join(MERCATUM_ROOM_NAME);
   try {
-    assert.equal(explorerC.roomId, MERCATUM_ROOM_ID);
+    assert.equal(explorerC.roomId, health.roomId);
   } finally {
     await explorerC.leave();
   }
