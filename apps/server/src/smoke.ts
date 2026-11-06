@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 import { Client } from "@colyseus/sdk";
-import { MERCATUM_ROOM_NAME } from "@mercatum/shared";
+import {
+  BALANCED_STATS, getMovementDelayMs, MERCATUM_ROOM_NAME,
+} from "@mercatum/shared";
 
 const PORT = 31237;
 const url = `http://127.0.0.1:${PORT}`;
@@ -46,7 +48,8 @@ async function run() {
   assert.deepEqual(health.activeRoomIds, [health.roomId]);
 
   const client = new Client(url);
-  const explorerA = await client.join(MERCATUM_ROOM_NAME);
+  const agileBuild = { ...BALANCED_STATS, dexterity: 3, strength: 1 };
+  const explorerA = await client.join(MERCATUM_ROOM_NAME, { stats: agileBuild });
   const explorerB = await client.join(MERCATUM_ROOM_NAME);
 
   try {
@@ -55,6 +58,14 @@ async function run() {
     await eventually(
       () => explorerA.state?.players?.size === 2 && explorerB.state?.players?.size === 2,
       "both players to be synchronized",
+    );
+
+    assert.equal(explorerA.state.players.get(explorerA.sessionId)?.dexterity, 3);
+    assert.equal(explorerA.state.players.get(explorerA.sessionId)?.strength, 1);
+    assert.equal(explorerB.state.players.get(explorerB.sessionId)?.dexterity, 2);
+    await assert.rejects(
+      client.join(MERCATUM_ROOM_NAME, { stats: { ...BALANCED_STATS, dexterity: 5 } }),
+      /atributos|invalid|error|400/i,
     );
 
     // A malicious client must not be able to instantiate an alternate market.
@@ -76,6 +87,27 @@ async function run() {
       sleep(3_000).then(() => { throw new Error("Missing rejection of invalid movement"); }),
     ]);
     assert.match(reason, /vecino/);
+
+    // The server rejects a second adjacent move until Destreza cooldown ends.
+    const tooSoon = new Promise<{ reason: string; retryAfterMs?: number }>((resolve) => {
+      explorerA.onMessage("move_rejected", (payload: { reason: string; retryAfterMs?: number }) => {
+        if (payload.retryAfterMs !== undefined) resolve(payload);
+      });
+    });
+    explorerA.send("move", { to: { q: 0, r: 0 } });
+    const cooldown = await Promise.race([
+      tooSoon,
+      sleep(2_000).then(() => { throw new Error("Missing movement cooldown rejection"); }),
+    ]);
+    assert.ok((cooldown.retryAfterMs ?? 0) > 0);
+    assert.match(cooldown.reason, /paso/);
+
+    await sleep(getMovementDelayMs(3) + 90);
+    explorerA.send("move", { to: { q: 0, r: 0 } });
+    await eventually(
+      () => explorerB.state?.players?.get(explorerA.sessionId)?.q === 0,
+      "agile player to move after its own cooldown",
+    );
   } finally {
     await explorerA.leave();
     await explorerB.leave();

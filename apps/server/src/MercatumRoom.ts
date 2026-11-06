@@ -1,18 +1,24 @@
-import { Room, type Client } from "colyseus";
+import { Room, ServerError, type Client } from "colyseus";
 import {
+  ATTRIBUTE_POINTS,
+  BALANCED_STATS,
   ENTRY,
+  getMovementDelayMs,
+  parseCharacterStats,
+  spentAttributePoints,
+  type CharacterStats,
   MercatumPlayer,
   MercatumState,
   hexKey,
   isNeighbor,
   makeDemoMap,
   type HexCoordinate,
+  type MoveAccepted,
   type MoveRejected,
   type MoveRequest,
 } from "@mercatum/shared";
 
 const MAX_PLAYERS = 20;
-const MIN_MOVE_INTERVAL_MS = 250;
 const walkableTiles = new Set(
   makeDemoMap().filter((tile) => tile.kind !== "wall").map(hexKey),
 );
@@ -49,7 +55,7 @@ export class MercatumRoom extends Room<{ state: MercatumState }> {
   maxMessagesPerSecond = 30;
   state = new MercatumState();
 
-  private readonly lastMoveAt = new Map<string, number>();
+  private readonly nextMoveAt = new Map<string, number>();
 
   onCreate(): void {
     this.state.mercatumTime = mercatumClock();
@@ -62,17 +68,31 @@ export class MercatumRoom extends Room<{ state: MercatumState }> {
     this.onMessage("move", (client, payload: unknown) => this.move(client, payload));
   }
 
-  onJoin(client: Client): void {
+  onJoin(client: Client, options?: unknown): void {
+    // Older clients without a character sheet get a balanced build.
+    // Explicit builds MUST pass the full validation; client values are untrusted.
+    const supplied = options && typeof options === "object" && "stats" in options
+      ? (options as { stats: unknown }).stats
+      : undefined;
+    const stats: CharacterStats = supplied === undefined
+      ? { ...BALANCED_STATS }
+      : parseCharacterStats(supplied) ?? (() => { throw new ServerError(400, "Distribución de atributos inválida."); })();
+
+    if (spentAttributePoints(stats) !== ATTRIBUTE_POINTS) {
+      throw new ServerError(400, "Distribución de atributos inválida.");
+    }
+
     this.state.players.set(client.sessionId, new MercatumPlayer({
       name: `Explorador-${client.sessionId.slice(0, 4).toUpperCase()}`,
       q: ENTRY.q,
       r: ENTRY.r,
+      ...stats,
     }));
   }
 
   onLeave(client: Client): void {
     this.state.players.delete(client.sessionId);
-    this.lastMoveAt.delete(client.sessionId);
+    this.nextMoveAt.delete(client.sessionId);
   }
 
   private move(client: Client, payload: unknown): void {
@@ -95,16 +115,23 @@ export class MercatumRoom extends Room<{ state: MercatumState }> {
     }
 
     const now = Date.now();
-    if (now - (this.lastMoveAt.get(client.sessionId) ?? 0) < MIN_MOVE_INTERVAL_MS) {
-      reject(client, "Movimiento demasiado rápido.");
+    const nextAllowed = this.nextMoveAt.get(client.sessionId) ?? 0;
+    if (now < nextAllowed) {
+      const reply: MoveRejected = {
+        reason: "Aún no puedes dar el siguiente paso.",
+        retryAfterMs: nextAllowed - now,
+      };
+      client.send("move_rejected", reply);
       return;
     }
 
-    this.lastMoveAt.set(client.sessionId, now);
+    // One accepted adjacent tile per cooldown, using server-owned Destreza.
+    const cooldownMs = getMovementDelayMs(player.dexterity);
+    this.nextMoveAt.set(client.sessionId, now + cooldownMs);
     player.q = destination.q;
     player.r = destination.r;
 
-    const accepted: MoveRequest = { to: destination };
+    const accepted: MoveAccepted = { to: destination, cooldownMs };
     client.send("move_accepted", accepted);
     // Colyseus pushes the Schema patch to everyone. No manual broadcast.
   }

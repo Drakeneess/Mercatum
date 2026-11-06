@@ -8,6 +8,13 @@ export const MercatumPlayer = schema({
   name: t.string().default("Explorador"),
   q: t.int16().default(0),
   r: t.int16().default(0),
+  strength: t.int16().default(2),
+  dexterity: t.int16().default(2),
+  endurance: t.int16().default(2),
+  perception: t.int16().default(2),
+  intellect: t.int16().default(2),
+  social: t.int16().default(2),
+  composure: t.int16().default(2),
 }, "MercatumPlayer");
 export type MercatumPlayer = SchemaType<typeof MercatumPlayer>;
 
