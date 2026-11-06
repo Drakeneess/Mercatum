@@ -77,3 +77,11 @@ Next.js: `http://localhost:3500`. Colyseus: `http://localhost:3001`. El puerto 3
 ## Presentación visual
 
 La interfaz de Next.js tiene tres variantes de CSS controladas por `data-theme` en el contenedor principal: `oxide`, `phosphor` y `vigil`. El componente `Home` mantiene toda la lógica de Colyseus mientras `globals.css` define tokens cromáticos y tratamientos por variante. El selector utiliza `details`/`summary` nativos y botones con `aria-pressed`. La elección se persiste en `localStorage` y se recupera al montar la vista, sin introducir dependencias adicionales ni modificar el protocolo multijugador.
+
+## Fichas de personaje y velocidad discreta
+
+`packages/shared/src/stats.ts` define FUE, DES, RES, PER, INT, TRA y TEM, sus límites de creación, validación estricta y tabla de demora de movimiento. `MercatumPlayer` en Schema sincroniza los siete valores (visibles públicamente en este prototipo). El cliente muestra un formulario antes de pedir acceso a la sala y remite `join("mercatum", { stats })`.
+
+`MercatumRoom.onJoin` valida la ficha del cliente o asigna una build equilibrada de compatibilidad si la ficha no se envió. No utiliza los valores que mande el cliente para el movimiento sin comprobarlos: la Destreza se toma del estado almacenado en servidor. `move` acepta únicamente hexágonos vecinos transitables y si `Date.now() >= nextMoveAt`. Al aceptar, emite `move_accepted` con `cooldownMs`. Si todavía no puede moverse, devuelve `move_rejected` con `retryAfterMs`. La UI enseña la recuperación como ayuda, pero nunca autoriza un paso por sí misma.
+
+Los otros seis atributos son parte de la ficha y su efecto se añadirá al implementar interacciones específicas. No hay progresión ni persistencia hasta integrar cuentas y PostgreSQL.

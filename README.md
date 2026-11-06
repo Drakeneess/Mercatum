@@ -2,7 +2,7 @@
 
 **Mercatum** es un prototipo web de exploración en un mercado paranormal persistente. El Mercado no es una mazmorra: existe y funciona independientemente de los jugadores.
 
-El prototipo incluye 61 hexágonos, movimiento entre vecinos, sincronización autoritativa de estado con **Colyseus 0.18** y una sola sala para todos los exploradores.
+El prototipo incluye 61 hexágonos, movimiento entre vecinos con cooldown individual según Destreza, ficha de personaje con siete atributos, sincronización autoritativa de estado con **Colyseus 0.18** y una sola sala para todos los exploradores.
 
 ## Estructura
 
@@ -38,7 +38,7 @@ pnpm dev
 
 Abre **http://localhost:3500**. Colyseus escucha en **http://localhost:3001** y expone **http://localhost:3001/health**.
 
-Abre dos pestañas para comprobar la sincronización de los exploradores. Selecciona una casilla vecina resaltada para moverte. Las casillas bloqueadas y los saltos entre hexágonos no adyacentes se rechazan en el servidor.
+En cada pestaña elige una build de siete atributos y pulsa **FIRMAR REGISTRO / ENTRAR**. Una vez dentro, selecciona una casilla vecina resaltada. Las casillas bloqueadas, los saltos no adyacentes y los pasos demasiado rápidos se rechazan en el servidor.
 
 ### Configuración opcional
 
@@ -70,6 +70,26 @@ Los temas modifican la interfaz, la textura y la lectura del mapa hexagonal; **n
 
 Consulta [docs/ui-themes.md](docs/ui-themes.md) para la guía de estilos.
 
+## Siete atributos y creación de personaje
+
+El **anexo de aptitudes** de la interfaz permite registrar la build antes de conectar con Colyseus. Cada rasgo empieza en 1; se distribuyen 7 puntos extra (14 puntos en total) con máximo 3 en la creación. El formulario comienza equilibrado con 2 en todos los atributos y permite redistribuir, además de elegir las plantillas «Corredor» y «Rastreador». El cliente envía la ficha al entrar y el servidor **valida todos los valores** y la suma para impedir estadísticas arbitrarias.
+
+| Abrev. | Atributo | Sistema al que servirá |
+| --- | --- | --- |
+| FUE | Fuerza | Cargas, obstáculos, empuje |
+| DES | Destreza | **Intervalo de movimiento entre hexágonos, activo ahora** |
+| RES | Resistencia | Fatiga, esfuerzo y lesiones |
+| PER | Percepción | Rastros e indicios |
+| INT | Intelecto | Documentos, mecanismos y artefactos |
+| TRA | Trato | Comercio, negociación e información |
+| TEM | Temple | Presión, tensión y pánico |
+
+El cooldown de DES sigue la tabla `[1400, 1200, 1050, 900, 800, 700]` ms para valores 0–5. En la creación se permiten 1–3: **1200, 1050 y 900 ms por hexágono**. El servidor impide movimientos prematuros y la interfaz muestra la recuperación del paso. El jugador mueve **un solo hexágono por acción**.
+
+**Alcance real:** solo DES modifica una mecánica por ahora. Los otros seis valores se sincronizan, pero sus interacciones todavía no están implementadas. No hay nivelación, heridas, comercio, inventario ni efectos de criaturas todavía. La build dura la sesión; no existe aún cuenta ni persistencia de personaje. La UI y su estética de horror documental se mantienen.
+
+Consulta [docs/character-stats.md](docs/character-stats.md) para la especificación.
+
 ## Una sala canónica
 
 El servidor crea `MercatumRoom` al iniciar, con ID generado por Colyseus. El cliente utiliza `join("mercatum")`: se une a una sala existente sin crear otras. El backend deshabilita `create` y `joinOrCreate`. El aforo de la única sala está limitado a 20 jugadores y `autoDispose = false` permite mantenerla incluso vacía.
@@ -80,8 +100,9 @@ Las posiciones se sincronizan mediante `@colyseus/schema` 5; los comandos de mov
 
 **Implementado**
 - Mapa hexagonal de 61 casillas y obstáculos fijos.
-- Movimiento validado en servidor (adyacencia, obstáculos y cadencia mínima de 250 ms).
+- Movimiento validado en servidor (adyacencia, obstáculos y cadencia individual definida por Destreza).
 - Sincronización incremental de jugadores, posiciones y reloj fijo UTC−6 mediante Schema.
+- Siete atributos asignables y sincronizados, con validación autoritativa y cooldown de Destreza.
 - Una sala precreada, sin creación de salas desde el cliente, máximo 20 conexiones.
 - Intentos de reconexión por nueva sesión desde el frontend y endpoint de salud.
 - Pruebas unitarias del mapa y prueba de integración Colyseus con varios clientes.
