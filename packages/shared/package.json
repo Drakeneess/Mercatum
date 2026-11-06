@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "pnpm build && node --test dist/hex.test.js"
+    "test": "pnpm build && node --test dist/hex.test.js dist/stats.test.js"
   },
   "dependencies": {
     "@colyseus/schema": "^5.0.42"
