@@ -56,6 +56,20 @@ pnpm test        # Ejecuta pruebas unitarias hexagonales
 pnpm --filter @mercatum/server smoke  # Prueba dos clientes reales (requiere build)
 ```
 
+## Interfaz y temas visuales
+
+La página de exploración tiene **tres temas completos**, disponibles desde el menú **APARIENCIA** en el encabezado. El tema se actualiza inmediatamente sin reconectar al jugador y se guarda en `localStorage` (`mercatum.ui.theme`) del navegador.
+
+| Tema | Dirección |
+| --- | --- |
+| **Archivo oxidado** (por defecto) | Expediente deteriorado, sellos, tinta seca, papel sucio, metal y tonos óxido |
+| **Fósforo muerto** | Terminal CRT, tipografía monoespaciada, verdes apagados, scanlines y cartografía electrónica |
+| **Vigilia** | Pasillos de comercio nocturno, sombras azul-violeta, neón enfermo y luz de emergencia |
+
+Los temas modifican la interfaz, la textura y la lectura del mapa hexagonal; **no alteran posiciones, estadísticas ni reglas de juego**. Incluyen estilos adaptables a móvil y respetan `prefers-reduced-motion`. No se descargan imágenes de fondo ni fuentes externas.
+
+Consulta [docs/ui-themes.md](docs/ui-themes.md) para la guía de estilos.
+
 ## Una sala canónica
 
 El servidor crea `MercatumRoom` al iniciar, con ID generado por Colyseus. El cliente utiliza `join("mercatum")`: se une a una sala existente sin crear otras. El backend deshabilita `create` y `joinOrCreate`. El aforo de la única sala está limitado a 20 jugadores y `autoDispose = false` permite mantenerla incluso vacía.

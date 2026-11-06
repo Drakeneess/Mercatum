@@ -73,3 +73,7 @@ El endpoint `/health` indica `worldReady` (sala registrada) y `worldJoinable` (s
 ## Puertos locales
 
 Next.js: `http://localhost:3500`. Colyseus: `http://localhost:3001`. El puerto 3000 no se utiliza en Mercatum para evitar conflictos con proyectos locales paralelos.
+
+## Presentación visual
+
+La interfaz de Next.js tiene tres variantes de CSS controladas por `data-theme` en el contenedor principal: `oxide`, `phosphor` y `vigil`. El componente `Home` mantiene toda la lógica de Colyseus mientras `globals.css` define tokens cromáticos y tratamientos por variante. El selector utiliza `details`/`summary` nativos y botones con `aria-pressed`. La elección se persiste en `localStorage` y se recupera al montar la vista, sin introducir dependencias adicionales ni modificar el protocolo multijugador.
