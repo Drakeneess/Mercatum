@@ -22,9 +22,9 @@ type ThemeId = "oxide" | "phosphor" | "vigil";
 
 const THEME_STORAGE_KEY = "mercatum.ui.theme";
 const THEMES: ReadonlyArray<{ id: ThemeId; name: string; description: string; tag: string }> = [
-  { id: "oxide", name: "Archivo oxidado", description: "Papel sucio, tinta seca y óxido.", tag: "01" },
-  { id: "phosphor", name: "Fósforo muerto", description: "Terminal CRT, señal e interferencias.", tag: "02" },
-  { id: "vigil", name: "Vigilia", description: "Neón enfermo y oscuridad comercial.", tag: "03" },
+  { id: "oxide", name: "Libro de incidencias", description: "Fotocopias, humedad y tinta roja.", tag: "PAPEL" },
+  { id: "phosphor", name: "Cinta de vigilancia", description: "Monitor viejo, imagen dañada.", tag: "VIDEO" },
+  { id: "vigil", name: "Turno de cierre", description: "Recibos, fluorescentes y pasillos vacíos.", tag: "RECIBO" },
 ];
 
 function isThemeId(value: string | null): value is ThemeId {
@@ -248,114 +248,118 @@ export default function Home() {
 
   return (
     <div className="app-shell" data-theme={theme}>
-      <div className="site-noise" aria-hidden="true" />
-      <div className="site-halo" aria-hidden="true" />
-      <header className="main-header">
-        <div className="brand">
-          <div className="brand-mark" aria-hidden="true"><span className="brand-initial">M</span><span className="brand-dot">.</span></div>
-          <div>
-            <div className="brand-name">MERCATUM</div>
-            <div className="brand-subtitle">INSPECCIÓN DE INCURSIONES · REGISTRO Nº 001</div>
-          </div>
+      <div className="filth" aria-hidden="true" />
+      <div className="screen-damage" aria-hidden="true" />
+
+      <header className="masthead">
+        <div className="masthead-serial">
+          <span>AVISO Nº 001 / DOCUMENTO EN MAL ESTADO</span>
+          <span>SE DESCONOCE EL ORIGEN DEL EDIFICIO</span>
         </div>
-        <div className="header-right">
-          <span className="header-edition">SISTEMA DE REGISTRO <span>/</span> VERSIÓN 0.2</span>
-          <details className="theme-picker" ref={themeMenuRef}>
-            <summary className="theme-trigger" aria-label={`Cambiar apariencia, tema actual: ${activeTheme.name}`}>
-              <span className="theme-trigger-icon" aria-hidden="true">◈</span>
-              <span className="theme-trigger-copy">
-                <span className="theme-trigger-label">APARIENCIA</span>
+        <div className="masthead-main">
+          <div className="title-block">
+            <span className="title-overline">ESTO NO ES UN DESTINO TURÍSTICO.</span>
+            <div className="brand-name" aria-label="Mercatum">MERCATUM<span className="brand-slash" aria-hidden="true">/</span></div>
+            <span className="title-under">EL MERCADO ESTÁ ABIERTO. <b>NO SABEMOS POR QUÉ.</b></span>
+          </div>
+          <div className="masthead-controls">
+            <details className="theme-picker" ref={themeMenuRef}>
+              <summary className="theme-trigger" aria-label={"Elegir tema visual, actual: " + activeTheme.name}>
+                <span className="theme-trigger-number">[ 03 ]</span>
+                <span className="theme-trigger-label">CAMBIAR SOPORTE</span>
                 <strong>{activeTheme.name}</strong>
-              </span>
-              <span className="theme-chevron" aria-hidden="true">⌄</span>
-            </summary>
-            <div className="theme-dropdown">
-              <div className="theme-dropdown-heading">
-                <strong>SELECCIONAR ATMÓSFERA</strong>
-                <span>ARCHIVO / 03 VARIANTES</span>
+                <span className="theme-trigger-arrow" aria-hidden="true">▼</span>
+              </summary>
+              <div className="theme-dropdown">
+                <div className="theme-dropdown-heading">TRES VERSIONES DEL MISMO EXPEDIENTE</div>
+                <div className="theme-options" role="group" aria-label="Temas visuales">
+                  {THEMES.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => selectTheme(option.id)}
+                      aria-pressed={theme === option.id}
+                      className={"theme-option" + (theme === option.id ? " theme-option--active" : "")}
+                    >
+                      <span className={"theme-swatch theme-swatch--" + option.id} aria-hidden="true">{option.tag}</span>
+                      <span className="theme-option-copy"><strong>{option.name}</strong><small>{option.description}</small></span>
+                      <span className="theme-option-mark" aria-hidden="true">{theme === option.id ? "✕" : "—"}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="theme-dropdown-foot">LA ELECCIÓN SE CONSERVA EN ESTE NAVEGADOR.</div>
               </div>
-              <div className="theme-options" role="group" aria-label="Temas visuales">
-                {THEMES.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    className={`theme-option${theme === option.id ? " theme-option--active" : ""}`}
-                    aria-pressed={theme === option.id}
-                    onClick={() => selectTheme(option.id)}
-                  >
-                    <span className={`theme-swatch theme-swatch--${option.id}`} aria-hidden="true">
-                      <span>◈</span>
-                    </span>
-                    <span className="theme-option-copy">
-                      <strong>{option.name}</strong>
-                      <small>{option.description}</small>
-                    </span>
-                    <span className="theme-option-mark">{theme === option.id ? "●" : option.tag}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="theme-dropdown-foot">Preferencia guardada en este navegador.</p>
+            </details>
+            <div className={"connection-chip connection-chip--" + connection} aria-live="polite">
+              <span className="status-dot" aria-hidden="true" />
+              <span>{connection === "online" ? "CONEXIÓN ESTABLECIDA" : connection === "connecting" ? "INTENTANDO CONTACTO" : "SEÑAL PERDIDA"}</span>
             </div>
-          </details>
-          <div className={`connection-chip connection-chip--${connection}`}>
-            <span className="status-dot" />
-            {connection === "online" ? "ENLACE ACTIVO" : connection === "connecting" ? "CONECTANDO" : "SIN CONEXIÓN"}
           </div>
         </div>
       </header>
 
-      <div className="document-ribbon" aria-hidden="true">
-        <span>MER / SECTOR 01</span>
-        <span>NO EXISTEN GARANTÍAS DE RETORNO</span>
-        <span>REGISTRO NO CLASIFICADO</span>
+      <div className="warning-banner" aria-label="Advertencia">
+        <span className="warning-cross" aria-hidden="true">✕</span>
+        <strong>NO ENTRE SIN TENER UNA RAZÓN.</strong>
+        <span>LAS OFERTAS NO COMPENSAN TODAS LAS PÉRDIDAS.</span>
+        <span className="warning-count">01 // 01</span>
       </div>
 
       <main className="game-layout">
-        <aside className="side-column">
-          <section className="surface-panel identity-panel">
-            <div className="section-label"><span className="red-line" /> DOCUMENTO 01 / IDENTIDAD</div>
-            <h1>Registro de<br /><em>incursión</em><span className="heading-period">.</span></h1>
-            <p className="subdued">La entrada queda asentada. La salida corre por tu cuenta.</p>
-            <div className="identity-stamp" aria-hidden="true">ADMISIÓN<br />CONDICIONAL</div>
-            <div className="identity-divider" />
-            <div className="meta-label">NOMBRE DE REGISTRO</div>
-            <div className="meta-value">{me?.name ?? "Sin identificar"}</div>
-            <div className="meta-label">ÚLTIMA POSICIÓN CONOCIDA</div>
-            <div className="meta-value mono">{currentPosition ? `Q ${currentPosition.q >= 0 ? "+" : ""}${currentPosition.q} · R ${currentPosition.r >= 0 ? "+" : ""}${currentPosition.r}` : "— / —"}</div>
-            <div className="meta-label">CONDICIÓN DEL ENLACE</div>
-            <div className="meta-value">{connection === "online" ? "Dentro del Mercado" : "Fuera de servicio"}</div>
+        <aside className="side-column side-column--entry" aria-label="Registro del explorador">
+          <section className="paper-piece entry-ticket">
+            <div className="piece-meta"><span>COMPROBANTE DE INGRESO</span><span>FORMA / 17-C</span></div>
+            <div className="section-number" aria-hidden="true">01</div>
+            <h1>Está<br />usted <em>dentro.</em></h1>
+            <p className="smudged-copy">No se garantiza que el edificio recuerde por dónde entró.</p>
+            <div className="torn-rule" aria-hidden="true" />
+            <div className="field">
+              <span className="field-label">NOMBRE ANOTADO</span>
+              <strong>{me?.name ?? "SIN IDENTIFICAR"}</strong>
+            </div>
+            <div className="field">
+              <span className="field-label">ÚLTIMA LOCALIZACIÓN</span>
+              <strong className="mono">{currentPosition ? "Q " + (currentPosition.q >= 0 ? "+" : "") + currentPosition.q + " / R " + (currentPosition.r >= 0 ? "+" : "") + currentPosition.r : "— / —"}</strong>
+            </div>
+            <div className="field">
+              <span className="field-label">SITUACIÓN ACTUAL</span>
+              <strong>{connection === "online" ? "DENTRO DEL PERÍMETRO" : "NO VERIFICADA"}</strong>
+            </div>
+            <div className="entry-stamp" aria-hidden="true">ACEPTADO<br />BAJO RIESGO</div>
+            <div className="ticket-bottom" aria-hidden="true"><span>NO ES UN SEGURO DE VIDA</span><span>///////</span></div>
           </section>
 
-          <section className="surface-panel clock-panel">
-            <div className="section-label">DOCUMENTO 02 / RELOJ PATRÓN</div>
+          <section className="paper-piece clock-ticket">
+            <div className="piece-meta">HORA DE REFERENCIA / MERCATUM</div>
             <div className="market-time mono">{marketTime}</div>
-            <div className="clock-footnote">UTC−06:00 <span>·</span> HORA FIJA</div>
-            <p>El Mercado no reconoce la hora del visitante.</p>
+            <div className="clock-offset">UTC − 06:00 / TIEMPO FIJO</div>
+            <p>Su reloj no tiene autoridad dentro de este lugar.</p>
           </section>
 
-          <section className="info-note">
-            <span className="info-sign">!</span>
+          <section className="hand-note">
+            <div className="hand-note-icon" aria-hidden="true">!</div>
             <div>
-              <strong>ADVERTENCIA / ENTRADA 00</strong>
-              <p>No toda mercancía merece ser comprada. No toda puerta debe abrirse.</p>
+              <strong>UNA OBSERVACIÓN</strong>
+              <p>Algo puede estar al otro lado de la puerta. O puede no haber nada. No tenemos forma de prometerlo.</p>
             </div>
           </section>
         </aside>
 
-        <section className="map-panel" aria-label="Mapa interactivo del Mercado">
-          <div className="map-panel-head">
-            <div>
-              <div className="section-label"><span className="red-line" /> PLANO RECUPERADO / ESTADO INCOMPLETO</div>
-              <h2>El primer nivel <span>/ Sector 01</span></h2>
+        <section className="map-panel" aria-label="Plano interactivo del Mercado">
+          <div className="map-header">
+            <div className="piece-meta"><span>LEVANTAMIENTO ENCONTRADO</span><span>SECTOR 01 / NIVEL 00</span></div>
+            <div className="map-title-line">
+              <h2>Plano <span>incompleto.</span></h2>
+              <div className="map-stamp" aria-hidden="true">NO VERIFICADO</div>
             </div>
-            <div className="map-coordinates mono"><span>LEVANTAMIENTO 00-A</span><strong>ACCESO PROVISIONAL</strong></div>
+            <p className="map-description">Papel recuperado junto a una entrada de servicio. Algunas marcas no coinciden con las observaciones.</p>
           </div>
-
           <div className="map-stage">
-            <div className="map-stage-grid" aria-hidden="true" />
-            <div className="map-watermark" aria-hidden="true">NO COMPLETADO<br />NO VERIFICADO</div>
-            <div className="map-corner map-corner--tl" aria-hidden="true" />
-            <div className="map-corner map-corner--br" aria-hidden="true" />
+            <div className="map-grit" aria-hidden="true" />
+            <div className="map-tape map-tape--top" aria-hidden="true" />
+            <div className="map-tape map-tape--bottom" aria-hidden="true" />
+            <span className="map-edge-note map-edge-note--left" aria-hidden="true">← NO BAJAR SOLO</span>
+            <span className="map-edge-note map-edge-note--right" aria-hidden="true">FIG. 00</span>
             <svg
               viewBox="-280 -254 560 508"
               className="hex-map"
@@ -366,11 +370,20 @@ export default function Home() {
                 <pattern id="wallPattern" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)">
                   <path d="M 0 0 L 0 7" className="wall-hatch" />
                 </pattern>
+                <pattern id="photocopy" patternUnits="userSpaceOnUse" width="34" height="34">
+                  <path d="M 2 7 l 4 1 M 24 5 l 2 1 M 9 21 l 3 -1 M 26 29 l 5 0" className="photocopy-dust" />
+                </pattern>
                 <filter id="playerGlow" x="-100%" y="-100%" width="300%" height="300%">
-                  <feGaussianBlur stdDeviation="5" />
+                  <feGaussianBlur stdDeviation="2" />
                 </filter>
               </defs>
 
+              <g className="map-underwriting" aria-hidden="true">
+                <path d="M-265,-194 L-219,-198 L-202,-193 M192,197 L242,194 L261,199 M-240,193 L-210,183 M204,-181 L257,-187" />
+                <text x="-249" y="-211">A / 00</text>
+                <text x="182" y="221">? ? ?</text>
+                <text x="-245" y="222">NO FIARSE DEL CROQUIS</text>
+              </g>
               {map.map((tile) => {
                 const key = hexKey(tile);
                 const center = hexCenter(tile);
@@ -414,9 +427,9 @@ export default function Home() {
                 const isMe = player.id === playerId;
                 return (
                   <g key={player.id} className={isMe ? "player-marker player-me" : "player-marker player-other"} transform={`translate(${x} ${y})`}>
-                    <circle r="16" className="player-aura" filter="url(#playerGlow)" />
-                    <circle r="12" className="player-ring" />
-                    <circle r="5" className="player-core" />
+                    <path d="M-12 -12 L12 12 M12 -12 L-12 12" className="player-scratch" />
+                    <circle r="10" className="player-ring" />
+                    <circle r="3.5" className="player-core" />
                     <text textAnchor="middle" y="-20" className="player-caption">
                       {isMe ? "TÚ" : player.name.replace("Explorador-", "")}
                     </text>
@@ -424,53 +437,50 @@ export default function Home() {
                 );
               })}
             </svg>
-            <div className="map-north mono"><span>↑</span> N</div>
-            <div className="map-scale mono">CUADRÍCULA 01 — LEVANTAMIENTO PARCIAL</div>
+            <span className="map-compass" aria-hidden="true">N ↑</span>
+            <span className="map-foot-mark" aria-hidden="true">CUADRÍCULA / NO A ESCALA</span>
           </div>
-
-          <div className="map-panel-footer">
+          <div className="map-bottom">
             <div className="map-legend">
-              <span><i className="legend-icon legend-available" /> Adyacente</span>
-              <span><i className="legend-icon legend-shop" /> Comercio</span>
-              <span><i className="legend-icon legend-wall" /> Bloqueado</span>
+              <span><i className="legend-icon legend-available" /> Paso posible</span>
+              <span><i className="legend-icon legend-shop" /> Puesto</span>
+              <span><i className="legend-icon legend-wall" /> Sin paso</span>
               <span><i className="legend-icon legend-player" /> Explorador</span>
             </div>
             <div className="movement-notice" role="status">{notice}</div>
           </div>
         </section>
 
-        <aside className="side-column">
-          <section className="surface-panel">
-            <div className="section-label"><span className="red-line" /> DOCUMENTO 03 / REGISTRO DEL SECTOR</div>
-            <h3>Lo que sabemos.</h3>
-            <div className="stat-row"><span>Exploradores conectados</span><strong className="mono">{players.length.toString().padStart(2, "0")} / 20</strong></div>
-            <div className="stat-row"><span>Casillas registradas</span><strong className="mono">{map.length}</strong></div>
-            <div className="stat-row"><span>Comercios conocidos</span><strong className="mono">{map.filter((tile) => tile.kind === "shop").length}</strong></div>
-            <div className="stat-row"><span>Entidades activas</span><strong className="mono">—</strong></div>
-            <p className="panel-caption">El prototipo todavía no simula criaturas ni inventarios.</p>
+        <aside className="side-column side-column--notes" aria-label="Notas del sector">
+          <section className="paper-piece evidence-sheet">
+            <div className="piece-meta"><span>EXTRACTO DE INCIDENCIAS</span><span>02 / 04</span></div>
+            <h3>Se ha<br /><em>observado.</em></h3>
+            <div className="observation-list">
+              <div><span>PERSONAS EN EL INTERIOR</span><strong className="mono">{players.length.toString().padStart(2, "0")} / 20</strong></div>
+              <div><span>ESPACIOS ANOTADOS</span><strong className="mono">{map.length}</strong></div>
+              <div><span>PUESTOS IDENTIFICADOS</span><strong className="mono">{map.filter((tile) => tile.kind === "shop").length}</strong></div>
+              <div><span>CRIATURAS COMPROBADAS</span><strong className="mono">SIN DATOS</strong></div>
+            </div>
+            <p className="margin-note">Las cifras son parciales. Este prototipo aún no simula criaturas.</p>
+            <div className="sheet-scratch" aria-hidden="true">?????????????</div>
           </section>
-
-          <section className="surface-panel events-panel">
-            <div className="section-label">DOCUMENTO 04 / BITÁCORA</div>
-            <h3>Últimos rastros.</h3>
+          <section className="paper-piece log-sheet">
+            <div className="piece-meta"><span>REGISTRO DE CONTACTO</span><span>03 / 04</span></div>
+            <h3>Lo último<br />que quedó.</h3>
             <ol className="event-list" aria-live="polite">
-              {events.map((event, index) => <li key={`${index}-${event}`}>{event}</li>)}
+              {events.map((event, index) => <li key={index + "-" + event}><span className="event-number">{String(index + 1).padStart(2, "0")}</span>{event}</li>)}
             </ol>
           </section>
-
-          <section className="notice-panel">
-            <div className="notice-symbol">✳</div>
-            <div>
-              <strong>EL MERCADO PERMANECE.</strong>
-              <p>Y no siempre deja constancia de lo que ocurre.</p>
-            </div>
-          </section>
+          <div className="closing-note">
+            <span aria-hidden="true">✱</span>
+            <div><strong>EL MERCADO NO CIERRA.</strong><p>Los exploradores sí desaparecen de los registros.</p></div>
+          </div>
         </aside>
       </main>
 
       <footer className="main-footer">
-        <span>LA ORGANIZACIÓN <span className="footer-separator">/</span> DOCUMENTACIÓN SUJETA A ERRORES</span>
-        <span className="mono">MERCATUM · ARCHIVO EN CURSO</span>
+        <span>LA ORGANIZACIÓN / DOCUMENTO SIN GARANTÍAS</span>
+        <span>MERCATUM — NO DEJAR EN EL INTERIOR DEL EDIFICIO</span>
       </footer>
     </div>
   );
