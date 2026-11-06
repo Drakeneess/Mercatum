@@ -2,13 +2,24 @@
 
 import { Client, type Room } from "@colyseus/sdk";
 import {
+  ATTRIBUTE_POINTS,
+  BALANCED_STATS,
+  CREATION_MAX_STAT,
+  getMovementDelayMs,
+  parseCharacterStats,
+  spentAttributePoints,
+  STARTING_STAT,
+  STAT_INFO,
   hexDistance,
   hexKey,
   makeDemoMap,
   MERCATUM_ROOM_NAME,
+  type CharacterStats,
   type HexCoordinate,
+  type StatKey,
   type HexTile,
   type MercatumState,
+  type MoveAccepted,
   type MoveRejected,
   type MoveRequest,
   type PlayerSnapshot,
@@ -81,6 +92,40 @@ export default function Home() {
       // The chosen theme remains active for the current page.
     }
   }
+  const [draftStats, setDraftStats] = useState<CharacterStats>({ ...BALANCED_STATS });
+  const [committedBuild, setCommittedBuild] = useState<CharacterStats | null>(null);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [cooldownClock, setCooldownClock] = useState(0);
+  const pointsLeft = ATTRIBUTE_POINTS - spentAttributePoints(draftStats);
+
+  function adjustStat(stat: StatKey, change: -1 | 1) {
+    if (committedBuild) return;
+    setDraftStats((current) => {
+      const next = current[stat] + change;
+      const available = ATTRIBUTE_POINTS - spentAttributePoints(current);
+      if (next < STARTING_STAT || next > CREATION_MAX_STAT || (change > 0 && available <= 0)) {
+        return current;
+      }
+      return { ...current, [stat]: next };
+    });
+  }
+
+  function enterMarket() {
+    const validated = parseCharacterStats(draftStats);
+    if (validated && !committedBuild) setCommittedBuild(validated);
+  }
+
+  useEffect(() => {
+    if (!cooldownUntil) return;
+    setCooldownClock(Date.now());
+    const timer = window.setInterval(() => {
+      const current = Date.now();
+      setCooldownClock(current);
+      if (current >= cooldownUntil) setCooldownUntil(0);
+    }, 100);
+    return () => window.clearInterval(timer);
+  }, [cooldownUntil]);
+
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [players, setPlayers] = useState<readonly PlayerSnapshot[]>([]);
   const map = useMemo(() => makeDemoMap(), []);
@@ -94,6 +139,10 @@ export default function Home() {
   const failedAttemptsRef = useRef(0);
 
   useEffect(() => {
+    // Character creation is a local draft. Do not reserve a server seat until
+    // the player signs a valid sheet. Reconnect retries retain that same build.
+    if (!committedBuild) return;
+
     let mounted = true;
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
     const client = new Client(COLYSEUS_URL);
@@ -115,7 +164,7 @@ export default function Home() {
 
       try {
         // join() selects an existing world without creating another.
-        const room = await client.join<MercatumState>(MERCATUM_ROOM_NAME);
+        const room = await client.join<MercatumState>(MERCATUM_ROOM_NAME, { stats: committedBuild });
         if (!mounted) {
           void room.leave();
           return;
@@ -137,6 +186,15 @@ export default function Home() {
               id,
               name: player.name,
               position: { q: player.q, r: player.r },
+              stats: {
+                strength: player.strength,
+                dexterity: player.dexterity,
+                endurance: player.endurance,
+                perception: player.perception,
+                intellect: player.intellect,
+                social: player.social,
+                composure: player.composure,
+              },
             });
           });
 
@@ -170,13 +228,16 @@ export default function Home() {
         // Subscribe first: a state update could arrive during connection.
         room.onStateChange(publishState);
         publishState(room.state);
-        room.onMessage("move_accepted", (_message: MoveRequest) => {
-          if (mounted) setNotice("Movimiento confirmado por el servidor.");
+        room.onMessage("move_accepted", (message: MoveAccepted) => {
+          if (!mounted) return;
+          setCooldownUntil(Date.now() + message.cooldownMs);
+          setNotice("Movimiento confirmado. Espera antes del siguiente paso.");
         });
         room.onMessage("move_rejected", (message: MoveRejected) => {
           if (!mounted) return;
+          if (message.retryAfterMs) setCooldownUntil(Date.now() + message.retryAfterMs);
           setNotice(message.reason);
-          record(`Movimiento rechazado: ${message.reason}`);
+          if (!message.retryAfterMs) record(`Movimiento rechazado: ${message.reason}`);
         });
         room.onError((_code, message) => {
           record(`Error de comunicación: ${message}`);
@@ -187,6 +248,7 @@ export default function Home() {
           setConnection("offline");
           setPlayerId(null);
           setPlayers([]);
+          setCooldownUntil(0);
           record("Conexión interrumpida. Se intentará reconectar.");
           retry();
         });
@@ -196,6 +258,7 @@ export default function Home() {
         setConnection("offline");
         setPlayerId(null);
         setPlayers([]);
+        setCooldownUntil(0);
         const code = typeof error === "object" && error !== null && "code" in error
           ? Number(error.code) : null;
         const detail = error instanceof Error ? error.message : String(error);
@@ -217,7 +280,7 @@ export default function Home() {
       roomRef.current = null;
       if (room) void room.leave();
     };
-  }, []);
+  }, [committedBuild]);
 
   const me = useMemo(() => players.find((p) => p.id === playerId), [players, playerId]);
   const walkable = useMemo(
@@ -225,11 +288,19 @@ export default function Home() {
     [map],
   );
   const currentPosition = me?.position;
+  const characterStats = me?.stats ?? committedBuild ?? draftStats;
+  const movementDelayMs = getMovementDelayMs(characterStats.dexterity);
+  const cooldownRemaining = Math.max(0, cooldownUntil - cooldownClock);
+  const recoveryPercentage = Math.max(0, Math.min(100, 100 * (1 - cooldownRemaining / movementDelayMs)));
 
   function requestMove(tile: HexTile) {
     const room = roomRef.current;
     if (!currentPosition || connection !== "online" || !room) {
       setNotice("Necesitas una conexión activa para desplazarte.");
+      return;
+    }
+    if (Date.now() < cooldownUntil) {
+      setNotice("Aún estás recuperando el paso.");
       return;
     }
     if (!walkable.has(hexKey(tile))) {
@@ -292,7 +363,7 @@ export default function Home() {
             </details>
             <div className={"connection-chip connection-chip--" + connection} aria-live="polite">
               <span className="status-dot" aria-hidden="true" />
-              <span>{connection === "online" ? "CONEXIÓN ESTABLECIDA" : connection === "connecting" ? "INTENTANDO CONTACTO" : "SEÑAL PERDIDA"}</span>
+              <span>{!committedBuild ? "SIN REGISTRO DE ENTRADA" : connection === "online" ? "CONEXIÓN ESTABLECIDA" : connection === "connecting" ? "INTENTANDO CONTACTO" : "SEÑAL PERDIDA"}</span>
             </div>
           </div>
         </div>
@@ -310,8 +381,8 @@ export default function Home() {
           <section className="paper-piece entry-ticket">
             <div className="piece-meta"><span>COMPROBANTE DE INGRESO</span><span>FORMA / 17-C</span></div>
             <div className="section-number" aria-hidden="true">01</div>
-            <h1>Está<br />usted <em>dentro.</em></h1>
-            <p className="smudged-copy">No se garantiza que el edificio recuerde por dónde entró.</p>
+            <h1>{committedBuild ? <>Está<br />usted <em>dentro.</em></> : <>Aún está<br /><em>afuera.</em></>}</h1>
+            <p className="smudged-copy">{committedBuild ? "No se garantiza que el edificio recuerde por dónde entró." : "Complete el registro antes de atravesar la puerta."}</p>
             <div className="torn-rule" aria-hidden="true" />
             <div className="field">
               <span className="field-label">NOMBRE ANOTADO</span>
@@ -325,8 +396,66 @@ export default function Home() {
               <span className="field-label">SITUACIÓN ACTUAL</span>
               <strong>{connection === "online" ? "DENTRO DEL PERÍMETRO" : "NO VERIFICADA"}</strong>
             </div>
-            <div className="entry-stamp" aria-hidden="true">ACEPTADO<br />BAJO RIESGO</div>
+            <div className="entry-stamp" aria-hidden="true">{committedBuild ? <>ACEPTADO<br />BAJO RIESGO</> : <>PENDIENTE<br />DE FIRMA</>}</div>
             <div className="ticket-bottom" aria-hidden="true"><span>NO ES UN SEGURO DE VIDA</span><span>///////</span></div>
+          </section>
+
+          <section className="paper-piece character-sheet" aria-label="Atributos de personaje">
+            <div className="piece-meta"><span>ANEXO / APTITUDES HUMANAS</span><span>07 RASGOS</span></div>
+            <h3>{committedBuild ? "Lo que puede hacer." : "¿Quién entra?"}</h3>
+            <p className="attribute-explanation">
+              {committedBuild
+                ? "Estas aptitudes fueron registradas al ingresar. No pueden modificarse durante esta incursión."
+                : "Todos comienzan con una aptitud ordinaria. Redistribuya siete puntos; puede restar de un rasgo para elevar otro."}
+            </p>
+            {!committedBuild && (
+              <div className="build-presets" aria-label="Distribuciones recomendadas">
+                <button type="button" onClick={() => setDraftStats({ ...BALANCED_STATS })}>EQUILIBRADO</button>
+                <button type="button" onClick={() => setDraftStats({ ...BALANCED_STATS, dexterity: 3, strength: 1 })}>CORREDOR</button>
+                <button type="button" onClick={() => setDraftStats({ ...BALANCED_STATS, perception: 3, social: 1 })}>RASTREADOR</button>
+              </div>
+            )}
+            <div className="stat-list">
+              {STAT_INFO.map((stat) => (
+                <div key={stat.key} className={"attribute-row" + (stat.active ? " attribute-row--active" : "")}>
+                  <div className="attribute-name">
+                    <span className="attribute-abbr">{stat.short}</span>
+                    <span><strong>{stat.name}</strong><small>{stat.description}</small></span>
+                  </div>
+                  <div className="attribute-controls">
+                    {!committedBuild && (
+                      <button type="button" aria-label={"Reducir " + stat.name}
+                        disabled={draftStats[stat.key] <= STARTING_STAT}
+                        onClick={() => adjustStat(stat.key, -1)}>−</button>
+                    )}
+                    <strong className="attribute-number">{characterStats[stat.key]}</strong>
+                    {!committedBuild && (
+                      <button type="button" aria-label={"Aumentar " + stat.name}
+                        disabled={draftStats[stat.key] >= CREATION_MAX_STAT || pointsLeft <= 0}
+                        onClick={() => adjustStat(stat.key, 1)}>+</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="attribute-foot">
+              {committedBuild ? (
+                <>
+                  <div className="attribute-seal">FICHA FIRMADA / SIN ENMIENDAS</div>
+                  <p>DES {characterStats.dexterity}: <strong>{movementDelayMs} ms por hexágono.</strong> Los demás atributos se guardan para futuras acciones del Mercado.</p>
+                </>
+              ) : (
+                <>
+                  <div className="point-budget">PUNTOS SIN ASIGNAR <strong>{pointsLeft.toString().padStart(2, "0")} / {ATTRIBUTE_POINTS}</strong></div>
+                  <p>DES controla el intervalo real entre pasos: <strong>{movementDelayMs} ms</strong> con esta build.</p>
+                  <button className="enter-button" type="button"
+                    disabled={pointsLeft !== 0}
+                    onClick={enterMarket}>
+                    FIRMAR REGISTRO / ENTRAR →
+                  </button>
+                </>
+              )}
+            </div>
           </section>
 
           <section className="paper-piece clock-ticket">
@@ -447,7 +576,16 @@ export default function Home() {
               <span><i className="legend-icon legend-wall" /> Sin paso</span>
               <span><i className="legend-icon legend-player" /> Explorador</span>
             </div>
-            <div className="movement-notice" role="status">{notice}</div>
+            {committedBuild && (
+              <div className="footstep-meter" aria-label="Tiempo hasta el próximo movimiento">
+                <div className="footstep-top">
+                  <span>INTERVALO / DES {characterStats.dexterity}</span>
+                  <strong>{cooldownRemaining > 0 ? (cooldownRemaining / 1000).toFixed(1) + " s" : "PASO DISPONIBLE"}</strong>
+                </div>
+                <div className="footstep-track"><span style={{ width: recoveryPercentage + "%" }} /></div>
+              </div>
+            )}
+            <div className="movement-notice" role="status">{!committedBuild ? "Primero debe firmar el registro de atributos." : notice}</div>
           </div>
         </section>
 
