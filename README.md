@@ -58,13 +58,13 @@ pnpm --filter @mercatum/server smoke  # Prueba dos clientes reales (requiere bui
 
 ## Interfaz y temas visuales
 
-La página de exploración tiene **tres temas completos**, disponibles desde el menú **APARIENCIA** en el encabezado. El tema se actualiza inmediatamente sin reconectar al jugador y se guarda en `localStorage` (`mercatum.ui.theme`) del navegador.
+La página de exploración tiene **tres temas completos**, disponibles desde el menú **CAMBIAR SOPORTE** en el encabezado. El tema se actualiza inmediatamente sin reconectar al jugador y se guarda en `localStorage` (`mercatum.ui.theme`) del navegador.
 
 | Tema | Dirección |
 | --- | --- |
-| **Archivo oxidado** (por defecto) | Expediente deteriorado, sellos, tinta seca, papel sucio, metal y tonos óxido |
-| **Fósforo muerto** | Terminal CRT, tipografía monoespaciada, verdes apagados, scanlines y cartografía electrónica |
-| **Vigilia** | Pasillos de comercio nocturno, sombras azul-violeta, neón enfermo y luz de emergencia |
+| **Libro de incidencias** (por defecto) | Fotocopia sucia, sello de acceso, correcciones en tinta roja y papel doblado |
+| **Cinta de vigilancia** | Monitor antiguo con señal deteriorada, verdes lavados y scanlines de CCTV |
+| **Turno de cierre** | Recibos gastados, fluorescentes moribundos y señalética comercial sucia |
 
 Los temas modifican la interfaz, la textura y la lectura del mapa hexagonal; **no alteran posiciones, estadísticas ni reglas de juego**. Incluyen estilos adaptables a móvil y respetan `prefers-reduced-motion`. No se descargan imágenes de fondo ni fuentes externas.
 
@@ -124,3 +124,7 @@ Por defecto, el frontend Next.js utiliza **3500** (el puerto 3000 queda libre pa
 El handshake de `client.join("mercatum")` puede resolverse antes de que `room.state.players` esté disponible. El frontend registra `onStateChange` antes de consultar el estado, ignora snapshots incompletos y solo informa «ENLACE ACTIVO» una vez recibida la primera colección de jugadores. Esto evita el fallo `Cannot read properties of undefined (reading 'keys')` que se producía durante la conexión.
 
 Si `/health` todavía muestra `roomId: "mercatum-world"` y omite `worldJoinable`, entonces otro proceso está ejecutando una versión antigua del servidor. Identifica su PID usando `Get-NetTCPConnection -LocalPort 3001 -State Listen` y revisa su ruta con `Get-CimInstance Win32_Process -Filter "ProcessId = <PID>"` antes de detenerlo. Asegúrate de cerrar **solo** la instancia antigua de Mercatum.
+
+### Dirección de horror documental (UI)
+
+El frontend abandonó la distribución de paneles tácticos limpios. La ficha de jugador es un comprobante de entrada, el mapa hexagonal se presenta como croquis deteriorado y la bitácora adopta apariencia de extractos de incidencias. Los tres soportes son variaciones de horror documental, no paletas premium. El cambio solo afecta la presentación: las validaciones, posiciones y comunicación con Colyseus siguen igual.
