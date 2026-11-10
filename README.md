@@ -9,8 +9,8 @@ El prototipo incluye 61 hexágonos, movimiento entre vecinos con cooldown indivi
 ```text
 Mercatum/
 ├── apps/
-│   ├── web/             Next.js + React + SVG + @colyseus/sdk
-│   └── server/          Node.js + Colyseus (MercatumRoom)
+│   ├── web/             Next.js: app/, components/, hooks/, lib/
+│   └── server/          Colyseus: MercatumRoom + domain/
 ├── packages/
 │   └── shared/          Mapa, reglas hexagonales y Schema 5
 ├── docs/                Documentación técnica
@@ -52,7 +52,7 @@ Colyseus gestiona el matchmaking HTTP y el transporte WebSocket en el mismo puer
 pnpm dev         # Compila shared e inicia web + server
 pnpm build       # Compila todos los paquetes
 pnpm typecheck   # Verifica TypeScript
-pnpm test        # Ejecuta pruebas unitarias hexagonales
+pnpm test        # Pruebas unitarias del paquete shared y las reglas del servidor
 pnpm --filter @mercatum/server smoke  # Prueba dos clientes reales (requiere build)
 ```
 
@@ -117,7 +117,7 @@ Las posiciones se sincronizan mediante `@colyseus/schema` 5; los comandos de mov
 
 **Importante:** la sala sobrevive a la salida del último jugador, pero **no a un reinicio del servidor**. Los jugadores reconectados reciben una nueva identidad; aún falta reconexión de sesión segura para el permadeath.
 
-Consulta [docs/architecture.md](docs/architecture.md).
+Consulta [docs/architecture.md](docs/architecture.md) y [docs/code-organization.md](docs/code-organization.md).
 
 ## Diagnóstico de errores 521/522
 
@@ -149,3 +149,11 @@ Si `/health` todavía muestra `roomId: "mercatum-world"` y omite `worldJoinable`
 ### Dirección de horror documental (UI)
 
 El frontend abandonó la distribución de paneles tácticos limpios. La ficha de jugador es un comprobante de entrada, el mapa hexagonal se presenta como croquis deteriorado y la bitácora adopta apariencia de extractos de incidencias. Los tres soportes son variaciones de horror documental, no paletas premium. El cambio solo afecta la presentación: las validaciones, posiciones y comunicación con Colyseus siguen igual.
+
+## Organización interna del código
+
+La página `apps/web/src/app/page.tsx` solo compone los componentes. Las reglas de creación de builds, la conexión a Colyseus y la selección de temas viven en hooks separados, mientras que el SVG, los formularios y los paneles documentales son componentes independientes. El CSS se distribuye por responsabilidad en `apps/web/src/app/styles/` (manteniendo el orden de importación en `layout.tsx`).
+
+En el backend, `MercatumRoom` solo coordina el ciclo de vida de la sala y confirma los resultados de las reglas definidas en `apps/server/src/domain/`. El movimiento se evalúa mediante una función sin efectos secundarios y tiene pruebas unitarias propias. Los contratos, valores y tipos comunes siguen en `packages/shared/`.
+
+Guía para nuevas mecánicas y detalles: [docs/code-organization.md](docs/code-organization.md).
