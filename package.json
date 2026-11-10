@@ -10,7 +10,7 @@
     "dev": "pnpm --filter @mercatum/shared build && pnpm --parallel --filter @mercatum/server --filter @mercatum/web dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter @mercatum/shared test"
+    "test": "pnpm --filter @mercatum/shared test && pnpm --filter @mercatum/server test"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
