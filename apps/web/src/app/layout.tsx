@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import "./styles/masthead.css";
+import "./styles/paper.css";
+import "./styles/map.css";
+import "./styles/evidence.css";
+import "./styles/variants.css";
+import "./styles/responsive.css";
+import "./styles/character.css";
 
 export const metadata: Metadata = {
   title: "Mercatum | Registro de incursiones",

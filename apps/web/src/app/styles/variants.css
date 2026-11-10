@@ -1,0 +1,120 @@
+/* CINTA DE VIGILANCIA: a broken screen, not a futuristic tactical station. */
+.app-shell[data-theme="phosphor"] .masthead { border-bottom-color: #0a130c; }
+.app-shell[data-theme="phosphor"] .brand-name {
+  color: #bfcbb3; letter-spacing: -.095em;
+  text-shadow: 3px 0 #304a33, -3px 1px #0c120c;
+}
+.app-shell[data-theme="phosphor"] .brand-slash { color: #879a83; }
+.app-shell[data-theme="phosphor"] .masthead-serial,
+.app-shell[data-theme="phosphor"] .title-under,
+.app-shell[data-theme="phosphor"] .title-overline { color: #80947b; }
+.app-shell[data-theme="phosphor"] .title-under b { color: #b7c8a9; }
+.app-shell[data-theme="phosphor"] .warning-banner { background: #293728; border-color: #728673; color: #d2d7bb; }
+.app-shell[data-theme="phosphor"] .warning-cross { color: #a5b8a3; }
+.app-shell[data-theme="phosphor"] .theme-trigger { background: #19271c; color: #c7d5b4; border-color: #5d765f; }
+.app-shell[data-theme="phosphor"] .theme-trigger-label,
+.app-shell[data-theme="phosphor"] .theme-trigger-arrow { color: #90a28e; }
+.app-shell[data-theme="phosphor"] .connection-chip { color: #a4bfa2; background: #101a11; }
+.app-shell[data-theme="phosphor"] .paper-piece {
+  border: 1px solid #3b523e;
+  box-shadow: 5px 5px 0 #020302, inset 0 0 60px #000b;
+  background:
+    repeating-linear-gradient(0deg, #00000044 0 1px, transparent 2px 5px),
+    radial-gradient(ellipse at 44% 22%, #2f523326, transparent 70%),
+    #121c14;
+  clip-path: polygon(0 0, 100% 0, 100% 99.5%, 89% 100%, 0 100%);
+}
+.app-shell[data-theme="phosphor"] .paper-piece::before { background: #30433188; }
+.app-shell[data-theme="phosphor"] .paper-piece h1,
+.app-shell[data-theme="phosphor"] .paper-piece h3 { text-transform: uppercase; letter-spacing: -.09em; }
+.app-shell[data-theme="phosphor"] .entry-ticket h1 em,
+.app-shell[data-theme="phosphor"] .paper-piece h3 em { color: #d6e1bb; }
+.app-shell[data-theme="phosphor"] .entry-stamp { transform: rotate(-3deg); }
+.app-shell[data-theme="phosphor"] .hand-note { color: #b9c1ac; border-color: #729273; background: #162019; }
+.app-shell[data-theme="phosphor"] .hand-note strong,
+.app-shell[data-theme="phosphor"] .closing-note strong { color: #d2e0c6; }
+.app-shell[data-theme="phosphor"] .map-panel {
+  transform: rotate(-.2deg); background: #17251a; color: #b3c5ad;
+  box-shadow: 0 0 0 5px #273b2c, 8px 10px 0 #000;
+  clip-path: none;
+}
+.app-shell[data-theme="phosphor"] .map-panel::before { display: none; }
+.app-shell[data-theme="phosphor"] .map-header { background: #152017; }
+.app-shell[data-theme="phosphor"] .map-title-line h2 span,
+.app-shell[data-theme="phosphor"] .map-stamp { color: #9caf96; border-color: #668b69; }
+.app-shell[data-theme="phosphor"] .map-description { color: #81937e; }
+.app-shell[data-theme="phosphor"] .map-stage {
+  border-color: #263629;
+  background: radial-gradient(ellipse at 50% 50%, #253b2a, #071109 77%);
+}
+.app-shell[data-theme="phosphor"] .map-stage::before {
+  z-index: 4; opacity: .48; mix-blend-mode: normal;
+  background: repeating-linear-gradient(0deg, #000 0 1px, transparent 2px 5px);
+}
+.app-shell[data-theme="phosphor"] .map-tape { display: none; }
+.app-shell[data-theme="phosphor"] .map-grit { opacity: .2; }
+.app-shell[data-theme="phosphor"] .hex-map { filter: contrast(1.4) drop-shadow(0 0 4px #9dc69b30); }
+.app-shell[data-theme="phosphor"] .hex-tile.tile-available:hover { fill: #879b77; }
+.app-shell[data-theme="phosphor"] .player-caption,
+.app-shell[data-theme="phosphor"] .tile-caption { fill: #bed4b4; stroke: #0d150b; }
+.app-shell[data-theme="phosphor"] .map-edge-note,
+.app-shell[data-theme="phosphor"] .map-compass,
+.app-shell[data-theme="phosphor"] .map-foot-mark { color: #a2b79a; }
+.app-shell[data-theme="phosphor"] .map-bottom { background: #18271b; }
+.app-shell[data-theme="phosphor"] .map-legend span { color: #afc0a3; }
+.app-shell[data-theme="phosphor"] .movement-notice { color: #b8ccb1; border-color: #58715d; }
+.app-shell[data-theme="phosphor"] .observation-list strong { color: #d6e1ce; }
+.app-shell[data-theme="phosphor"] .closing-note { background: #0b140d; color: #adbeaa; border-color: #667e67; }
+.app-shell[data-theme="phosphor"] .closing-note p { color: #8c9f86; }
+
+/* TURNO DE CIERRE: tired supermarket signage, filthy receipt paper, sick light. */
+.app-shell[data-theme="vigil"] .brand-name {
+  color: #f0eed3; font-family: Impact, 'Arial Narrow', Arial, sans-serif;
+  font-stretch: condensed; font-weight: 900; letter-spacing: -.045em;
+  transform: scaleY(1.1); transform-origin: left bottom;
+}
+.app-shell[data-theme="vigil"] .brand-slash { color: #b43834; }
+.app-shell[data-theme="vigil"] .masthead-serial { color: #bdc1a5; border-color: #66705b; }
+.app-shell[data-theme="vigil"] .title-under { color: #c7cbb8; }
+.app-shell[data-theme="vigil"] .title-under b { color: #de8e80; }
+.app-shell[data-theme="vigil"] .warning-banner { background: #bfc49a; border-color: #72735a; color: #242c20; }
+.app-shell[data-theme="vigil"] .warning-cross { color: #9f3029; }
+.app-shell[data-theme="vigil"] .theme-trigger { background: #333729; color: #f1edcf; border-color: #899173; }
+.app-shell[data-theme="vigil"] .theme-trigger-label { color: #b0b9a1; }
+.app-shell[data-theme="vigil"] .connection-chip { border-color: #a0ad8f; background: #24291e; color: #d5e0c0; }
+.app-shell[data-theme="vigil"] .paper-piece {
+  background:
+    repeating-linear-gradient(0deg, #777d6555 0 1px, transparent 1px 23px),
+    repeating-linear-gradient(90deg, transparent 0 90px, #5760440d 91px 92px),
+    #d9dabb;
+  box-shadow: 0 13px 0 #7c8067, 8px 16px 18px #0008;
+  clip-path: polygon(0 0, 100% 0, 100% 99%, 96% 100%, 92% 99%, 87% 100%, 82% 99%, 77% 100%, 72% 99%, 67% 100%, 62% 99%, 57% 100%, 52% 99%, 47% 100%, 42% 99%, 37% 100%, 32% 99%, 27% 100%, 22% 99%, 17% 100%, 12% 99%, 7% 100%, 0 99%);
+}
+.app-shell[data-theme="vigil"] .paper-piece::before { background: #c9c4a18c; width: 33px; left: 47%; }
+.app-shell[data-theme="vigil"] .entry-ticket h1,
+.app-shell[data-theme="vigil"] .paper-piece h3 {
+  font-family: Impact, 'Arial Narrow', Arial, sans-serif;
+  letter-spacing: -.04em; text-transform: uppercase;
+}
+.app-shell[data-theme="vigil"] .entry-ticket h1 em,
+.app-shell[data-theme="vigil"] .paper-piece h3 em { color: #9d322d; }
+.app-shell[data-theme="vigil"] .map-panel { background: #b5b89b; box-shadow: 8px 14px 0 #252a20, 12px 20px 30px #000; }
+.app-shell[data-theme="vigil"] .map-panel::before { background: #eeeeae81; width: 52px; }
+.app-shell[data-theme="vigil"] .map-header { background: #d0d2b2; }
+.app-shell[data-theme="vigil"] .map-title-line h2 { font-family: Impact, 'Arial Narrow', Arial, sans-serif; letter-spacing: -.02em; text-transform: uppercase; }
+.app-shell[data-theme="vigil"] .map-stage {
+  background:
+    repeating-linear-gradient(0deg, #d4d8b00a 0 33px, #15170b34 34px 37px, transparent 38px 80px),
+    radial-gradient(ellipse at 52% 27%, #b6bb9c, #737966 84%);
+}
+.app-shell[data-theme="vigil"] .map-stage::before {
+  opacity: .55; background:
+    linear-gradient(90deg, #0006 0, transparent 19%, transparent 82%, #0006),
+    repeating-linear-gradient(90deg, transparent 0 55px, #272f2077 56px 58px, transparent 59px 110px);
+}
+.app-shell[data-theme="vigil"] .map-legend span { color: #283326; }
+.app-shell[data-theme="vigil"] .map-bottom { background: #c1c5a5; }
+.app-shell[data-theme="vigil"] .closing-note { background: #293021; color: #e8e7cc; }
+.app-shell[data-theme="vigil"] .closing-note p { color: #b6bfa3; }
+.app-shell[data-theme="vigil"] .hand-note { background: #3f4534; color: #deddb8; border-color: #a63830; }
+

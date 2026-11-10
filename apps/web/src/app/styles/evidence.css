@@ -1,0 +1,37 @@
+.evidence-sheet { transform: rotate(1.3deg); padding-top: 19px; }
+.paper-piece h3 { font: 900 clamp(28px,2.8vw,40px)/1.05 var(--surface-type); letter-spacing: -.06em; margin: 25px 0; }
+.paper-piece h3 em { font-style: normal; color: var(--blood); text-decoration: underline; text-underline-offset: 4px; }
+.observation-list { margin: 12px 0; }
+.observation-list > div {
+  border-bottom: 2px dotted var(--hairline); padding: 15px 0;
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 10px;
+}
+.observation-list span { color: var(--smudge); font: 10px/1.5 var(--machine-type); }
+.observation-list strong { font: 900 12px var(--machine-type); text-align: right; white-space: nowrap; }
+.margin-note { color: var(--smudge); margin: 23px 0 0; font: italic 13px/1.55 var(--surface-type); }
+.sheet-scratch { color: var(--blood); opacity: .6; font: 19px var(--machine-type); letter-spacing: -.3em; transform: rotate(-7deg); text-align: right; margin-top: 16px; }
+.log-sheet { transform: rotate(-1.1deg); }
+.log-sheet h3 { font-size: 33px; }
+.event-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 0; }
+.event-list li {
+  display: grid; grid-template-columns: 23px minmax(0,1fr); gap: 9px;
+  border-bottom: 1px dashed var(--hairline); padding: 11px 0;
+  font: 11px/1.55 var(--machine-type); overflow-wrap: anywhere;
+}
+.event-list li:first-child { color: var(--blood); font-weight: 900; }
+.event-number { color: var(--smudge); font-size: 10px; }
+.closing-note {
+  display: flex; gap: 15px; padding: 16px 18px;
+  background: #100e0c; color: #d6bd9b; transform: rotate(2deg);
+  border: 2px solid #6b2926; box-shadow: 5px 5px 0 #000;
+}
+.closing-note > span { color: #b44e45; font-size: 28px; line-height: 1; }
+.closing-note strong { font: 900 12px var(--machine-type); color: #d6a297; }
+.closing-note p { margin: 9px 0 0; font: 12px/1.55 var(--machine-type); color: #b4a58b; }
+.main-footer {
+  border-top: 1px solid #786d5a; display: flex; flex-wrap: wrap;
+  justify-content: space-between; gap: 12px;
+  color: #9f8c71; font: 10px var(--machine-type);
+  padding: 25px clamp(18px,4.3vw,80px) 40px;
+}
+

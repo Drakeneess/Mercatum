@@ -133,7 +133,7 @@ export function MarketMap(props: MarketMapProps) {
                 <div className="footstep-track"><span style={{ width: recoveryPercentage + "%" }} /></div>
               </div>
             )}
-            <div className="movement-notice" role="status">{!committedBuild ? "Primero debe firmar el registro de atributos." : notice}</div>
+            <div className="movement-notice" role="status">{!hasBuild ? "Primero debe firmar el registro de atributos." : notice}</div>
           </div>
         </section>
 

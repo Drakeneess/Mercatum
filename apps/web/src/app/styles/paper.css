@@ -1,0 +1,88 @@
+.game-layout {
+  display: grid; grid-template-columns: minmax(210px, 260px) minmax(420px, 1fr) minmax(225px, 280px);
+  gap: clamp(17px,2.3vw,41px);
+  width: min(1900px, 100%); margin: 0 auto; flex: 1;
+  padding: 43px clamp(18px,4.3vw,80px) 66px;
+  align-items: start;
+}
+.side-column { display: flex; flex-direction: column; gap: 30px; min-width: 0; }
+.side-column--entry { padding-top: 8px; }
+.side-column--notes { padding-top: 60px; }
+.paper-piece {
+  position: relative; min-width: 0;
+  padding: 21px 21px 28px;
+  color: var(--ink); background:
+    radial-gradient(ellipse 90px 90px at 8% 100%, #53342322, transparent 95%),
+    radial-gradient(ellipse 140px 120px at 89% 10%, #56462b23, transparent 90%),
+    repeating-linear-gradient(0deg, #22150508 0 1px, transparent 2px 7px),
+    var(--paper);
+  box-shadow: 2px 4px 0 #090807, 6px 10px 18px #0009;
+  clip-path: polygon(0 .5%, 10% .1%, 26% .4%, 47% 0, 63% .4%, 78% 0, 96% .6%, 100% 0, 100% 98.7%, 92% 99.6%, 85% 98.9%, 72% 99.7%, 55% 99%, 38% 99.9%, 25% 99.2%, 8% 100%, 0 98.9%);
+}
+.paper-piece::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .42;
+  background:
+    radial-gradient(ellipse 7px 37px at 99% 17%, #1b131024, transparent 95%),
+    radial-gradient(ellipse 55px 12px at 15% 2%, #25130b22, transparent 95%),
+    repeating-linear-gradient(113deg, transparent 0 76px, #21110718 77px 77.5px, transparent 78px 171px);
+  mix-blend-mode: multiply;
+}
+.paper-piece::before {
+  content: ''; position: absolute; top: -9px; left: 35%;
+  background: #bcb59e93; width: 68px; height: 20px; transform: rotate(-8deg);
+  box-shadow: 0 1px #f4dfad50, inset 0 0 8px #574a364d;
+  z-index: 2;
+}
+.piece-meta {
+  display: flex; justify-content: space-between; gap: 12px;
+  color: var(--smudge); border-bottom: 1px solid var(--hairline);
+  font: 900 9px/1.5 var(--machine-type); letter-spacing: .03em;
+  padding-bottom: 10px; text-transform: uppercase;
+}
+.piece-meta span:last-child { white-space: nowrap; }
+.section-number {
+  font: 900 95px/.8 var(--surface-type); color: var(--blood); opacity: .12;
+  position: absolute; right: 9px; top: 32px; pointer-events: none;
+}
+.entry-ticket { transform: rotate(-1deg); padding-bottom: 30px; }
+.entry-ticket h1 {
+  font: 900 clamp(32px,3.4vw,48px)/1.02 var(--surface-type);
+  letter-spacing: -.065em; margin: 29px 0 16px; transform: scaleX(.95); transform-origin: left;
+}
+.entry-ticket h1 em { color: var(--blood); font-style: normal; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px; }
+.smudged-copy { color: var(--smudge); font: 12px/1.55 var(--machine-type); max-width: 27ch; margin: 0; }
+.torn-rule {
+  height: 7px; margin: 27px 0 21px;
+  background: repeating-linear-gradient(90deg, var(--ink) 0 12px, transparent 12px 16px);
+  opacity: .32;
+  clip-path: polygon(0 20%, 45% 60%, 66% 1%, 100% 70%, 100% 100%, 0 100%);
+}
+.field { margin: 20px 0 0; border-bottom: 1px dashed var(--hairline); padding-bottom: 13px; }
+.field-label { display: block; font: 10px var(--machine-type); color: var(--smudge); margin-bottom: 7px; letter-spacing: .04em; }
+.field strong { display: block; font: 700 13px/1.4 var(--machine-type); color: var(--ink); overflow-wrap: anywhere; }
+.entry-stamp {
+  width: max-content; margin: 28px 0 22px auto; padding: 8px 13px;
+  border: 3px double var(--blood); transform: rotate(-10deg);
+  color: var(--blood); opacity: .8; font: 900 14px/.98 var(--surface-type);
+  text-align: center; text-transform: uppercase; letter-spacing: -.03em;
+}
+.ticket-bottom { display: flex; justify-content: space-between; color: var(--smudge); font: 8px var(--machine-type); border-top: 1px solid var(--hairline); padding-top: 8px; }
+.clock-ticket { transform: rotate(1deg); }
+.clock-ticket .piece-meta { border: 0; padding: 0; }
+.market-time { margin: 13px 0 2px; font: 900 clamp(38px, 3.8vw, 55px)/1 var(--machine-type); letter-spacing: -.12em; color: var(--blood); }
+.clock-offset { font: 10px var(--machine-type); color: var(--smudge); }
+.clock-ticket p { margin: 20px 0 0; border-top: 1px solid var(--hairline); padding-top: 12px; font: 12px/1.6 var(--machine-type); }
+.hand-note {
+  position: relative; display: flex; gap: 13px;
+  background: #322820; color: #cdbba2; padding: 18px 18px 19px;
+  border-left: 8px solid #7e2c2a; transform: rotate(-.7deg);
+}
+.hand-note::after {
+  content: ''; position: absolute; right: -6px; bottom: 3px;
+  width: 35px; height: 3px; background: #8c5a4b;
+  transform: rotate(-20deg);
+}
+.hand-note-icon { flex: 0 0 20px; font: 900 26px var(--surface-type); color: #c07061; line-height: 1; }
+.hand-note strong { font: 900 11px var(--machine-type); color: #e2b6a1; }
+.hand-note p { margin: 9px 0 0; font: 12px/1.65 var(--machine-type); }
+

@@ -1,0 +1,199 @@
+/* ANEXO DE APTITUDES — a grubby intake form, not an RPG HUD. */
+.character-sheet {
+  transform: rotate(.65deg);
+  padding-bottom: 24px;
+}
+.character-sheet h3 {
+  margin: 19px 0 10px;
+  font-size: clamp(27px, 2.5vw, 35px);
+}
+.attribute-explanation {
+  color: var(--smudge);
+  font: 11px/1.55 var(--machine-type);
+  margin: 0 0 18px;
+}
+.build-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 15px;
+  border-bottom: 1px dashed var(--hairline);
+}
+.build-presets button {
+  background: transparent;
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  font: 900 9px var(--machine-type);
+  padding: 6px 5px;
+}
+.build-presets button:hover,
+.build-presets button:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
+}
+.stat-list { display: grid; }
+.attribute-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px dashed var(--hairline);
+  padding: 12px 0;
+}
+.attribute-row--active { border-bottom: 2px solid var(--blood); }
+.attribute-name { display: flex; align-items: flex-start; gap: 9px; min-width: 0; }
+.attribute-abbr {
+  flex: 0 0 33px;
+  padding: 4px 3px;
+  background: var(--ink);
+  color: var(--paper);
+  text-align: center;
+  font: 900 10px var(--machine-type);
+}
+.attribute-row--active .attribute-abbr { background: var(--blood); color: var(--paper); }
+.attribute-name > span:last-child { min-width: 0; display: grid; gap: 4px; }
+.attribute-name strong { font: 900 11px var(--machine-type); }
+.attribute-name small {
+  font: 10px/1.4 var(--machine-type);
+  color: var(--smudge);
+}
+.attribute-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+.attribute-controls button {
+  width: 25px;
+  height: 27px;
+  background: transparent;
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  font: 900 17px/1 var(--machine-type);
+  padding: 0;
+}
+.attribute-controls button:hover:not(:disabled),
+.attribute-controls button:focus-visible {
+  background: var(--blood);
+  color: #eee2c9;
+}
+.attribute-controls button:disabled { opacity: .2; cursor: not-allowed; }
+.attribute-number {
+  min-width: 20px;
+  font: 900 22px var(--machine-type);
+  color: var(--blood);
+  text-align: center;
+}
+.attribute-foot {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 3px double var(--hairline);
+}
+.attribute-foot p {
+  font: 11px/1.55 var(--machine-type);
+  color: var(--smudge);
+  margin: 13px 0 0;
+}
+.attribute-foot p strong { color: var(--ink); }
+.point-budget {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font: 900 10px var(--machine-type);
+  color: var(--smudge);
+}
+.point-budget strong { color: var(--blood); font-size: 18px; }
+.attribute-seal {
+  border: 2px solid var(--blood);
+  padding: 9px 12px;
+  color: var(--blood);
+  font: 900 11px var(--machine-type);
+  transform: rotate(-2deg);
+}
+.enter-button {
+  background: #702923;
+  color: #e9d7b5;
+  border: 2px solid #351a15;
+  box-shadow: 4px 4px 0 #2a1b17;
+  width: 100%;
+  margin-top: 16px;
+  padding: 15px 9px;
+  font: 900 12px var(--machine-type);
+  text-align: center;
+  letter-spacing: -.02em;
+}
+.enter-button:hover:not(:disabled),
+.enter-button:focus-visible { background: #95332a; }
+.enter-button:disabled { opacity: .44; cursor: not-allowed; box-shadow: none; }
+.footstep-meter {
+  margin: 17px 0 3px;
+  background: #9686696b;
+  padding: 9px 10px 11px;
+  border: 1px dashed #6a5544;
+}
+.footstep-top {
+  display: flex; justify-content: space-between;
+  gap: 10px;
+  font: 900 10px var(--machine-type);
+  color: #4c3a30;
+}
+.footstep-top strong { color: #802b26; text-align: right; }
+.footstep-track {
+  height: 8px;
+  background: #493b2f;
+  margin-top: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.footstep-track > span {
+  display: block;
+  height: 100%;
+  background: #9b392d;
+  transition: width .09s linear;
+}
+/* Alternate found-media materials need the same controls and contrast. */
+.app-shell[data-theme="phosphor"] .attribute-abbr {
+  background: #1b3520;
+  color: #cce5c6;
+}
+.app-shell[data-theme="phosphor"] .attribute-row--active .attribute-abbr {
+  background: #5c825e;
+  color: #041006;
+}
+.app-shell[data-theme="phosphor"] .build-presets button:hover,
+.app-shell[data-theme="phosphor"] .attribute-controls button:hover:not(:disabled) {
+  background: #4b6b52;
+  color: #d9ead0;
+}
+.app-shell[data-theme="phosphor"] .attribute-number,
+.app-shell[data-theme="phosphor"] .point-budget strong { color: #cae0c6; }
+.app-shell[data-theme="phosphor"] .enter-button {
+  background: #283d2d;
+  border-color: #607f65;
+  box-shadow: 4px 4px 0 #000;
+  color: #d7ead3;
+}
+.app-shell[data-theme="phosphor"] .enter-button:hover:not(:disabled) {
+  background: #3e5b43;
+}
+.app-shell[data-theme="phosphor"] .footstep-meter {
+  background: #1d3220;
+  border-color: #5e785f;
+}
+.app-shell[data-theme="phosphor"] .footstep-top { color: #b3c9a9; }
+.app-shell[data-theme="phosphor"] .footstep-top strong { color: #d2ead0; }
+.app-shell[data-theme="phosphor"] .footstep-track { background: #080f09; }
+.app-shell[data-theme="phosphor"] .footstep-track > span { background: #a5c8a4; }
+.app-shell[data-theme="vigil"] .build-presets button:hover,
+.app-shell[data-theme="vigil"] .attribute-controls button:hover:not(:disabled) {
+  background: #4d5742;
+  color: #eef1d5;
+}
+.app-shell[data-theme="vigil"] .attribute-number { color: #7c2b28; }
+.app-shell[data-theme="vigil"] .footstep-meter { background: #b4b797; }
+.app-shell[data-theme="vigil"] .footstep-track { background: #4b5440; }
+@media (max-width: 720px) {
+  .character-sheet { transform: none; }
+  .attribute-name small { font-size: 11px; }
+}
