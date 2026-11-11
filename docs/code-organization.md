@@ -110,3 +110,17 @@ El servidor ahora necesita PostgreSQL. La credencial local no sustituye la auten
 - `apps/web/src/components/ThreatReport.tsx` y `app/styles/threat.css`: salud, heridas y avistamientos privados con estética documental.
 
 **Regla de privacidad:** añadir más criaturas a la base de datos, nunca a `MercatumState`. Su posición solo puede llegar al cliente a través del filtro de visión del servidor.
+
+## V3 — Mercado y registro externo
+
+- `apps/server/src/MarketGateway.ts`: frontera entre mensajes de Colyseus y operaciones de comercio.
+- `apps/server/src/storage/market.ts`: cuentas, saldo, tasaciones NPC, stock y publicación voluntaria.
+- `apps/server/src/storage/trades.ts`: ofertas por sesión, aceptación de ambas partes y transferencias SQL atómicas.
+- `apps/server/src/storage/provenance.ts`: testimonios atribuidos y consulta externa de historial.
+- `apps/server/src/domain/marketRules.ts` y `marketRules.test.ts`: precios, rangos, cantidad e IDs seguros.
+- `apps/web/src/components/MarketBoard.tsx`: mostrador, trueques y ofertas.
+- `apps/web/src/components/ProvenanceBoard.tsx`: registro externo que separa hechos y claims.
+- `apps/web/src/app/styles/commerce.css`: materiales gastados compatibles con los tres temas.
+- `apps/server/src/smoke-v3.ts`: pruebas transaccionales y de procedencia contra esquema PostgreSQL temporal.
+
+Para reglas económicas, precauciones de confianza y requisitos de despliegue: [docs/v3.md](v3.md).

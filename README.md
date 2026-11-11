@@ -2,7 +2,7 @@
 
 **Mercatum** es un prototipo web de exploración en un mercado paranormal persistente. El Mercado no es una mazmorra: existe y funciona independientemente de los jugadores.
 
-**Mercatum V2** mantiene el recorrido de V1 (61 hexágonos, siete atributos, puerta, objetos únicos, extracción y PostgreSQL) e incorpora **dos criaturas autónomas**, avistamientos por Percepción, heridas, robos, muerte permanente y sucesores de cuenta. Colyseus 0.18 conserva autoridad sobre acciones y amenazas.
+**Mercatum V3** incorpora el ciclo de V1 (exploración, objetos únicos y extracción), las amenazas de V2 (criaturas, heridas y permadeath), y ahora **créditos, comerciante NPC, ofertas de intercambio, desgaste y registro exterior de procedencia**. Colyseus 0.18 conserva autoridad sobre acciones y PostgreSQL sobre posesión y dinero.
 
 ## Estructura
 
@@ -20,7 +20,7 @@ Mercatum/
 
 ## Backlog de desarrollo
 
-El plan de desarrollo por vertical slices, historias con IDs, prioridades, dependencias y criterios de aceptación está en [docs/backlog.md](docs/backlog.md). Los cortes V1 y V2 ya tienen pruebas de integración. El próximo hito principal es **V3: intercambio, comercio y procedencia pública de objetos**, después de verificar visualmente V2.
+El plan de desarrollo por vertical slices, historias con IDs, prioridades, dependencias y criterios de aceptación está en [docs/backlog.md](docs/backlog.md). V1, V2 y V3 cuentan con pruebas de integración. El siguiente objetivo será una **alfa privada controlada** con chat de proximidad, moderación básica y pruebas de carga.
 
 ## Requisitos
 
@@ -50,7 +50,7 @@ La primera vez, distribuye los siete atributos y pulsa **FIRMAR REGISTRO / ENTRA
 
 Los valores por defecto funcionan sin `.env` **si PostgreSQL está activo en localhost:5432** con la configuración de `compose.yaml`. Puedes copiar `apps/web/.env.example` a `apps/web/.env.local` para configurar `NEXT_PUBLIC_COLYSEUS_URL`. Para cambiar el puerto del backend, copia `apps/server/.env.example` a `apps/server/.env` y establece `PORT` y `DATABASE_URL`.
 
-Colyseus gestiona el matchmaking HTTP y el transporte WebSocket en el mismo puerto. Si publicas la web por HTTPS, el backend deberá ser accesible mediante HTTPS/WSS y un proxy inverso adecuado. **No despliegues V2 públicamente:** la credencial local en `localStorage` es apropiada solamente para pruebas privadas. Falta un mecanismo de autenticación de producción y límites de abuso.
+Colyseus gestiona el matchmaking HTTP y el transporte WebSocket en el mismo puerto. Si publicas la web por HTTPS, el backend deberá ser accesible mediante HTTPS/WSS y un proxy inverso adecuado. **No despliegues V3 públicamente:** la credencial local en `localStorage` es apropiada solamente para pruebas privadas. Falta un mecanismo de autenticación de producción y límites de abuso.
 
 ## Comandos
 
@@ -62,6 +62,7 @@ pnpm test        # Pruebas unitarias del paquete shared y las reglas del servido
 pnpm --filter @mercatum/server smoke     # Prueba dos clientes reales (requiere build)
 pnpm --filter @mercatum/server smoke:v1  # Botín + reinicio PostgreSQL aislado
 pnpm --filter @mercatum/server smoke:v2  # Criaturas, muerte offline y sucesión
+pnpm --filter @mercatum/server smoke:v3  # Comercio, trueque y registro público
 ```
 
 ## Interfaz y temas visuales
@@ -104,17 +105,17 @@ El servidor crea `MercatumRoom` al iniciar, con ID generado por Colyseus. El cli
 
 Las posiciones se sincronizan mediante `@colyseus/schema` 5; los comandos de movimiento y sus respuestas usan mensajes de Colyseus. `patchRate = 200` representa una frecuencia máxima de envío de parches, **no** un ciclo de simulación del mundo de 5 FPS.
 
-## Estado actual — V2
+## Estado actual — V3
 
-**V1:** ficha y posición persistentes, puerta, acciones temporizadas, objeto único, inventario y extracción a depósito exterior.
+**V1:** mapa, personaje, objetos únicos, mochila y extracción persistentes.
 
-**V2:** Rastrero y Rebuscador con acciones autónomas de servidor, persecución con memoria, visibilidad por Percepción, daño y heridas persistentes (ralentizan el movimiento), robo temporal de objetos, muerte irreversible, caída del botín transportado y registro explícito de sucesores de la misma cuenta.
+**V2:** dos criaturas autónomas, persecución, heridas, robo de mercancía y muerte permanente sin desconexión segura.
 
-**Advertencia:** un personaje desconectado **no está a salvo** si quedó dentro del Mercado; el servidor mantiene a las criaturas activas mientras la sala exista. El depósito exterior sí se conserva y puede pasar al siguiente personaje.
+**V3:** 100 créditos ficticios por cuenta, mercado NPC finito en el exterior, tasaciones por condición y Trato, publicaciones voluntarias de objetos, ofertas de intercambio con consentimiento, transacciones SQL atómicas, desgaste, historia de procedencia y testimonios atribuidos **no verificados**. Consultar el registro de objeto solo es posible **fuera del Mercado**.
 
-Quedan pendientes sigilo activo, ruido, curas dentro del edificio y balance detallado. Las criaturas **no están en el estado público** de la sala: cada explorador recibe únicamente los avistamientos autorizados por el servidor.
+No se utiliza blockchain ni dinero real. Las afirmaciones públicas pueden ser falsas y no existe castigo automático por estafar mediante la narrativa del juego. Falta un sistema formal de reputación, moderación y chat de cercanía.
 
-Documentos: [V1](docs/v1.md), **[V2](docs/v2.md)**, [arquitectura](docs/architecture.md) y [backlog](docs/backlog.md).
+Documentación: [V1](docs/v1.md), [V2](docs/v2.md), **[V3](docs/v3.md)**, [arquitectura](docs/architecture.md) y [backlog](docs/backlog.md).
 
 ## Diagnóstico de errores 521/522
 

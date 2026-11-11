@@ -1,6 +1,6 @@
 # Mercatum — Product Backlog
 
-> **Estado:** backlog vivo; V0 y cortes V1/V2 implementados con refinamientos pendientes. **Actualizado:** 10 de noviembre de 2026.
+> **Estado:** backlog vivo; V0 y cortes V1/V2/V3 implementados con refinamientos pendientes. **Actualizado:** 10 de noviembre de 2026.
 
 ## Norte del producto
 
@@ -18,7 +18,7 @@ Mercatum es un mercado paranormal persistente, con mapa hexagonal 2D y desplazam
 
 ### No existe todavía
 
-Autenticación de producción, equipamiento/transferencias, comerciantes, moneda, sigilo y ruido, curación dentro del Mercado, chat de proximidad, registro público de procedencia y reputación. **Las posiciones, fichas, puerta y objetos de V1 ahora sí sobreviven a reiniciar el servidor** gracias a PostgreSQL.
+Autenticación de producción, equipamiento y reparación, sigilo y ruido, curación dentro del Mercado, chat de proximidad, moderación, reputación formal y escalado de inventarios/sectores. **Las posiciones, fichas, puerta y objetos de V1 ahora sí sobreviven a reiniciar el servidor** gracias a PostgreSQL.
 
 ## Etapas de entrega (vertical slices)
 
@@ -27,11 +27,11 @@ Autenticación de producción, equipamiento/transferencias, comerciantes, moneda
 | **V0 · Base técnica** | Entrar con build y moverse; multijugador básico | **Ya existe** |
 | **V1 · Incursión con botín** (ciclo implementado; refinamientos pendientes) | Un jugador entra, abre algo, obtiene un objeto único, sale y recupera ese objeto después de reiniciar el servicio | F-001–008; X-009–014, X-017 |
 | **V2 · Riesgo real** (ciclo implementado; refinamientos pendientes) | Una criatura autónoma patrulla, persigue, hiere o mata; una muerte es definitiva y una desconexión no es una salida gratis | X-018; H-019–025 |
-| **V3 · Mercado de jugadores** | Se compra, vende, intercambia, desgasta y documenta un objeto sin duplicación, con afirmaciones públicas atribuidas | E-029–038 |
+| **V3 · Mercado de jugadores** (ciclo implementado; refinamientos pendientes) | Se compra, vende, intercambia, desgasta y documenta un objeto sin duplicación, con afirmaciones públicas atribuidas | E-029–038 |
 | **V4 · Alfa privada** | Chat de cercanía, límites de abuso, una ruta de incursión repetible y pruebas de carga/observabilidad | S-041–047 |
 | **V5 · Profundidad** | Pisos extra, habilidades y ecología más rica | Z-048–052 |
 
-**Importante:** V1 y V2 son cortes implementados y verificados; V3 es el siguiente corte. Todos pueden refinarse gradualmente. No se debe implementar toda la economía ni todas las criaturas antes de probar un recorrido de extremo a extremo.
+**Importante:** V1, V2 y V3 son cortes implementados y verificados; V4 será el siguiente corte. Todos pueden refinarse gradualmente. No se debe implementar toda la economía ni todas las criaturas antes de probar un recorrido de extremo a extremo.
 
 ## Convenciones de la cola
 
@@ -128,6 +128,25 @@ El Mercado funciona sin jugadores y la amenaza puede perseguir, herir, robar y c
 | H-026 | P1 | M | 021 | **Escapar y ocultarse frente a perseguidores** — Velocidad, obstáculos, ruido y pérdida de contacto permiten huir sin que DES sea invencibilidad. |
 | H-027 | P1 | S | 019–026 | **Ecología del horario sin recompensas nocturnas artificiales** — El horario influye en rutinas cuando corresponda, pero no garantiza mejor botín; criaturas no salen del edificio según la regla actual. |
 | H-028 | P1 | M | 020,021 | **Dos arquetipos de amenaza y pruebas de balance** — Al menos un merodeador y un perseguidor con comportamientos distinguibles; pruebas de escape para DES 1–3. |
+
+## Avance verificable de V3
+
+| ID | Estado V3 | Evidencia / alcance restante |
+| --- | --- | --- |
+| E-029 | Implementado V3 | Saldo no negativo por cuenta, créditos ficticios iniciales y movimientos contables append-only |
+| E-030 | Implementado V3 | Stock único finito, compra/venta NPC fuera, valoración por condición/TRA |
+| E-031 | Implementado V3 | Anuncios voluntarios y propuestas directas de crédito/objeto con aceptación atómica y caducidad |
+| E-032 | Parcial | TRA modifica tasación NPC; sin diálogos de persuasión independientes |
+| E-033 | Parcial | Transferencias y criaturas deterioran objetos; falta desgaste natural, reparación y uso de equipo |
+| E-034 | Implementado V3 | Histórico append-only por trigger; no es prueba criptográfica frente a un DBA |
+| E-035 | Implementado V3 | Declaraciones autorales públicas y no verificadas, con identificador estable de cuenta |
+| E-036 | Parcial | Declaraciones contradictorias conservadas; falta reputación formal y revisión comunitaria |
+| E-037 | Implementado V3 | Registro consultable solo fuera del Mercado, verificación en servidor |
+| E-038 | Implementado V3 | Compra concurrente sin clonación, oferta/aceptación atómicas, IDs de operación |
+| E-039 | Parcial | Fuente inicial y comisión implícita NPC; faltan telemetría y balance económico del juego vivo |
+| E-040 | Pendiente por diseño | ADR sobre blockchain solo cuando los requisitos de confianza/coste lo justifiquen |
+
+La prueba de aceptación `smoke:v3` valida créditos, compraventa, verdadero historial del servidor frente a afirmaciones de jugadores, trueque, competencia por stock, inmutabilidad operativa y reinicio. [Detalles de V3](v3.md).
 
 ## E · Mercado, intercambio y memoria de objetos
 

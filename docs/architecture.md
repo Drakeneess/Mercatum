@@ -1,10 +1,10 @@
-# Arquitectura de Mercatum V2 — Mundo hostil y persistente
+# Arquitectura de Mercatum V3 — Riesgo y economía persistentes
 
 ## Contexto
 
 Una sola sala Colyseus 0.18 atiende hasta 20 conexiones concurrentes. Next.js 16 muestra el mundo como un plano SVG hexagonal. **El cliente no decide resultados**: Colyseus valida comandos y PostgreSQL conserva el estado durable.
 
-V2 ejecuta criaturas, daño, robo de objetos y muerte permanente. Comercio entre jugadores y autenticación pública siguen en hitos posteriores del [backlog](backlog.md).
+V2 ejecuta criaturas, daño, robo de objetos y muerte permanente. Comercio entre jugadores ya está implementado en V3. Autenticación pública, reputación formal y chat quedan en los siguientes hitos del [backlog](backlog.md).
 
 ## Módulos
 
@@ -99,6 +99,7 @@ pnpm test
 pnpm --filter @mercatum/server smoke
 pnpm --filter @mercatum/server smoke:v1
 pnpm --filter @mercatum/server smoke:v2
+pnpm --filter @mercatum/server smoke:v3
 ```
 
 El smoke V1 crea un **esquema PostgreSQL temporal aislado**, confirma que una disputa simultánea por el mismo objeto tiene un solo ganador, verifica la extracción, reinicia el backend y vuelve con el mismo token y el objeto en depósito. Luego borra solo el esquema temporal.
@@ -114,3 +115,13 @@ El scheduler `apps/server/src/CreatureScheduler.ts` mantiene un temporizador par
 El estado `dead` es irreversible. Tras fallecimiento, los objetos `carried` pasan al suelo, los del depósito `stash` se conservan; un sucesor explícito puede heredar este depósito, sin recuperar el cuerpo ni las pertenencias perdidas. `docs/v2.md` contiene reglas detalladas y pruebas.
 
 Las pruebas de integración de V1 deshabilitan hostiles, mientras `smoke:v2` comprueba exposición offline, caída de objetos y sucesión en un esquema PostgreSQL aislado.
+
+## V3 — Transacciones y veracidad diferenciada
+
+`MarketGateway.ts` recibe operaciones de Colyseus y solo muestra cotizaciones, anuncios y ofertas autorizadas por el servidor. `storage/market.ts` administra la moneda interna, mercader NPC, snapshots privados e IDs de operación; `storage/trades.ts` gestiona las ofertas y el intercambio atómico; `storage/provenance.ts` publica y consulta el registro externo. `domain/marketRules.ts` contiene reglas puras de precio y cercanía.
+
+Los objetos son instancias únicas de PostgreSQL. Su cambio de estado, dueño o condición inserta automáticamente `object_events.kind='fact'` mediante trigger; `claim` es una fila independiente, escrita por el jugador fuera del edificio y con autor de cuenta. Un trigger impide UPDATE/DELETE de hechos y testimonios. Ninguna capa del cliente puede convertir un claim en fact.
+
+Las compras y los intercambios utilizan bloqueo ordenado y transacciones con recibos idempotentes; `wallet_ledger` permite reconciliar saldos. El comerciante posee mercancía finita, y el depósito exterior es el estado seguro de inventario. La UI conserva los tres temas documentales con `MarketBoard` y `ProvenanceBoard`.
+
+Las afirmaciones **no son certificaciones** y la base no implementa blockchain. [Contrato completo de V3](v3.md).
