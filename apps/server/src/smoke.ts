@@ -50,7 +50,7 @@ async function run() {
   const client = new Client(url);
   const agileBuild = { ...BALANCED_STATS, dexterity: 3, strength: 1 };
   const explorerA = await client.join(MERCATUM_ROOM_NAME, { stats: agileBuild });
-  const explorerB = await client.join(MERCATUM_ROOM_NAME);
+  const explorerB = await client.join(MERCATUM_ROOM_NAME, { stats: BALANCED_STATS });
 
   try {
     assert.equal(explorerA.roomId, health.roomId);
@@ -114,7 +114,7 @@ async function run() {
   }
 
   // autoDispose=false: the world remains available even with zero clients.
-  const explorerC = await client.join(MERCATUM_ROOM_NAME);
+  const explorerC = await client.join(MERCATUM_ROOM_NAME, { stats: BALANCED_STATS });
   try {
     assert.equal(explorerC.roomId, health.roomId);
   } finally {
