@@ -19,7 +19,8 @@ apps/web/src/
 │       ├── evidence.css         # Incidencias, bitácora y pie de página
 │       ├── variants.css         # Tres tratamientos de horror documental
 │       ├── responsive.css       # Adaptación para pantallas estrechas
-│       └── character.css        # Ficha de stats y cooldown del movimiento
+│       ├── character.css        # Ficha de stats y cooldown del movimiento
+      └── expedition.css       # Acciones y botín
 ├── components/
 │   ├── MarketHeader.tsx
 │   ├── ExplorerColumn.tsx

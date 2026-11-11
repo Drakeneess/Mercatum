@@ -1,91 +1,105 @@
-# Arquitectura de Mercatum — Prototipo 0.2 (Colyseus)
+# Arquitectura de Mercatum V1 — Incursión con botín
 
-## Objetivo
+## Contexto
 
-La interfaz SVG y las reglas hexagonales se mantienen, mientras que la capa WebSocket propia se reemplaza por Colyseus 0.18. El servidor sigue siendo la única autoridad sobre posiciones y movimientos.
+Una sola sala Colyseus 0.18 atiende hasta 20 conexiones concurrentes. Next.js 16 muestra el mundo como un plano SVG hexagonal. **El cliente no decide resultados**: Colyseus valida comandos y PostgreSQL conserva el estado durable.
 
-## Mundo compartido
+La primera versión no ejecuta criaturas, ni combate, ni mercado de jugadores; estos sistemas tienen hitos posteriores en [backlog.md](backlog.md).
 
-- `apps/server/src/index.ts` configura Colyseus y crea una única sala `mercatum` con ID generado por Colyseus al inicio.
-- El matchmaking expone únicamente `join` y `reconnect`. No se permite que el navegador cree instancias con `create` o `joinOrCreate`.
-- `apps/server/src/MercatumRoom.ts` tiene `maxClients = 20`, `autoDispose = false`, `patchRate = 200` y `maxMessagesPerSecond = 30`.
-- El cliente Next.js llama a `join("mercatum")` para entrar en la única sala existente (sin crear otras) y aplica espera progresiva si no está disponible.
+## Módulos
 
-## Estado sincronizado
+```text
+packages/shared/src/
+  sectors.ts        Definición tipada del primer nivel
+  world.ts          Mapa derivado de sector, hexágonos, puerta
+  hex.ts            Distancias y vecindad axial
+  stats.ts          Siete atributos y cooldowns
+  schema.ts         Estado de sala: jugadores, stats, fase, reloj, puerta
+  protocol.ts       Mensajes tipados de acciones, botín e identidad
 
-`packages/shared/src/schema.ts` define `MercatumState` y `MercatumPlayer` mediante el builder de `@colyseus/schema` 5. Solo los datos visibles globalmente se incluyen en este estado:
+apps/server/src/
+  index.ts          Bootstrap PostgreSQL, endpoint /health, sala canónica
+  MercatumRoom.ts   Ciclo de sala, enlace de mensajes, tareas temporizadas
+  domain/
+    actionPlan.ts   Legitimidad, alcance, tiempos de interacción
+    movement.ts     Validación pura de movimiento y puerta
+    clock.ts        Hora fija del Mercado UTC−06:00
+  storage/
+    db.ts           Pool y transacciones SQL
+    migrations.ts   Migraciones versionadas y semillas únicas
+    characters.ts  Sesión anónima, personaje, cooldown, reingreso/extracción
+    objects.ts     Inventarios, botín único, capacidad y abandono
+    world.ts        Puerta de servicio duradera
 
-- `players`: mapa sincronizado de exploradores con `name`, `q`, `r`.
-- `mercatumTime`: hora oficial `HH:mm` según UTC−6.
+apps/web/src/
+  app/page.tsx      Composición (sin lógica de red)
+  components/       Comprobante, ficha, croquis, acciones, incidentes
+  hooks/            useCharacterBuild, useMercatumRoom, useTheme
+  lib/              Geometría y proyección de Schema
+  app/styles/       Estilos por responsabilidad (incluye expedition.css)
+```
 
-No se publican posiciones de criaturas ocultas. Cuando existan, será obligatorio añadir filtrado por cliente (por ejemplo, StateView) o mensajes privados de percepción.
+## Persistencia y admisión
 
-## Flujo de movimiento
+En el primer ingreso, el navegador envía una **build válida** al matchmaking `join("mercatum")`. El servidor genera una cuenta pseudónima independiente del personaje; guarda el **hash SHA-256** de una credencial aleatoria en PostgreSQL y devuelve la credencial únicamente a la conexión dueña mediante el mensaje privado `identity` solicitado después de instalar listeners.
 
-1. El navegador muestra el mapa con coordenadas axiales `(q, r)`.
-2. El explorador selecciona un hexágono contiguo.
-3. Envía `room.send("move", {to:{q:1,r:0}})`.
-4. `domain/movement.ts` valida el tipo, la adyacencia, la transitabilidad y el intervalo por Destreza del personaje; `MercatumRoom` aplica la decisión.
-5. Si es válido, actualiza `player.q` y `player.r` en el Schema y envía `move_accepted` solo al solicitante.
-6. Colyseus entrega automáticamente el parche de estado al resto de exploradores.
-7. Si se rechaza, recibe `move_rejected` con el motivo. El cliente jamás actualiza la posición de forma optimista.
+La credencial se guarda localmente bajo `mercatum.session.token`. En la siguiente admisión se presenta de nuevo, y el backend carga **el mismo personaje**, sus siete atributos, coordenadas, fase (`inside` / `outside`) y tiempo permitido para el siguiente paso. Si el token no existe, el servidor exige una nueva build. Si el token es inválido, rechaza la admisión y **no crea silenciosamente otro personaje**.
 
-El mapa sigue siendo estático en `packages/shared/src/world.ts`. No requiere sincronizar los 61 hexágonos en cada movimiento.
+El backend prohíbe dos conexiones simultáneas del mismo personaje. Los ID de socket Colyseus son transitorios; la identidad y la propiedad de objetos no dependen de esos IDs.
 
-## Tiempo y coste
+**Limitación:** esta credencial es adecuada para prueba local cerrada, no para autenticación pública ni recuperación de cuentas.
 
-El servidor usa el reloj fijo `Etc/GMT+6`, independientemente del horario del navegador. Un temporizador de sala verifica la hora cada diez segundos y solo muta el estado si cambia el minuto mostrado.
+## Reglas de movimiento
 
-**No se añadió bucle de simulación de 60 FPS.** La entrega de parches cada 200 ms es una cadencia de red que puede evitar transmisiones cuando no cambia nada. Los futuros comportamientos de criaturas deberán utilizar un planificador de eventos con marcas de tiempo absolutas.
+1. `MarketMap` solicita un único hexágono vecino con `room.send("move",{to})`.
+2. `domain/movement.ts` verifica las coordenadas, el permiso de estar dentro, la vecindad, obstáculos, estado de puerta y cooldown de Destreza.
+3. `storage/characters.ts` confirma una actualización condicionada por posición y `next_move_at`. Un cliente no puede reordenar pasos o usar un reinicio como aceleración.
+4. `MercatumRoom` actualiza el Schema y envía `move_accepted` con cooldown; si se rechaza, responde con un motivo.
 
-## Pruebas
+No se simulan 60 FPS. `patchRate=200` se refiere a envíos de red, no a un bucle global. El reloj se revisa cada 10 segundos, solo muta al cambiar el minuto.
 
-`pnpm --filter @mercatum/server smoke` inicia el servidor compilado y comprueba dos clientes, replicación de una posición, rechazo de salto inválido, bloqueo de creación de salas alternativas y supervivencia de la sala cuando no quedan jugadores. GitHub Actions ejecuta compilación, typecheck, pruebas unitarias y esta prueba de integración.
+## Acciones temporizadas
 
-## Restricciones
+La solicitud `action` se valida mediante `domain/actionPlan.ts` y programa una tarea con un temporizador; se informa por mensaje `action_started` y se puede interrumpir con `cancel_action` o al moverse.
 
-- Aún no hay autenticación: cada nueva conexión es un personaje efímero.
-- La reconexión automática del frontend vuelve a entrar con **nueva identidad**. No es la reconexión segura de Colyseus que hará falta para permadeath.
-- El estado de la sala sigue en memoria; reiniciar el proceso lo borra.
-- `autoDispose = false` no sustituye a PostgreSQL.
-- El límite de 20 clientes no constituye un sistema de colas.
-- No hay enemigos, economía ni simulación de sectores vacíos.
-- Se requiere autenticación, validación de orígenes, control de abuso y configuración de hosting antes de producción.
+Las acciones actuales son: abrir puerta por Fuerza o Intelecto, inspeccionar objeto, recogerlo y extraer botín desde la entrada. La resolución comprueba de nuevo que el usuario siga en su posición y que el objeto esté disponible. Los resultados de inventario se envían de forma privada y los del suelo se publican a los miembros de la sala.
 
-## Siguientes hitos
+La capacidad provisional de inventario es `4 + 2 × FUE` unidades. El depósito exterior `stash` es separado del inventario llevado `carried`. La transacción de extracción cambia todos los objetos llevados a depósito y el personaje a estado `outside` simultáneamente.
 
-1. Integrar reconexión por sesión con un protocolo seguro para personajes.
-2. Introducir planificador de eventos para criaturas (independiente de los ticks de red).
-3. Incorporar persistencia selectiva en PostgreSQL y recuperación tras reinicios.
-4. Implementar visibilidad limitada y percepción individual.
-5. Añadir inventario, comercio y registro de objetos.
+## Datos SQL
 
-**Los jugadores son temporales; el Mercado permanece.**
+Las migraciones se ejecutan con bloqueo transaccional antes de escuchar peticiones. Tablas:
 
-## Diagnóstico del mundo
+- `accounts`: ID estable y hash de token.
+- `characters`: cuenta, build JSONB validada, posición, fase, cooldown.
+- `world_state`: estado único de la puerta.
+- `market_objects`: instancia única con estado exclusivo `ground | carried | stash`, posición o propietario.
+- `event_log`: secuencia duradera de acciones de personaje/propiedad.
+- `schema_migrations`: versiones aplicadas.
 
-`/health` consulta el estado real del matchmaking y muestra `worldReady`, `roomName`, `roomId`, `activeRoomIds` y número de jugadores. Al iniciar, el servidor también comprueba que la sala precreada tenga un ID válido. Esto distingue un servidor HTTP disponible de un mundo realmente inicializado.
+La semilla inicial crea **una sola navaja oxidada** y no la repone al reiniciar. El servidor usa `transaction()` con `BEGIN/COMMIT/ROLLBACK` para cambios atómicos de propiedad y extracción.
 
-## Diagnóstico de admisión
+## Seguridad, visibilidad y deuda pendiente
 
-El endpoint `/health` indica `worldReady` (sala registrada) y `worldJoinable` (sala no bloqueada ni privada) por separado. Expone los campos `roomLocked`, `roomClients` y `roomMaxClients`, además del `roomId` real asignado automáticamente. Los errores 521/522 se muestran en la interfaz sin eliminar el mensaje original. El ID ya no se fuerza dentro de `onCreate`, para evitar inconsistencias con las reservas del matchmaker.
+- Solo `onJoin` con build válida o token real. `create` y `joinOrCreate` están deshabilitados.
+- Los objetos de suelo son **públicos en V1**; no habrá criaturas ocultas hasta filtrar información por usuario (`X-018`).
+- El token y los inventarios se envían únicamente por mensaje privado al dueño; los nombres/atributos están compartidos por el esquema de sala.
+- Aún faltan autenticación de producción, recuperación de cuenta, rotación de credenciales, validación de orígenes, límites de admisión, protección XSS y respaldos probados.
+- No hay muertes ni reglas de desconexión bajo amenaza. La sesión no equivale a extracción automática.
+- Los jugadores conectados desde el depósito exterior **siguen ocupando una plaza de la sala**; la separación de lobby y sala de incursión queda para otro hito.
 
-## Puertos locales
+## Tests y operación
 
-Next.js: `http://localhost:3500`. Colyseus: `http://localhost:3001`. El puerto 3000 no se utiliza en Mercatum para evitar conflictos con proyectos locales paralelos.
+CI levanta PostgreSQL 16 temporal y ejecuta:
 
-## Presentación visual
+```bash
+pnpm build
+pnpm typecheck
+pnpm test
+pnpm --filter @mercatum/server smoke
+pnpm --filter @mercatum/server smoke:v1
+```
 
-La interfaz de Next.js tiene tres variantes de CSS controladas por `data-theme` en el contenedor principal: `oxide`, `phosphor` y `vigil`. El hook `useMercatumRoom` mantiene el ciclo de conexión y el estado de la sala, mientras `Home` solo compone componentes; `globals.css` y `app/styles/*.css` contienen la presentación separada por responsabilidades. El selector utiliza `details`/`summary` nativos y botones con `aria-pressed`. La elección se persiste en `localStorage` y se recupera al montar la vista, sin introducir dependencias adicionales ni modificar el protocolo multijugador.
+El smoke V1 crea un **esquema PostgreSQL temporal aislado**, confirma que una disputa simultánea por el mismo objeto tiene un solo ganador, verifica la extracción, reinicia el backend y vuelve con el mismo token y el objeto en depósito. Luego borra solo el esquema temporal.
 
-## Fichas de personaje y velocidad discreta
-
-`packages/shared/src/stats.ts` define FUE, DES, RES, PER, INT, TRA y TEM, sus límites de creación, validación estricta y tabla de demora de movimiento. `MercatumPlayer` en Schema sincroniza los siete valores (visibles públicamente en este prototipo). El cliente muestra un formulario antes de pedir acceso a la sala y remite `join("mercatum", { stats })`.
-
-`domain/character.ts`, invocado por `MercatumRoom.onJoin`, valida la ficha del cliente o asigna una build equilibrada de compatibilidad si la ficha no se envió. No utiliza los valores que mande el cliente para el movimiento sin comprobarlos: la Destreza se toma del estado almacenado en servidor. `move` acepta únicamente hexágonos vecinos transitables y si `Date.now() >= nextMoveAt`. Al aceptar, emite `move_accepted` con `cooldownMs`. Si todavía no puede moverse, devuelve `move_rejected` con `retryAfterMs`. La UI enseña la recuperación como ayuda, pero nunca autoriza un paso por sí misma.
-
-Los otros seis atributos son parte de la ficha y su efecto se añadirá al implementar interacciones específicas. No hay progresión ni persistencia hasta integrar cuentas y PostgreSQL.
-
-## Modularización (noviembre de 2026)
-
-La página anterior mezclaba UI, renderizado de SVG, creación de fichas, comunicación de red y elección de temas. La nueva separación queda documentada en [docs/code-organization.md](code-organization.md). En servidor, la sala dejó de contener directamente reglas de movimiento, validación de build y cálculo del reloj. GitHub Actions conserva las mismas pruebas de integración y añade pruebas unitarias de las reglas de dominio.
+Para ejecución local (incluidos los pasos de Docker Compose), consultar [v1.md](v1.md). Para el estado del backlog y pendientes, consultar [backlog.md](backlog.md).
