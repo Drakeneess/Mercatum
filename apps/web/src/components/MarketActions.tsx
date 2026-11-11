@@ -17,6 +17,7 @@ export interface MarketActionsProps {
   cancelAction:()=>void;
   dropItem:(id:string)=>void;
   reenter:()=>void;
+  onNewCharacter:()=>void;
 }
 
 function closeTo(a:HexCoordinate|undefined,b:HexCoordinate):boolean {
@@ -25,7 +26,7 @@ function closeTo(a:HexCoordinate|undefined,b:HexCoordinate):boolean {
 
 export function MarketActions(props:MarketActionsProps){
   const {connection,identity,position,groundItems,doorOpen,action,clock,
-    requestAction,cancelAction,dropItem,reenter}=props;
+    requestAction,cancelAction,dropItem,reenter,onNewCharacter}=props;
   const ready=connection==="online"&&!!identity;
   const inside=identity?.phase==="inside";
   const blocked=!ready||!!action;
@@ -51,7 +52,16 @@ export function MarketActions(props:MarketActionsProps){
             </div>
           )}
 
-          {inside ? (
+          {identity.phase==="dead" ? (
+            <div className="death-record">
+              <strong>EXPEDIENTE CERRADO / DEFUNCIÓN</strong>
+              <p>Este personaje no puede volver. Lo que llevaba ha quedado dentro.
+                El depósito exterior pertenece a la cuenta y seguirá disponible.</p>
+              <button className="expedition-primary" type="button" onClick={onNewCharacter}>
+                REGISTRAR SUCESOR
+              </button>
+            </div>
+          ) : inside ? (
             <>
               <div className="expedition-subheading">PUERTA DE MANTENIMIENTO</div>
               <p className="expedition-muted">{doorOpen

@@ -1,0 +1,26 @@
+/* Expedition body damage — another spoiled sheet, never a clean HP HUD. */
+.threat-sheet { transform: rotate(.8deg); }
+.threat-sheet h3 { font-size: 32px; margin-bottom: 16px; }
+.threat-sheet--dead { border: 3px double var(--blood); }
+.health-readout { display: grid; gap: 9px; border-top: 2px dashed var(--hairline); padding: 15px 0; }
+.health-readout > span, .health-readout small { color:var(--smudge); font:900 10px var(--machine-type); }
+.health-readout strong { font:900 36px var(--machine-type);color:var(--blood); }
+.health-track { height: 11px; background:var(--ink); overflow:hidden; }
+.health-track i { display:block;height:100%; background:var(--blood);transition:width .15s; }
+.threat-warning { font:900 13px/1.55 var(--machine-type);color:var(--blood); }
+.threat-sighting { margin-top:9px; padding:12px 4px;border-left:4px solid var(--blood);
+  display:grid;gap:6px; background: #24150d1d; padding-left:10px; }
+.threat-sighting strong { color:var(--blood); font:900 14px var(--surface-type); }
+.threat-sighting small { color:var(--smudge);font:10px var(--machine-type); }
+.death-record { border:3px double var(--blood);padding:16px;margin:16px 0; }
+.death-record strong { color:var(--blood);font:900 14px var(--machine-type); }
+.death-record p { font:12px/1.6 var(--machine-type);color:var(--smudge); }
+.hostile-marker { pointer-events:none; }
+.hostile-marker path { fill:#2d1817;stroke:#9f3830;stroke-width:2.7;stroke-dasharray:5 2; }
+.hostile-glyph { fill:#d6af88; font:900 20px var(--surface-type); }
+.hostile-name { fill:#7a2620;paint-order:stroke;stroke:#d0bd9a;stroke-width:2;
+  font:900 9px var(--machine-type); }
+.app-shell[data-theme="phosphor"] .hostile-marker path { fill:#151e15;stroke:#a2b7a1; }
+.app-shell[data-theme="phosphor"] .hostile-name { fill:#b9d6b2;stroke:#0a100a; }
+.app-shell[data-theme="phosphor"] .hostile-glyph { fill:#bbd4ae; }
+@media(max-width:720px){.threat-sheet{transform:none;}}

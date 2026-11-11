@@ -8,6 +8,8 @@ export function useCharacterBuild() {
   const [draftStats, setDraftStats] = useState<CharacterStats>({ ...BALANCED_STATS });
   const [committedBuild, setCommittedBuild] = useState<CharacterStats | null>(null);
   const pointsLeft = ATTRIBUTE_POINTS - spentAttributePoints(draftStats);
+  // A resumed registration must not automatically resurrect a deceased explorer.
+  const [createSuccessor, setCreateSuccessor] = useState(false);
 
   // A returning browser keeps the same account/character. The server restores
   // the original stats; this placeholder never overrides a saved character.
@@ -35,8 +37,19 @@ export function useCharacterBuild() {
 
   function enterMarket() {
     const validated = parseCharacterStats(draftStats);
-    if (validated && !committedBuild) setCommittedBuild(validated);
+    if (validated && !committedBuild) {
+      setCreateSuccessor(true);
+      setCommittedBuild(validated);
+    }
   }
 
-  return { draftStats, committedBuild, pointsLeft, adjustStat, enterMarket, setDraftStats };
+  function prepareSuccessor() {
+    setDraftStats({ ...BALANCED_STATS });
+    setCommittedBuild(null);
+    setCreateSuccessor(false);
+  }
+  return {
+    draftStats, committedBuild, pointsLeft, adjustStat, enterMarket,
+    setDraftStats, createSuccessor, prepareSuccessor,
+  };
 }

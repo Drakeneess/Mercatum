@@ -1,7 +1,7 @@
 "use client";
 
 import { hexDistance, hexKey, type CharacterStats, type HexCoordinate,
-  type HexTile, type MarketItem, type PlayerSnapshot } from "@mercatum/shared";
+  type CreatureSighting, type HexTile, type MarketItem, type PlayerSnapshot } from "@mercatum/shared";
 import { getTileName, hexCenter, hexPoints } from "../lib/hexMapView";
 
 export interface MarketMapProps {
@@ -18,11 +18,12 @@ export interface MarketMapProps {
   notice: string;
   doorOpen: boolean;
   groundItems: readonly MarketItem[];
+  sightings: readonly CreatureSighting[];
 }
 
 export function MarketMap(props: MarketMapProps) {
   const { map, currentPosition, walkable, requestMove, players, playerId,
-    hasBuild, characterStats, cooldownRemaining, recoveryPercentage, notice, doorOpen, groundItems } = props;
+    hasBuild, characterStats, cooldownRemaining, recoveryPercentage, notice, doorOpen, groundItems, sightings } = props;
   return (
         <section className="map-panel" aria-label="Plano interactivo del Mercado">
           <div className="map-header">
@@ -110,6 +111,17 @@ export function MarketMap(props: MarketMapProps) {
                   <rect x="-7" y="-7" width="14" height="14" />
                   <text textAnchor="middle" dominantBaseline="central">!</text>
                 </g>;
+              })}
+              {sightings.map((creature)=>{
+                const position=hexCenter({q:creature.q,r:creature.r});
+                return (
+                  <g className="hostile-marker" key={creature.id}
+                    transform={`translate(${position.x} ${position.y})`}>
+                    <path d="M0 -18 L13 -6 L10 10 L0 17 L-11 9 L-13 -5 Z" />
+                    <text y="3" textAnchor="middle" className="hostile-glyph">?</text>
+                    <text y="27" textAnchor="middle" className="hostile-name">{creature.name.toUpperCase()}</text>
+                  </g>
+                );
               })}
               {players.filter(p=>p.inside).map((player, index, visiblePlayers) => {
                 const center = hexCenter(player.position);

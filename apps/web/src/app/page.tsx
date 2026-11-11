@@ -10,13 +10,16 @@ import { SectorNotes } from "../components/SectorNotes";
 
 export default function Home() {
   const { theme, activeTheme, themeMenuRef, selectTheme } = useTheme();
-  const { draftStats, committedBuild, pointsLeft, adjustStat, enterMarket, setDraftStats } = useCharacterBuild();
+  const {
+    draftStats, committedBuild, pointsLeft, adjustStat, enterMarket,
+    setDraftStats, createSuccessor, prepareSuccessor,
+  } = useCharacterBuild();
   const {
     connection, playerId, players, map, marketTime, notice, events, me,
     currentPosition, characterStats, movementDelayMs, cooldownRemaining,
     recoveryPercentage, walkable, requestMove,
-    identity, groundItems, doorOpen, action, clock, requestAction, cancelAction, dropItem, reenter,
-  } = useMercatumRoom(committedBuild, draftStats);
+    identity, groundItems, doorOpen, action, clock, requestAction, cancelAction, dropItem, reenter, sightings,
+  } = useMercatumRoom(committedBuild, draftStats, createSuccessor);
 
   return (
     <div className="app-shell" data-theme={theme}>
@@ -40,10 +43,12 @@ export default function Home() {
           requestMove={requestMove} players={players} playerId={playerId}
           hasBuild={Boolean(committedBuild)} characterStats={characterStats}
           cooldownRemaining={cooldownRemaining} recoveryPercentage={recoveryPercentage}
-          notice={notice} doorOpen={doorOpen} groundItems={groundItems}
+          notice={notice} doorOpen={doorOpen} groundItems={groundItems} sightings={sightings}
         />
         <SectorNotes map={map} players={players} events={events}
-          actions={{ connection, identity, position:currentPosition, groundItems, doorOpen,
+          identity={committedBuild?identity:null} sightings={sightings}
+          actions={{ connection, identity:committedBuild?identity:null, position:currentPosition, groundItems, doorOpen,
+            onNewCharacter:prepareSuccessor,
             action, clock, requestAction, cancelAction, dropItem, reenter }}
         />
       </main>

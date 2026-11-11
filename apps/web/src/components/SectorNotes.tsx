@@ -1,4 +1,5 @@
-import type { HexTile, PlayerSnapshot } from "@mercatum/shared";
+import type { CreatureSighting, HexTile, IdentityReply, PlayerSnapshot } from "@mercatum/shared";
+import { ThreatReport } from "./ThreatReport";
 import { MarketActions, type MarketActionsProps } from "./MarketActions";
 
 interface SectorNotesProps {
@@ -6,12 +7,15 @@ interface SectorNotesProps {
   players: readonly PlayerSnapshot[];
   events: readonly string[];
   actions: MarketActionsProps;
+  identity: IdentityReply | null;
+  sightings: readonly CreatureSighting[];
 }
 
 /** Everything shown here comes from the current shared world snapshot. */
-export function SectorNotes({ map, players, events, actions }: SectorNotesProps) {
+export function SectorNotes({ map, players, events, actions, identity, sightings }: SectorNotesProps) {
   return (
         <aside className="side-column side-column--notes" aria-label="Notas del sector">
+          <ThreatReport identity={identity} sightings={sightings} />
           <MarketActions {...actions} />
           <section className="paper-piece evidence-sheet">
             <div className="piece-meta"><span>EXTRACTO DE INCIDENCIAS</span><span>02 / 04</span></div>

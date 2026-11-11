@@ -4,9 +4,9 @@ import { Client, type Room } from "@colyseus/sdk";
 import {
   hexDistance, hexKey, makeDemoMap, MERCATUM_ROOM_NAME, getMovementDelayMs,
   type ActionRequest, type ActionResult, type CharacterStats, type HexTile,
-  type IdentityReply, type MarketItem, type MercatumState, type MoveAccepted,
+  type CreatureSighting, type HarmReport, type IdentityReply, type MarketItem, type MercatumState, type MoveAccepted,
   type MoveRejected, type MoveRequest, type PlayerSnapshot, type TimedActionReply,
-  type WorldItemsReply,
+  type SightingsReply, type WorldItemsReply,
 } from "@mercatum/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { connectionErrorMessage, snapshotPlayers } from "../lib/roomSnapshots";
@@ -21,7 +21,7 @@ function readToken():string|null {
 }
 
 /** Network ownership, state snapshots and commands for one persistent expedition. */
-export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:CharacterStats){
+export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:CharacterStats,createSuccessor=false){
   const [connection,setConnection]=useState<Connection>("connecting");
   const [playerId,setPlayerId]=useState<string|null>(null);
   const [players,setPlayers]=useState<readonly PlayerSnapshot[]>([]);
@@ -30,6 +30,7 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
   const [events,setEvents]=useState<string[]>(["Terminal de exploración iniciada."]);
   const [identity,setIdentity]=useState<IdentityReply|null>(null);
   const [groundItems,setGroundItems]=useState<readonly MarketItem[]>([]);
+  const [sightings,setSightings]=useState<readonly CreatureSighting[]>([]);
   const [doorOpen,setDoorOpen]=useState(false);
   const [action,setAction]=useState<TimedActionReply|null>(null);
   const [cooldownUntil,setCooldownUntil]=useState(0);
@@ -68,7 +69,9 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
       setConnection("connecting");
       try{
         const token=readToken();
-        const joinOptions=token?{token}:{stats:committedBuild};
+        const joinOptions=token
+          ? (createSuccessor?{token,stats:committedBuild}:{token})
+          : {stats:committedBuild};
         const room=await client.join<MercatumState>(MERCATUM_ROOM_NAME,joinOptions);
         if(!mounted){void room.leave();return;}
         roomRef.current=room;
@@ -116,6 +119,16 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
           if(!mounted)return;
           setGroundItems(reply.items);
           setDoorOpen(reply.doorOpen);
+        });
+        room.onMessage("sightings",(reply:SightingsReply)=>{
+          if(mounted)setSightings(reply.creatures);
+        });
+        room.onMessage("harm",(report:HarmReport)=>{
+          if(!mounted)return;
+          setNotice(report.message);
+          record(report.message);
+          if(report.stolenItem)record("OBJETO PERDIDO: "+report.stolenItem);
+          if(report.dead)setAction(null);
         });
         room.onMessage("move_accepted",(message:MoveAccepted)=>{
           if(!mounted)return;
@@ -167,6 +180,7 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
           setPlayerId(null);
           setPlayers([]);
           setIdentity(null);
+          setSightings([]);
           setAction(null);
           record("Señal interrumpida. El personaje permanece en el Mercado.");
           retry();
@@ -174,12 +188,14 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
         // Register listeners before requesting any private credentials or loot.
         room.send("identity_request");
         room.send("world_request");
+        room.send("sightings_request");
       }catch(error){
         if(!mounted)return;
         setConnection("offline");
         setPlayerId(null);
         setPlayers([]);
         setIdentity(null);
+        setSightings([]);
         setAction(null);
         const reason=connectionErrorMessage(error);
         setNotice(reason);
@@ -195,7 +211,7 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
       roomRef.current=null;
       if(room)void room.leave();
     };
-  },[committedBuild]);
+  },[committedBuild,createSuccessor]);
 
   const me=useMemo(()=>players.find(p=>p.id===playerId),[players,playerId]);
   const currentPosition=me?.position;
@@ -203,7 +219,7 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
     tile.kind!=="wall" && (tile.kind!=="door" || doorOpen)
   ).map(hexKey)),[map,doorOpen]);
   const characterStats=me?.stats??committedBuild??draftStats;
-  const movementDelayMs=getMovementDelayMs(characterStats.dexterity);
+  const movementDelayMs=getMovementDelayMs(characterStats.dexterity) + (me?.wounds??0)*180;
   const cooldownRemaining=Math.max(0,cooldownUntil-clock);
   const recoveryPercentage=Math.min(100,Math.max(0,100*(1-cooldownRemaining/movementDelayMs)));
 
@@ -232,6 +248,6 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
   return {
     connection,playerId,players,map,marketTime,notice,events,me,currentPosition,
     characterStats,movementDelayMs,cooldownRemaining,recoveryPercentage,walkable,requestMove,
-    identity,groundItems,doorOpen,action,clock,requestAction,cancelAction,dropItem,reenter,
+    identity,groundItems,doorOpen,action,clock,requestAction,cancelAction,dropItem,reenter,sightings,
   };
 }
