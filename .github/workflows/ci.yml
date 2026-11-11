@@ -41,3 +41,4 @@ jobs:
         env:
           MERCATUM_DISABLE_CREATURES: "1"
       - run: pnpm --filter @mercatum/server smoke:v2
+      - run: pnpm --filter @mercatum/server smoke:v3

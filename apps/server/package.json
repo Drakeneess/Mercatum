@@ -11,7 +11,8 @@
     "smoke": "node dist/smoke.js",
     "test": "pnpm build && node --test dist/domain/*.test.js",
     "smoke:v1": "node dist/smoke-v1.js",
-    "smoke:v2": "node dist/smoke-v2.js"
+    "smoke:v2": "node dist/smoke-v2.js",
+    "smoke:v3": "node dist/smoke-v3.js"
   },
   "dependencies": {
     "@mercatum/shared": "workspace:*",
