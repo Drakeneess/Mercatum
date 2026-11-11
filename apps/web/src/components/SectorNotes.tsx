@@ -1,6 +1,8 @@
-import type { CreatureSighting, HexTile, IdentityReply, PlayerSnapshot } from "@mercatum/shared";
+import type { CreatureSighting, HexTile, IdentityReply, MarketOperation, MarketReply, PlayerSnapshot, ProvenanceReply } from "@mercatum/shared";
 import { ThreatReport } from "./ThreatReport";
 import { MarketActions, type MarketActionsProps } from "./MarketActions";
+import { MarketBoard } from "./MarketBoard";
+import { ProvenanceBoard } from "./ProvenanceBoard";
 
 interface SectorNotesProps {
   map: readonly HexTile[];
@@ -9,14 +11,23 @@ interface SectorNotesProps {
   actions: MarketActionsProps;
   identity: IdentityReply | null;
   sightings: readonly CreatureSighting[];
+  market:MarketReply|null;
+  provenance:ProvenanceReply|null;
+  operateMarket:(request:Omit<MarketOperation,"requestId">)=>void;
+  requestMarket:()=>void;
+  requestProvenance:(id:string)=>void;
 }
 
 /** Everything shown here comes from the current shared world snapshot. */
-export function SectorNotes({ map, players, events, actions, identity, sightings }: SectorNotesProps) {
+export function SectorNotes({ map, players, events, actions, identity, sightings, market, provenance, operateMarket, requestMarket, requestProvenance }: SectorNotesProps) {
   return (
         <aside className="side-column side-column--notes" aria-label="Notas del sector">
           <ThreatReport identity={identity} sightings={sightings} />
           <MarketActions {...actions} />
+          <MarketBoard identity={identity} market={market}
+            operate={operateMarket} requestMarket={requestMarket} />
+          <ProvenanceBoard identity={identity} market={market} record={provenance}
+            operate={operateMarket} inspect={requestProvenance} />
           <section className="paper-piece evidence-sheet">
             <div className="piece-meta"><span>EXTRACTO DE INCIDENCIAS</span><span>02 / 04</span></div>
             <h3>Se ha<br /><em>observado.</em></h3>

@@ -19,6 +19,7 @@ export default function Home() {
     currentPosition, characterStats, movementDelayMs, cooldownRemaining,
     recoveryPercentage, walkable, requestMove,
     identity, groundItems, doorOpen, action, clock, requestAction, cancelAction, dropItem, reenter, sightings,
+    market, provenance, operateMarket, requestMarket, requestProvenance,
   } = useMercatumRoom(committedBuild, draftStats, createSuccessor);
 
   return (
@@ -47,6 +48,9 @@ export default function Home() {
         />
         <SectorNotes map={map} players={players} events={events}
           identity={committedBuild?identity:null} sightings={sightings}
+          market={market} provenance={provenance}
+          operateMarket={operateMarket} requestMarket={requestMarket}
+          requestProvenance={requestProvenance}
           actions={{ connection, identity:committedBuild?identity:null, position:currentPosition, groundItems, doorOpen,
             onNewCharacter:prepareSuccessor,
             action, clock, requestAction, cancelAction, dropItem, reenter }}
