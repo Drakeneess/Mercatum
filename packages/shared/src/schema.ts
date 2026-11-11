@@ -8,6 +8,7 @@ export const MercatumPlayer = schema({
   name: t.string().default("Explorador"),
   q: t.int16().default(0),
   r: t.int16().default(0),
+  inside: t.boolean().default(true),
   strength: t.int16().default(2),
   dexterity: t.int16().default(2),
   endurance: t.int16().default(2),
@@ -21,5 +22,6 @@ export type MercatumPlayer = SchemaType<typeof MercatumPlayer>;
 export const MercatumState = schema({
   players: t.map(MercatumPlayer),
   mercatumTime: t.string().default("--:--"),
+  doorOpen: t.boolean().default(false),
 }, "MercatumState");
 export type MercatumState = SchemaType<typeof MercatumState>;

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { hexDistance, hexKey, hexNeighbors, isNeighbor } from "./hex.js";
-import { ENTRY, makeDemoMap, SHOP } from "./world.js";
+import { ENTRY, makeDemoMap, SERVICE_DOOR, SHOP } from "./world.js";
 
 test("hex coordinates have six unique neighbors", () => {
   const neighbors = hexNeighbors(ENTRY);
@@ -22,5 +22,6 @@ test("radius four demo map has 61 tiles and unique coordinates", () => {
   assert.equal(new Set(tiles.map(hexKey)).size, tiles.length);
   assert.equal(tiles.find((tile) => hexKey(tile) === hexKey(ENTRY))?.kind, "entry");
   assert.equal(tiles.find((tile) => hexKey(tile) === hexKey(SHOP))?.kind, "shop");
+  assert.equal(tiles.find((tile) => hexKey(tile) === hexKey(SERVICE_DOOR))?.kind, "door");
   assert.equal(tiles.find((tile) => hexKey(tile) === "-2,0")?.kind, "wall");
 });

@@ -1,6 +1,6 @@
 import { hexKey, type HexCoordinate } from "./hex.js";
 
-export type TileKind = "floor" | "wall" | "entry" | "shop";
+export type TileKind = "floor" | "wall" | "entry" | "shop" | "door";
 
 export interface HexTile extends HexCoordinate {
   readonly kind: TileKind;
@@ -8,6 +8,7 @@ export interface HexTile extends HexCoordinate {
 
 export const ENTRY: HexCoordinate = { q: 0, r: 0 };
 export const SHOP: HexCoordinate = { q: 2, r: 0 };
+export const SERVICE_DOOR: HexCoordinate = { q: 1, r: 0 };
 
 /** Static demo layout. The authoritative server validates against these tiles. */
 const WALLS = new Set(["-2,0", "-2,1", "-1,2", "0,-3", "1,-2", "2,-2", "3,1"]);
@@ -27,6 +28,7 @@ export function makeDemoMap(radius = 4): HexTile[] {
       const kind: TileKind =
         key === hexKey(ENTRY) ? "entry"
         : key === hexKey(SHOP) ? "shop"
+        : key === hexKey(SERVICE_DOOR) ? "door"
         : WALLS.has(key) ? "wall"
         : "floor";
       tiles.push({ ...position, kind });
