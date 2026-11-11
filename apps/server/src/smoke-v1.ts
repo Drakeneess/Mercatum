@@ -1,5 +1,7 @@
 /** V1 integration smoke: a single durable object cannot be duplicated and survives server restart. */
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
+import { Pool } from "pg";
 import { spawn, type ChildProcess } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 import { Client, type Room } from "@colyseus/sdk";
@@ -11,6 +13,12 @@ import {
 
 const PORT=31238;
 const url=`http://127.0.0.1:${PORT}`;
+const dbBase=process.env.DATABASE_URL??"postgres://mercatum:mercatum@127.0.0.1:5432/mercatum";
+const testSchema="v1_smoke_"+randomBytes(6).toString("hex");
+const isolatedUrl=new URL(dbBase);
+isolatedUrl.searchParams.set("options",`-csearch_path=${testSchema}`);
+const admin=new Pool({connectionString:dbBase});
+let schemaPrepared=false;
 let server:ChildProcess|null=null;
 let logs="";
 
@@ -24,7 +32,7 @@ async function eventually(check:()=>boolean|Promise<boolean>, label:string, time
 }
 async function boot():Promise<void>{
   server=spawn(process.execPath,["dist/index.js"],{
-    cwd:process.cwd(),env:{...process.env,PORT:String(PORT)},
+    cwd:process.cwd(),env:{...process.env,PORT:String(PORT),DATABASE_URL:isolatedUrl.toString()},
     stdio:["ignore","pipe","pipe"],
   });
   server.stdout?.on("data",(chunk:Buffer)=>{logs+=chunk.toString();});
@@ -69,6 +77,10 @@ async function actionOutcome(room:Room<MercatumState>,request:unknown):Promise<{
   return Promise.race([reply,sleep(5000).then(()=>{throw new Error("Action response timed out");})]);
 }
 async function run():Promise<void>{
+  // Each invocation gets its own isolated PostgreSQL schema. Tests never
+  // steal or delete a real player's unique loot from the local development DB.
+  await admin.query(`CREATE SCHEMA "${testSchema}"`);
+  schemaPrepared=true;
   await boot();
   const sdk=new Client(url);
   const a=await sdk.join<MercatumState>(MERCATUM_ROOM_NAME,{stats:BALANCED_STATS});
@@ -137,4 +149,8 @@ async function run():Promise<void>{
 
 try{await run();}
 catch(error){console.error(error);process.exitCode=1;}
-finally{await stop();}
+finally{
+  await stop();
+  if(schemaPrepared)await admin.query(`DROP SCHEMA "${testSchema}" CASCADE`);
+  await admin.end();
+}
