@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "start": "node dist/index.js",
     "smoke": "node dist/smoke.js",
-    "test": "pnpm build && node --test dist/domain/movement.test.js"
+    "test": "pnpm build && node --test dist/domain/*.test.js"
   },
   "dependencies": {
     "@mercatum/shared": "workspace:*",

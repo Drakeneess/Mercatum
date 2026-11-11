@@ -72,9 +72,9 @@ async function run() {
     await assert.rejects(client.create(MERCATUM_ROOM_NAME));
     await assert.rejects(client.joinOrCreate(MERCATUM_ROOM_NAME));
 
-    explorerA.send("move", { to: { q: 1, r: 0 } });
+    explorerA.send("move", { to: { q: 0, r: 1 } });
     await eventually(
-      () => explorerB.state?.players?.get(explorerA.sessionId)?.q === 1,
+      () => explorerB.state?.players?.get(explorerA.sessionId)?.r === 1,
       "movement to synchronize to explorer B",
     );
 
@@ -105,7 +105,7 @@ async function run() {
     await sleep(getMovementDelayMs(3) + 90);
     explorerA.send("move", { to: { q: 0, r: 0 } });
     await eventually(
-      () => explorerB.state?.players?.get(explorerA.sessionId)?.q === 0,
+      () => explorerB.state?.players?.get(explorerA.sessionId)?.r === 0,
       "agile player to move after its own cooldown",
     );
   } finally {

@@ -8,6 +8,20 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: mercatum
+          POSTGRES_PASSWORD: mercatum
+          POSTGRES_DB: mercatum
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mercatum -d mercatum"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      DATABASE_URL: postgres://mercatum:mercatum@127.0.0.1:5432/mercatum
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
