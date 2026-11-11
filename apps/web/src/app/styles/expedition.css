@@ -1,0 +1,29 @@
+.expedition-sheet { transform: rotate(-.4deg); }
+.expedition-sheet h3 { margin: 19px 0; }
+.expedition-status { display:grid; gap:6px; padding:10px 0 17px; border-bottom:3px double var(--hairline); }
+.expedition-status span { color:var(--smudge);font:900 10px var(--machine-type); }
+.expedition-status strong { font:900 15px var(--machine-type); color:var(--blood); }
+.expedition-muted { font:11px/1.6 var(--machine-type);color:var(--smudge);margin:6px 0;overflow-wrap:anywhere; }
+.expedition-subheading { font:900 11px var(--machine-type);letter-spacing:.035em; margin:22px 0 8px;
+  padding:8px 0 4px; border-top:2px dashed var(--hairline); color:var(--blood); }
+.expedition-actions { display:flex;flex-wrap:wrap;gap:6px;margin:11px 0; }
+.expedition-actions button, .expedition-action-live button { background:transparent;border:1px solid var(--hairline);
+  color:var(--ink);padding:8px 7px;font:900 10px var(--machine-type); }
+.expedition-actions button:disabled { opacity:.26;cursor:not-allowed; }
+.expedition-actions button:hover:not(:disabled), .expedition-action-live button:hover {
+  background:var(--blood);color:var(--paper); }
+.expedition-object { display:grid;gap:4px;border-bottom:1px dashed var(--hairline);padding:11px 0; }
+.expedition-object strong { color:var(--ink);font:900 12px var(--machine-type); }
+.expedition-primary { width:100%;background:var(--blood);color:var(--paper);font:900 11px var(--machine-type);
+  border:2px solid var(--ink);padding:14px 7px;margin-top:12px;box-shadow:3px 4px 0 #33271c; }
+.expedition-primary:hover:not(:disabled) { filter:brightness(1.22); }
+.expedition-primary:disabled { opacity:.32;cursor:not-allowed;box-shadow:none; }
+.expedition-action-live { padding:14px;margin:12px 0;border:2px solid var(--blood);display:grid;gap:8px; }
+.expedition-action-live strong { color:var(--blood);font:900 12px var(--machine-type); }
+.expedition-action-live span { color:var(--smudge);font:12px var(--machine-type); }
+.expedition-fineprint { font:9px/1.65 var(--machine-type);color:var(--smudge);border-top:3px double var(--hairline);
+  margin-top:19px;padding-top:10px; }
+.app-shell[data-theme="phosphor"] .expedition-actions button:hover:not(:disabled) {background:#466148;color:#d5e9d2;}
+.app-shell[data-theme="phosphor"] .expedition-primary {background:#35513a;color:#d8e4cf;border-color:#6b8b71;}
+.app-shell[data-theme="vigil"] .expedition-primary {background:#782a27;color:#f1e7c7;}
+@media (max-width:720px) { .expedition-sheet { transform:none; } }

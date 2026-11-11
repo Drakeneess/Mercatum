@@ -133,3 +133,10 @@
 }
 .movement-notice::before { content: '>> '; color: #7a2824; }
 
+
+.hex-tile.tile-door { fill: #6d4036; stroke: #321c17; stroke-width: 3; }
+.app-shell[data-theme="phosphor"] .hex-tile.tile-door { fill:#2d3d2c; stroke:#849b7b; }
+.app-shell[data-theme="vigil"] .hex-tile.tile-door { fill:#535c43; stroke:#262a20; }
+.loot-marker { pointer-events: none; }
+.loot-marker rect { fill: #8e3028; stroke: #f1d7ac; stroke-width: 1; transform: rotate(12deg); }
+.loot-marker text { fill: #f5deb3; font: 900 13px var(--machine-type); }

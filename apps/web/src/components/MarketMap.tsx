@@ -1,7 +1,7 @@
 "use client";
 
 import { hexDistance, hexKey, type CharacterStats, type HexCoordinate,
-  type HexTile, type PlayerSnapshot } from "@mercatum/shared";
+  type HexTile, type MarketItem, type PlayerSnapshot } from "@mercatum/shared";
 import { getTileName, hexCenter, hexPoints } from "../lib/hexMapView";
 
 export interface MarketMapProps {
@@ -16,11 +16,13 @@ export interface MarketMapProps {
   cooldownRemaining: number;
   recoveryPercentage: number;
   notice: string;
+  doorOpen: boolean;
+  groundItems: readonly MarketItem[];
 }
 
 export function MarketMap(props: MarketMapProps) {
   const { map, currentPosition, walkable, requestMove, players, playerId,
-    hasBuild, characterStats, cooldownRemaining, recoveryPercentage, notice } = props;
+    hasBuild, characterStats, cooldownRemaining, recoveryPercentage, notice, doorOpen, groundItems } = props;
   return (
         <section className="map-panel" aria-label="Plano interactivo del Mercado">
           <div className="map-header">
@@ -89,6 +91,11 @@ export function MarketMap(props: MarketMapProps) {
                         <text y="23" textAnchor="middle" className="tile-caption">PUESTO</text>
                       </g>
                     )}
+                    {tile.kind === "door" && (
+                      <text className="entry-label" x={center.x} y={center.y + 8} textAnchor="middle">
+                        {doorOpen ? "ABIERTO" : "CERRADO"}
+                      </text>
+                    )}
                     {tile.kind === "entry" && (
                       <text className="entry-label" x={center.x} y={center.y + 23} textAnchor="middle">ACCESO</text>
                     )}
@@ -96,9 +103,17 @@ export function MarketMap(props: MarketMapProps) {
                 );
               })}
 
-              {players.map((player, index) => {
+              {groundItems.map((item) => {
+                if (item.q===undefined||item.r===undefined) return null;
+                const center=hexCenter({q:item.q,r:item.r});
+                return <g className="loot-marker" key={item.id} transform={`translate(${center.x} ${center.y-14})`}>
+                  <rect x="-7" y="-7" width="14" height="14" />
+                  <text textAnchor="middle" dominantBaseline="central">!</text>
+                </g>;
+              })}
+              {players.filter(p=>p.inside).map((player, index, visiblePlayers) => {
                 const center = hexCenter(player.position);
-                const sameCellIndex = players.slice(0, index).filter((other) => hexKey(other.position) === hexKey(player.position)).length;
+                const sameCellIndex = visiblePlayers.slice(0, index).filter((other) => hexKey(other.position) === hexKey(player.position)).length;
                 const x = center.x + (sameCellIndex % 3 - 1) * 13;
                 const y = center.y - Math.floor(sameCellIndex / 3) * 13;
                 const isMe = player.id === playerId;

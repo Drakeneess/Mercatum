@@ -1,15 +1,18 @@
 import type { HexTile, PlayerSnapshot } from "@mercatum/shared";
+import { MarketActions, type MarketActionsProps } from "./MarketActions";
 
 interface SectorNotesProps {
   map: readonly HexTile[];
   players: readonly PlayerSnapshot[];
   events: readonly string[];
+  actions: MarketActionsProps;
 }
 
 /** Everything shown here comes from the current shared world snapshot. */
-export function SectorNotes({ map, players, events }: SectorNotesProps) {
+export function SectorNotes({ map, players, events, actions }: SectorNotesProps) {
   return (
         <aside className="side-column side-column--notes" aria-label="Notas del sector">
+          <MarketActions {...actions} />
           <section className="paper-piece evidence-sheet">
             <div className="piece-meta"><span>EXTRACTO DE INCIDENCIAS</span><span>02 / 04</span></div>
             <h3>Se ha<br /><em>observado.</em></h3>

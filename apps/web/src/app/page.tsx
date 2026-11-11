@@ -15,6 +15,7 @@ export default function Home() {
     connection, playerId, players, map, marketTime, notice, events, me,
     currentPosition, characterStats, movementDelayMs, cooldownRemaining,
     recoveryPercentage, walkable, requestMove,
+    identity, groundItems, doorOpen, action, clock, requestAction, cancelAction, dropItem, reenter,
   } = useMercatumRoom(committedBuild, draftStats);
 
   return (
@@ -39,9 +40,12 @@ export default function Home() {
           requestMove={requestMove} players={players} playerId={playerId}
           hasBuild={Boolean(committedBuild)} characterStats={characterStats}
           cooldownRemaining={cooldownRemaining} recoveryPercentage={recoveryPercentage}
-          notice={notice}
+          notice={notice} doorOpen={doorOpen} groundItems={groundItems}
         />
-        <SectorNotes map={map} players={players} events={events} />
+        <SectorNotes map={map} players={players} events={events}
+          actions={{ connection, identity, position:currentPosition, groundItems, doorOpen,
+            action, clock, requestAction, cancelAction, dropItem, reenter }}
+        />
       </main>
       <footer className="main-footer">
         <span>LA ORGANIZACIÓN / DOCUMENTO SIN GARANTÍAS</span>

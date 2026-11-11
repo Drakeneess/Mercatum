@@ -8,6 +8,7 @@ import "./styles/evidence.css";
 import "./styles/variants.css";
 import "./styles/responsive.css";
 import "./styles/character.css";
+import "./styles/expedition.css";
 
 export const metadata: Metadata = {
   title: "Mercatum | Registro de incursiones",

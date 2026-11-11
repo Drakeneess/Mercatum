@@ -43,7 +43,7 @@ export function ExplorerColumn(props: ExplorerColumnProps) {
             </div>
             <div className="field">
               <span className="field-label">SITUACIÓN ACTUAL</span>
-              <strong>{connection === "online" ? "DENTRO DEL PERÍMETRO" : "NO VERIFICADA"}</strong>
+              <strong>{connection === "online" ? (me?.inside ? "DENTRO DEL PERÍMETRO" : "EXTRACCIÓN REGISTRADA") : "NO VERIFICADA"}</strong>
             </div>
             <div className="entry-stamp" aria-hidden="true">{committedBuild ? <>ACEPTADO<br />BAJO RIESGO</> : <>PENDIENTE<br />DE FIRMA</>}</div>
             <div className="ticket-bottom" aria-hidden="true"><span>NO ES UN SEGURO DE VIDA</span><span>///////</span></div>

@@ -24,6 +24,7 @@ export function getTileName(kind: HexTile["kind"]): string {
     case "entry": return "Punto de entrada";
     case "shop": return "Puesto comercial";
     case "wall": return "Zona bloqueada";
+    case "door": return "Puerta de mantenimiento";
     default: return "Pasillo";
   }
 }
