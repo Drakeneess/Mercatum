@@ -18,6 +18,10 @@ Mercatum/
 └── package.json
 ```
 
+## Backlog de desarrollo
+
+El plan de desarrollo por vertical slices, historias con IDs, prioridades, dependencias y criterios de aceptación está en [docs/backlog.md](docs/backlog.md). La base multijugador está terminada; la primera meta es **una incursión con un objeto único, extracción y persistencia segura**, antes de ampliar criaturas, economía y registro de procedencia.
+
 ## Requisitos
 
 - Node.js 22 o superior
