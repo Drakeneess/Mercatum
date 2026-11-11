@@ -6,6 +6,7 @@ import {
   type ActionRequest, type ActionResult, type CharacterStats, type HexTile,
   type CreatureSighting, type HarmReport, type IdentityReply, type MarketItem, type MercatumState, type MoveAccepted,
   type MoveRejected, type MoveRequest, type PlayerSnapshot, type TimedActionReply,
+  type MarketOperation, type MarketReply, type ProvenanceReply,
   type SightingsReply, type WorldItemsReply,
 } from "@mercatum/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -32,6 +33,8 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
   const [groundItems,setGroundItems]=useState<readonly MarketItem[]>([]);
   const [sightings,setSightings]=useState<readonly CreatureSighting[]>([]);
   const [doorOpen,setDoorOpen]=useState(false);
+  const [market,setMarket]=useState<MarketReply|null>(null);
+  const [provenance,setProvenance]=useState<ProvenanceReply|null>(null);
   const [action,setAction]=useState<TimedActionReply|null>(null);
   const [cooldownUntil,setCooldownUntil]=useState(0);
   const [clock,setClock]=useState(0);
@@ -130,6 +133,25 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
           if(report.stolenItem)record("OBJETO PERDIDO: "+report.stolenItem);
           if(report.dead)setAction(null);
         });
+        room.onMessage("market_snapshot",(reply:MarketReply)=>{
+          if(mounted)setMarket(reply);
+        });
+        room.onMessage("market_update",()=>{
+          if(mounted)room.send("market_request");
+        });
+        room.onMessage("market_result",(reply:{message:string})=>{
+          if(!mounted)return;
+          setNotice(reply.message);
+          record(reply.message);
+        });
+        room.onMessage("market_error",(reply:{message:string})=>{
+          if(!mounted)return;
+          setNotice(reply.message);
+          record(reply.message);
+        });
+        room.onMessage("provenance",(reply:ProvenanceReply)=>{
+          if(mounted)setProvenance(reply);
+        });
         room.onMessage("move_accepted",(message:MoveAccepted)=>{
           if(!mounted)return;
           const now=Date.now();
@@ -181,6 +203,8 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
           setPlayers([]);
           setIdentity(null);
           setSightings([]);
+          setMarket(null);
+          setProvenance(null);
           setAction(null);
           record("Señal interrumpida. El personaje permanece en el Mercado.");
           retry();
@@ -189,6 +213,7 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
         room.send("identity_request");
         room.send("world_request");
         room.send("sightings_request");
+        room.send("market_request");
       }catch(error){
         if(!mounted)return;
         setConnection("offline");
@@ -196,6 +221,8 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
         setPlayers([]);
         setIdentity(null);
         setSightings([]);
+        setMarket(null);
+        setProvenance(null);
         setAction(null);
         const reason=connectionErrorMessage(error);
         setNotice(reason);
@@ -244,10 +271,22 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
   function cancelAction(){roomRef.current?.send("cancel_action");}
   function dropItem(itemId:string){roomRef.current?.send("drop_item",{itemId});}
   function reenter(){roomRef.current?.send("reenter");}
+  function requestMarket(){roomRef.current?.send("market_request");}
+  function requestProvenance(itemId:string){
+    setProvenance(null);
+    roomRef.current?.send("provenance_request",{itemId});
+  }
+  function operateMarket(operation:Omit<MarketOperation,"requestId">){
+    if(connection!=="online"||!roomRef.current)return;
+    roomRef.current.send("market_operation",{
+      ...operation,requestId:crypto.randomUUID(),
+    } satisfies MarketOperation);
+  }
 
   return {
     connection,playerId,players,map,marketTime,notice,events,me,currentPosition,
     characterStats,movementDelayMs,cooldownRemaining,recoveryPercentage,walkable,requestMove,
     identity,groundItems,doorOpen,action,clock,requestAction,cancelAction,dropItem,reenter,sightings,
+    market,provenance,requestMarket,requestProvenance,operateMarket,
   };
 }
