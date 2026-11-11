@@ -111,6 +111,14 @@ export function decideCreatureMove(
   }
 
   let to:HexCoordinate|null=goal?nextStepToward(from,goal,doorOpen):null;
+  // If a creature and its prey already share a hex, it attacks here instead
+  // of accidentally wandering away before resolving the contact.
+  if(prey && prey.q===from.q && prey.r===from.r){
+    return {
+      to:from, lastKnownQ:knownQ, lastKnownR:knownR, searchLeft:search,
+      victimId:prey.id,
+    };
+  }
   if(!to||hexKey(to)===hexKey(from)){
     // Rotation is deterministic and persisted (steps). No random global ticks.
     const neighbors=hexNeighbors(from).filter(n=>passable(n,doorOpen));

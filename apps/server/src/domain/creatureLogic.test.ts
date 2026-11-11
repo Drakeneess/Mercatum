@@ -32,3 +32,11 @@ test("memory persists a last known location after target disappears",()=>{
   assert.equal(r.searchLeft,1);
   assert.equal(r.lastKnownQ,1);
 });
+
+test("a creature already touching its prey attacks without stepping away",()=>{
+  const actor={id:"stalker-01",kind:"stalker" as const,q:4,r:-3,steps:0,
+    lastKnownQ:null,lastKnownR:null,searchLeft:0};
+  const result=decideCreatureMove(actor,[{id:"prey",q:4,r:-3}],false);
+  assert.deepEqual(result.to,{q:4,r:-3});
+  assert.equal(result.victimId,"prey");
+});
