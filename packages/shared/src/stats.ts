@@ -1,5 +1,5 @@
-/** Human-scale aptitudes. Only Dexterity affects a live mechanic in prototype 0.3.
- * The other six attributes are validated and synchronized for future systems. */
+/** Human-scale aptitudes. In V1, Dexterity sets movement cadence, Strength sets carry capacity and door force time,
+ * and Intellect sets the alternative door analysis time. Other attributes await future systems. */
 export const STAT_KEYS = [
   "strength",
   "dexterity",
@@ -26,11 +26,11 @@ export const STAT_INFO: ReadonlyArray<{
   description: string;
   active: boolean;
 }> = [
-  { key: "strength", short: "FUE", name: "Fuerza", description: "Empuje, carga y obstáculos físicos.", active: false },
+  { key: "strength", short: "FUE", name: "Fuerza", description: "Peso de carga y apertura por fuerza.", active: true },
   { key: "dexterity", short: "DES", name: "Destreza", description: "Intervalo real entre hexágonos.", active: true },
   { key: "endurance", short: "RES", name: "Resistencia", description: "Fatiga, heridas y esfuerzo sostenido.", active: false },
   { key: "perception", short: "PER", name: "Percepción", description: "Rastros, indicios y amenazas detectables.", active: false },
-  { key: "intellect", short: "INT", name: "Intelecto", description: "Análisis, mecanismos y documentación.", active: false },
+  { key: "intellect", short: "INT", name: "Intelecto", description: "Análisis y apertura de mecanismos.", active: true },
   { key: "social", short: "TRA", name: "Trato", description: "Negociación e intercambio de información.", active: false },
   { key: "composure", short: "TEM", name: "Temple", description: "Control de la tensión y del pánico.", active: false },
 ];

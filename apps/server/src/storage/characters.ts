@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { ServerError } from "colyseus";
-import { BALANCED_STATS, parseCharacterStats, type CharacterStats, type ExpeditionPhase, type HexCoordinate } from "@mercatum/shared";
+import { parseCharacterStats, type CharacterStats, type ExpeditionPhase, type HexCoordinate } from "@mercatum/shared";
 import { pool, transaction } from "./db.js";
 import type { Admission, CharacterRecord } from "./models.js";
 

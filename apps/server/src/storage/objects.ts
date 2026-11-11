@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { hexDistance, type HexCoordinate, type MarketItem } from "@mercatum/shared";
 import { pool, transaction } from "./db.js";
 import type { StoredObject } from "./models.js";

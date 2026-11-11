@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Room, ServerError, type Client } from "colyseus";
 import {
   ENTRY, MercatumPlayer, MercatumState, hexDistance, SERVICE_DOOR,
-  type ActionKind, type ActionRequest, type IdentityReply, type MarketItem,
+  type ActionRequest, type IdentityReply,
   type TimedActionReply, type WorldItemsReply,
 } from "@mercatum/shared";
 import { mercatumClock } from "./domain/clock.js";

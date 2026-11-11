@@ -17,7 +17,7 @@ export function SectorNotes({ map, players, events, actions }: SectorNotesProps)
             <div className="piece-meta"><span>EXTRACTO DE INCIDENCIAS</span><span>02 / 04</span></div>
             <h3>Se ha<br /><em>observado.</em></h3>
             <div className="observation-list">
-              <div><span>PERSONAS EN EL INTERIOR</span><strong className="mono">{players.length.toString().padStart(2, "0")} / 20</strong></div>
+              <div><span>PERSONAS EN EL INTERIOR</span><strong className="mono">{players.filter(player => player.inside).length.toString().padStart(2, "0")} / 20</strong></div>
               <div><span>ESPACIOS ANOTADOS</span><strong className="mono">{map.length}</strong></div>
               <div><span>PUESTOS IDENTIFICADOS</span><strong className="mono">{map.filter((tile) => tile.kind === "shop").length}</strong></div>
               <div><span>CRIATURAS COMPROBADAS</span><strong className="mono">SIN DATOS</strong></div>

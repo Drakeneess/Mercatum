@@ -6,11 +6,11 @@ Un personaje no es un héroe; es una persona que entra con capacidades y carenci
 
 | Código | Campo de red | Aplicación futura |
 | --- | --- | --- |
-| FUE | strength | Fuerza, cargas y obstáculos |
-| DES | dexterity | **Cooldown de paso entre hexágonos (implementado)** |
+| FUE | strength | Peso máximo de inventario y apertura de puertas (V1) |
+| DES | dexterity | **Cooldown de paso entre hexágonos (V1)** |
 | RES | endurance | Resistencia física y fatiga |
 | PER | perception | Rastros y amenaza detectable |
-| INT | intellect | Análisis y mecanismos |
+| INT | intellect | Apertura alternativa de puerta por análisis (V1) |
 | TRA | social | Interacciones y negociación |
 | TEM | composure | Control ante situaciones de estrés |
 
@@ -48,3 +48,11 @@ El indicador del frontend es informativo: si el reloj cliente diverge, el servid
 - Intelecto para pruebas de análisis, Trato para negociación y Temple para presión.
 - Autenticación de producción, progreso, equipamiento, fatiga y permadeath. V1 ya tiene personaje persistente, inventario y extracción.
 - Estado privado y filtrado por jugador: el prototipo actual expone los siete atributos en la sala compartida.
+
+## Efectos activos desde V1
+
+- **FUE:** peso máximo en mochila provisional `4 + 2 × FUE` y duración para forzar la puerta.
+- **INT:** duración alternativa para analizar y abrir la misma puerta.
+- **DES:** cooldown entre hexágonos, validado y guardado por el servidor.
+
+Los otros cuatro atributos permanecen preparados y sincronizados, pero no se les asignan efectos ficticios en V1.
