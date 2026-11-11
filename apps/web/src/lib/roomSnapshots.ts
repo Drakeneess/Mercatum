@@ -13,7 +13,7 @@ export function snapshotPlayers(state: MercatumState): PlayerSnapshot[] {
       social: player.social,
       composure: player.composure,
     };
-    snapshot.push({ id, name: player.name, position: { q: player.q, r: player.r }, stats });
+    snapshot.push({ id, name: player.name, position: { q: player.q, r: player.r }, inside: player.inside, stats });
   });
   return snapshot;
 }

@@ -8,6 +8,7 @@ export interface PlayerSnapshot {
   readonly id: string;
   readonly name: string;
   readonly position: HexCoordinate;
+  readonly inside: boolean;
   readonly stats: CharacterStats;
 }
 
