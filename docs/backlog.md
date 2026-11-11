@@ -1,6 +1,6 @@
 # Mercatum — Product Backlog
 
-> **Estado:** backlog vivo; V0 terminada y V1 vertical slice implementada con pendientes. **Actualizado:** 10 de noviembre de 2026.
+> **Estado:** backlog vivo; V0 y cortes V1/V2 implementados con refinamientos pendientes. **Actualizado:** 10 de noviembre de 2026.
 
 ## Norte del producto
 
@@ -10,7 +10,7 @@ Mercatum es un mercado paranormal persistente, con mapa hexagonal 2D y desplazam
 
 - [x] Next.js (puerto local 3500), Colyseus 0.18 (puerto local 3001), un mundo canónico con aforo de 20 conexiones.
 - [x] Mapa de demostración de 61 hexágonos, obstáculos y movimientos autoritativos de casilla adyacente.
-- [x] Siete atributos (FUE, DES, RES, PER, INT, TRA, TEM), build inicial validada por servidor; **solo DES tiene una regla activa**.
+- [x] Siete atributos (FUE, DES, RES, PER, INT, TRA, TEM), build validada por servidor; **DES, FUE, INT, RES y PER tienen efectos activos**.
 - [x] Cooldown de movimiento discreto según DES, reloj de referencia UTC−06:00, eventos de estado compartido.
 - [x] Reconexión por credencial persistente en V1: cambia el socket, no el personaje.
 - [x] Tres soportes visuales: Libro de incidencias, Cinta de vigilancia y Turno de cierre.
@@ -18,7 +18,7 @@ Mercatum es un mercado paranormal persistente, con mapa hexagonal 2D y desplazam
 
 ### No existe todavía
 
-Autenticación de producción, equipamiento/transferencias, comerciantes, moneda, criaturas autónomas, daño, permadeath, chat de proximidad, registro público de procedencia y reputación. **Las posiciones, fichas, puerta y objetos de V1 ahora sí sobreviven a reiniciar el servidor** gracias a PostgreSQL.
+Autenticación de producción, equipamiento/transferencias, comerciantes, moneda, sigilo y ruido, curación dentro del Mercado, chat de proximidad, registro público de procedencia y reputación. **Las posiciones, fichas, puerta y objetos de V1 ahora sí sobreviven a reiniciar el servidor** gracias a PostgreSQL.
 
 ## Etapas de entrega (vertical slices)
 
@@ -26,12 +26,12 @@ Autenticación de producción, equipamiento/transferencias, comerciantes, moneda
 | --- | --- | --- |
 | **V0 · Base técnica** | Entrar con build y moverse; multijugador básico | **Ya existe** |
 | **V1 · Incursión con botín** (ciclo implementado; refinamientos pendientes) | Un jugador entra, abre algo, obtiene un objeto único, sale y recupera ese objeto después de reiniciar el servicio | F-001–008; X-009–014, X-017 |
-| **V2 · Riesgo real** | Una criatura autónoma patrulla, persigue, hiere o mata; una muerte es definitiva y una desconexión no es una salida gratis | X-018; H-019–025 |
+| **V2 · Riesgo real** (ciclo implementado; refinamientos pendientes) | Una criatura autónoma patrulla, persigue, hiere o mata; una muerte es definitiva y una desconexión no es una salida gratis | X-018; H-019–025 |
 | **V3 · Mercado de jugadores** | Se compra, vende, intercambia, desgasta y documenta un objeto sin duplicación, con afirmaciones públicas atribuidas | E-029–038 |
 | **V4 · Alfa privada** | Chat de cercanía, límites de abuso, una ruta de incursión repetible y pruebas de carga/observabilidad | S-041–047 |
 | **V5 · Profundidad** | Pisos extra, habilidades y ecología más rica | Z-048–052 |
 
-**Importante:** V1, V2 y V3 son cortes demostrables y pueden construirse gradualmente. No se debe implementar toda la economía ni todas las criaturas antes de probar un recorrido de extremo a extremo.
+**Importante:** V1 y V2 son cortes implementados y verificados; V3 es el siguiente corte. Todos pueden refinarse gradualmente. No se debe implementar toda la economía ni todas las criaturas antes de probar un recorrido de extremo a extremo.
 
 ## Convenciones de la cola
 
@@ -93,6 +93,24 @@ Primer vertical slice: entrar, inspeccionar, obtener algo, transportarlo, salir 
 | X-016 | P1 | M | X-018 | **Percepción e indicios observables** — PER revela detalles que podrían percibirse en ese lugar; sin mostrar entidades detrás de obstáculos sin justificación. |
 | X-017 | P0 | M | X-010–014 | **UI de interacción sin romper estilo documental** — Croquis, inventario, acciones, advertencias y cancelación funcionan en los tres soportes, móvil y teclado. |
 | X-018 | P0 | L | 009 | **Visibilidad autorizada por jugador** — El servidor filtra información por posición/observación; no transmite amenazas ocultas al estado público. |
+
+## Avance verificable de V2
+
+| ID | Estado V2 | Evidencia / pendiente |
+| --- | --- | --- |
+| X-018 | Parcial | Entidades hostiles filtradas por mensaje privado y línea de visión; falta ocultar posiciones de otros jugadores en el Schema público |
+| H-019 | Implementado V2 | Planificador de acciones por timestamps; criaturas no requieren jugadores conectados ni bucle de 60 FPS |
+| H-020 | Implementado V2 | Dos entidades con posición, intervalos y memoria persistentes |
+| H-021 | Parcial | Detección por proximidad/visión y persecución con memoria; ruido todavía no modelado |
+| H-022 | Implementado V2 | Salud, daño reducido por RES y heridas que penalizan movimiento |
+| H-023 | Implementado V2 | El Rebuscador roba una instancia única y puede abandonarla dañada más tarde |
+| H-024 | Implementado V2 | Muerte irreversible, objetos transportados caen al suelo; depósito externo heredable por sucesor |
+| H-025 | Implementado V2 | Desconexión no elimina al personaje del mapa ni lo protege ante criaturas |
+| H-026 | Parcial | Escapar depende de rutas y velocidad; falta ocultarse activamente |
+| H-027 | Parcial | Se mantiene un reloj de referencia único sin bonificaciones nocturnas; faltan rutinas horarias propias |
+| H-028 | Implementado en código | Rastrero/Rebuscador con distintos intervalos y daños; falta balance manual de sesiones largas |
+
+**Prueba de aceptación del corte:** `smoke:v2` usa PostgreSQL temporal, comprueba peligro offline, muerte persistente, botín único, avistamientos filtrados y sucesión sin resurrección. Para reglas y limitaciones: [docs/v2.md](v2.md).
 
 ## H · Criaturas, daño y permadeath
 

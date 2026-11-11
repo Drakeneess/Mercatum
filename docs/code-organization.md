@@ -99,3 +99,14 @@ Este diseño favorece archivos orientados a una responsabilidad; si `useMercatum
 - `apps/server/src/smoke-v1.ts` verifica la permanencia de inventario tras reiniciar el backend en un esquema PostgreSQL temporal aislado.
 
 El servidor ahora necesita PostgreSQL. La credencial local no sustituye la autenticación de producción. Véase [docs/v1.md](v1.md).
+
+## V2 — Ubicación de amenazas y mortalidad
+
+- `apps/server/src/CreatureScheduler.ts`: un temporizador por siguiente evento, sin ticks visuales.
+- `apps/server/src/domain/creatureLogic.ts`: búsqueda de rutas, línea de visión, recuerdos y cálculo puro de daño; `creatureLogic.test.ts`.
+- `apps/server/src/storage/creatures.ts`: transacciones SQL, ataques, robos y muertes, incluidas entidades actuando sin usuarios conectados.
+- `apps/server/src/storage/characters.ts`: admite personajes muertos para consultar el expediente, crea sucesores cuando se presenta una build explícita y transfiere solo objetos del depósito exterior.
+- `apps/server/src/smoke-v2.ts`: prueba de integración aislada de peligro offline, muerte irreversible y sucesión.
+- `apps/web/src/components/ThreatReport.tsx` y `app/styles/threat.css`: salud, heridas y avistamientos privados con estética documental.
+
+**Regla de privacidad:** añadir más criaturas a la base de datos, nunca a `MercatumState`. Su posición solo puede llegar al cliente a través del filtro de visión del servidor.

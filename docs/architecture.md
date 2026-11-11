@@ -1,10 +1,10 @@
-# Arquitectura de Mercatum V1 — Incursión con botín
+# Arquitectura de Mercatum V2 — Mundo hostil y persistente
 
 ## Contexto
 
 Una sola sala Colyseus 0.18 atiende hasta 20 conexiones concurrentes. Next.js 16 muestra el mundo como un plano SVG hexagonal. **El cliente no decide resultados**: Colyseus valida comandos y PostgreSQL conserva el estado durable.
 
-La primera versión no ejecuta criaturas, ni combate, ni mercado de jugadores; estos sistemas tienen hitos posteriores en [backlog.md](backlog.md).
+V2 ejecuta criaturas, daño, robo de objetos y muerte permanente. Comercio entre jugadores y autenticación pública siguen en hitos posteriores del [backlog](backlog.md).
 
 ## Módulos
 
@@ -43,7 +43,7 @@ apps/web/src/
 
 En el primer ingreso, el navegador envía una **build válida** al matchmaking `join("mercatum")`. El servidor genera una cuenta pseudónima independiente del personaje; guarda el **hash SHA-256** de una credencial aleatoria en PostgreSQL y devuelve la credencial únicamente a la conexión dueña mediante el mensaje privado `identity` solicitado después de instalar listeners.
 
-La credencial se guarda localmente bajo `mercatum.session.token`. En la siguiente admisión se presenta de nuevo, y el backend carga **el mismo personaje**, sus siete atributos, coordenadas, fase (`inside` / `outside`) y tiempo permitido para el siguiente paso. Si el token no existe, el servidor exige una nueva build. Si el token es inválido, rechaza la admisión y **no crea silenciosamente otro personaje**.
+La credencial se guarda localmente bajo `mercatum.session.token`. En la siguiente admisión se presenta de nuevo, y el backend carga **el mismo personaje**, sus siete atributos, coordenadas, fase (`inside` / `outside` / `dead`) y tiempo permitido para el siguiente paso. Si el token no existe, el servidor exige una nueva build. Si el token es inválido, rechaza la admisión y **no crea silenciosamente otro personaje**.
 
 El backend prohíbe dos conexiones simultáneas del mismo personaje. Los ID de socket Colyseus son transitorios; la identidad y la propiedad de objetos no dependen de esos IDs.
 
@@ -98,8 +98,19 @@ pnpm typecheck
 pnpm test
 pnpm --filter @mercatum/server smoke
 pnpm --filter @mercatum/server smoke:v1
+pnpm --filter @mercatum/server smoke:v2
 ```
 
 El smoke V1 crea un **esquema PostgreSQL temporal aislado**, confirma que una disputa simultánea por el mismo objeto tiene un solo ganador, verifica la extracción, reinicia el backend y vuelve con el mismo token y el objeto en depósito. Luego borra solo el esquema temporal.
 
 Para ejecución local (incluidos los pasos de Docker Compose), consultar [v1.md](v1.md). Para el estado del backlog y pendientes, consultar [backlog.md](backlog.md).
+
+## V2 — Motor de amenazas
+
+El scheduler `apps/server/src/CreatureScheduler.ts` mantiene un temporizador para la acción más próxima de cualquier criatura; las posiciones, intervalos y memoria se guardan en `storage/creatures.ts` con transacciones PostgreSQL. `domain/creatureLogic.ts` calcula visión, patrulla, caminos y daño con funciones probables unitariamente.
+
+**No hay entidades hostiles en el Schema público.** `MercatumRoom.sendSightings` filtra la lista por estado, PER, rango y línea de visión y la envía solo al jugador por mensajes `sightings`. Tras un ataque, el servidor actualiza la salud/heridas del personaje, su Schema y el inventario privado. Las criaturas persiguen también a personajes desconectados, cuya situación continúa en PostgreSQL.
+
+El estado `dead` es irreversible. Tras fallecimiento, los objetos `carried` pasan al suelo, los del depósito `stash` se conservan; un sucesor explícito puede heredar este depósito, sin recuperar el cuerpo ni las pertenencias perdidas. `docs/v2.md` contiene reglas detalladas y pruebas.
+
+Las pruebas de integración de V1 deshabilitan hostiles, mientras `smoke:v2` comprueba exposición offline, caída de objetos y sucesión en un esquema PostgreSQL aislado.
