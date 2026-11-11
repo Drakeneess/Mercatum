@@ -1,6 +1,6 @@
 # Mercatum — Product Backlog
 
-> **Estado:** propuesta inicial de planificación, no son funcionalidades implementadas ni fechas comprometidas. **Actualizado:** 10 de noviembre de 2026.
+> **Estado:** backlog vivo; V0 terminada y V1 vertical slice implementada con pendientes. **Actualizado:** 10 de noviembre de 2026.
 
 ## Norte del producto
 
@@ -12,20 +12,20 @@ Mercatum es un mercado paranormal persistente, con mapa hexagonal 2D y desplazam
 - [x] Mapa de demostración de 61 hexágonos, obstáculos y movimientos autoritativos de casilla adyacente.
 - [x] Siete atributos (FUE, DES, RES, PER, INT, TRA, TEM), build inicial validada por servidor; **solo DES tiene una regla activa**.
 - [x] Cooldown de movimiento discreto según DES, reloj de referencia UTC−06:00, eventos de estado compartido.
-- [x] Reconexión básica que hoy **crea identidad nueva** (todavía no es reconexión segura).
+- [x] Reconexión por credencial persistente en V1: cambia el socket, no el personaje.
 - [x] Tres soportes visuales: Libro de incidencias, Cinta de vigilancia y Turno de cierre.
 - [x] Código dividido en componentes, hooks, servicios de dominio y estilos; CI con build, typecheck, tests y smoke.
 
 ### No existe todavía
 
-Cuentas, persistencia PostgreSQL, inventarios, instancias únicas durables, comerciantes, dinero, criaturas autónomas, daño, permadeath, chat de proximidad, registro público de objetos y reputación. La sala sobrevive vacía, pero **el estado del proceso no sobrevive a reiniciar el servidor**.
+Autenticación de producción, equipamiento/transferencias, comerciantes, moneda, criaturas autónomas, daño, permadeath, chat de proximidad, registro público de procedencia y reputación. **Las posiciones, fichas, puerta y objetos de V1 ahora sí sobreviven a reiniciar el servidor** gracias a PostgreSQL.
 
 ## Etapas de entrega (vertical slices)
 
 | Hito | Demostración verificable | Dependencias principales |
 | --- | --- | --- |
 | **V0 · Base técnica** | Entrar con build y moverse; multijugador básico | **Ya existe** |
-| **V1 · Incursión con botín** | Un jugador entra, abre algo, obtiene un objeto único, sale y recupera ese objeto después de reiniciar el servicio | F-001–008; X-009–014, X-017 |
+| **V1 · Incursión con botín** (ciclo implementado; refinamientos pendientes) | Un jugador entra, abre algo, obtiene un objeto único, sale y recupera ese objeto después de reiniciar el servicio | F-001–008; X-009–014, X-017 |
 | **V2 · Riesgo real** | Una criatura autónoma patrulla, persigue, hiere o mata; una muerte es definitiva y una desconexión no es una salida gratis | X-018; H-019–025 |
 | **V3 · Mercado de jugadores** | Se compra, vende, intercambia, desgasta y documenta un objeto sin duplicación, con afirmaciones públicas atribuidas | E-029–038 |
 | **V4 · Alfa privada** | Chat de cercanía, límites de abuso, una ruta de incursión repetible y pruebas de carga/observabilidad | S-041–047 |
@@ -39,6 +39,28 @@ Cuentas, persistencia PostgreSQL, inventarios, instancias únicas durables, come
 - **S / M / L:** esfuerzo relativo (pequeño / medio / grande); **no** son puntos de historia calibrados ni promesas de plazo.
 - Todo ticket está **pendiente** salvo la base V0 marcada como existente arriba. Dependencias usan IDs (F-001, X-012, etc.); un rango corto indica el conjunto de tickets indicado.
 - **Aceptación** es la condición mínima para cerrar una historia. Dividir una historia grande en tareas de PR es válido, pero preservar el ID de trazabilidad.
+
+## Avance verificable de V1 (no confundir con una alfa pública)
+
+| ID | Estado V1 | Evidencia / faltante |
+| --- | --- | --- |
+| F-001 | Implementado | Contrato de extracción, desconexión y recuperación en `docs/v1.md` |
+| F-002 | Parcial | PostgreSQL y migraciones de cuentas/objetos/eventos; faltan tablas de economía para V3 |
+| F-003 | Prototipo | Cuenta pseudónima separada del personaje; token secreto no equivale a autenticación pública |
+| F-004 | Implementado | Ficha, posición, fase y cooldown persistentes |
+| F-005 | Implementado V1 | Reentrada con token, bloqueo de dos sesiones simultáneas, persistencia tras reinicio |
+| F-006 | Parcial | Recogida/extracción/drop atómicos y registro durable; no existe muerte |
+| F-007 | Parcial | Identificadores validados, mensajes limitados por Colyseus; faltan origen, sesión segura de producción y controles antiabuso |
+| F-008 | Implementado V1 | CI con PostgreSQL, dos clientes, extracción y recuperación tras reinicio |
+| X-009 | Implementado V1 | Sector 01 declarado como datos tipados; estado de puerta persistente |
+| X-010 | Implementado V1 | Acciones de examinar/abrir/recoger/extractar temporizadas y cancelables |
+| X-011 | Parcial | Apertura alternativa con FUE o INT; sin ruido/desgaste/herramientas |
+| X-012 | Implementado V1 | Navaja única con ID y posición persistentes; competición entre jugadores sin duplicación |
+| X-013 | Parcial | Recoger, soltar, peso/capacidad; faltan equipar y transferir con consentimiento |
+| X-014 | Implementado V1 | Extracción transaccional hacia depósito exterior |
+| X-017 | Implementado en código | Interfaz de inventario/puerta/salida, tres temas y responsive; falta QA visual manual |
+
+**Aceptación del corte V1:** probada automáticamente. **Cierre total de tickets:** varios siguen parciales según criterios completos. Ver [docs/v1.md](v1.md).
 
 ## F · Fundamentos de persistencia e identidad
 
@@ -62,14 +84,14 @@ Primer vertical slice: entrar, inspeccionar, obtener algo, transportarlo, salir 
 | ID | Prioridad | Tamaño | Depende | Trabajo y criterio de aceptación |
 | --- | --- | --- | --- | --- |
 | X-009 | P0 | M | 001 | **Modelo de sectores y mapa basado en datos** — La sala consulta un mapa con sectores, casillas, obstáculos, entrada y salida; se reemplaza el hardcode sin romper el hexágono. |
-| X-010 | P0 | M | Acciones temporizadas e interrumpibles | **Inspeccionar, abrir y recoger duran tiempo de servidor; se puede interrumpir sin duplicar resultados y sin detener el mundo.** — undefined |
-| X-011 | P0 | M | Puertas con rutas de solución por build | **Una puerta admite Fuerza, Intelecto o herramientas; cada solución cambia tiempo, ruido o desgaste; sin requisito binario universal.** — undefined |
-| X-012 | P0 | M | Instancias únicas de objetos en el suelo | **Cada objeto tiene ID estable, ubicación y dueño opcional; dos exploradores no pueden recoger el mismo objeto.** — undefined |
-| X-013 | P0 | M | Inventario autoritativo y restricciones | **Recoger, soltar, equipar o transferir actualiza el servidor; peso/capacidad y colisiones de operaciones se comprueban.** — undefined |
-| X-014 | P0 | M | Salida y extracción de botín | **Solo se conserva botín al completar una salida válida; cortar la conexión no equivale a extraer.** — undefined |
-| X-015 | P1 | M | Resistencia, carga y fatiga | **RES afecta esfuerzo sostenido y exceso de peso; DES sigue marcando el cooldown base y no se invalida por clientes.** — undefined |
-| X-016 | P1 | M | Percepción e indicios observables | **PER revela detalles que podrían percibirse en ese lugar; sin mostrar entidades detrás de obstáculos sin justificación.** — undefined |
-| X-017 | P0 | M | UI de interacción sin romper estilo documental | **Croquis, inventario, acciones, advertencias y cancelación funcionan en los tres soportes, móvil y teclado.** — undefined |
+| X-010 | P0 | M | — | **Acciones temporizadas e interrumpibles** — Inspeccionar, abrir y recoger duran tiempo de servidor; se puede interrumpir sin duplicar resultados y sin detener el mundo. |
+| X-011 | P0 | M | X-010 | **Puertas con rutas de solución por build** — Una puerta admite Fuerza, Intelecto o herramientas; cada solución cambia tiempo, ruido o desgaste; sin requisito binario universal. |
+| X-012 | P0 | M | F-002, F-006 | **Instancias únicas de objetos en el suelo** — Cada objeto tiene ID estable, ubicación y dueño opcional; dos exploradores no pueden recoger el mismo objeto. |
+| X-013 | P0 | M | X-012 | **Inventario autoritativo y restricciones** — Recoger, soltar, equipar o transferir actualiza el servidor; peso/capacidad y colisiones de operaciones se comprueban. |
+| X-014 | P0 | M | X-013, F-005 | **Salida y extracción de botín** — Solo se conserva botín al completar una salida válida; cortar la conexión no equivale a extraer. |
+| X-015 | P1 | M | X-013 | **Resistencia, carga y fatiga** — RES afecta esfuerzo sostenido y exceso de peso; DES sigue marcando el cooldown base y no se invalida por clientes. |
+| X-016 | P1 | M | X-018 | **Percepción e indicios observables** — PER revela detalles que podrían percibirse en ese lugar; sin mostrar entidades detrás de obstáculos sin justificación. |
+| X-017 | P0 | M | X-010–014 | **UI de interacción sin romper estilo documental** — Croquis, inventario, acciones, advertencias y cancelación funcionan en los tres soportes, móvil y teclado. |
 | X-018 | P0 | L | 009 | **Visibilidad autorizada por jugador** — El servidor filtra información por posición/observación; no transmite amenazas ocultas al estado público. |
 
 ## H · Criaturas, daño y permadeath
@@ -134,9 +156,9 @@ Ampliar profundidad sin bloquear el primer juego que se puede terminar.
 | Z-051 | P2 | M | 033–039 | **Objetos históricos y expediciones documentadas** — Un objeto degradado conserva historial verificable y notas no verificadas; hallazgos narrativos emergentes. |
 | Z-052 | P2 | M | 047 | **Ampliación controlada del mundo y aforo** — Decisión de particionado o servidor por sector respaldada por medidas; sin prometer MMO masivo en una sala de 20. |
 
-## Primera secuencia de implementación recomendada
+## Primera secuencia de implementación (completada para el corte V1)
 
-No empezar por criaturas o blockchain. Ordenar la primera iteración así:
+Se implementó el corte de extremo a extremo sin añadir criaturas ni blockchain. El historial de prioridades fue:
 
 1. **F-001:** reglas explícitas de entrada, extracción, desconexión y pérdida; elimina decisiones ambiguas que luego afectan al esquema.
 2. **F-002 + F-003:** migraciones PostgreSQL e identidad estable (cuenta y personaje separados).
@@ -145,7 +167,7 @@ No empezar por criaturas o blockchain. Ordenar la primera iteración así:
 5. **X-009 + X-010:** sectores basados en datos y acciones con demora/cancelación.
 6. **X-012 + X-013 + X-014:** un objeto único, inventario y extracción; cerrar V1.
 
-**Primera demo objetivo:** dos exploradores ven el mismo botín; solo uno puede recogerlo; el propietario sale; tras recargar y reiniciar el backend, sigue teniendo ese objeto, mientras la otra sesión no pudo duplicarlo. El personaje conserva sus stats y el cooldown de DES.
+**Primera demo verificada en CI:** dos exploradores ven el mismo botín; solo uno puede recogerlo; el propietario sale; tras recargar y reiniciar el backend, sigue teniendo ese objeto, mientras la otra sesión no pudo duplicarlo. El personaje conserva sus stats y el cooldown de DES.
 
 ## Dependencias críticas y riesgos
 

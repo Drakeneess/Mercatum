@@ -21,7 +21,7 @@ Un personaje no es un héroe; es una persona que entra con capacidades y carenci
 - Rango de creación: 1–3 por atributo; valores 0 y 4–5 reservados para el futuro.
 - Predeterminado: `2,2,2,2,2,2,2`; se restan puntos de una aptitud para invertirlos en otra.
 - Plantillas: Equilibrado; Corredor (DES 3, FUE 1); Rastreador (PER 3, TRA 1).
-- La ficha queda fijada al confirmar el ingreso y solo dura la sesión actual. Un reinicio o nueva entrada genera una nueva identidad, hasta que exista persistencia.
+- La ficha queda fijada al confirmar el primer ingreso y se guarda en PostgreSQL. Una credencial de navegador permite restaurar el mismo personaje tras recarga o reinicio de Colyseus en V1.
 
 El cliente puede mostrar una build propuesta, pero el servidor valida números enteros, rango, suma y conjunto exacto de siete campos. No confiar en el almacenamiento local para autoridad de juego.
 
@@ -46,5 +46,5 @@ El indicador del frontend es informativo: si el reloj cliente diverge, el servid
 - Resistencia para fatiga, heridas y recuperación.
 - Percepción frente a indicios perceptibles, nunca omnisciencia.
 - Intelecto para pruebas de análisis, Trato para negociación y Temple para presión.
-- Cuentas, almacenamiento persistente de personajes, progreso, inventario y permadeath.
+- Autenticación de producción, progreso, equipamiento, fatiga y permadeath. V1 ya tiene personaje persistente, inventario y extracción.
 - Estado privado y filtrado por jugador: el prototipo actual expone los siete atributos en la sala compartida.

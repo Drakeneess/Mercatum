@@ -87,3 +87,14 @@ pnpm --filter @mercatum/server smoke
 ```
 
 Este diseño favorece archivos orientados a una responsabilidad; si `useMercatumRoom` crece mucho con inventario, comercio o criaturas, extraer el nuevo dominio a hooks y servicios adicionales en vez de ampliar el hook indefinidamente.
+
+## V1: módulos nuevos
+
+- `packages/shared/src/sectors.ts` define sectores como datos tipados; `world.ts` genera el mapa.
+- `apps/server/src/storage/db.ts` gestiona conexiones y transacciones de PostgreSQL; `migrations.ts` aplica migraciones versionadas; `characters.ts`, `objects.ts`, `world.ts` guardan reglas durables por dominio.
+- `apps/server/src/domain/actionPlan.ts` decide legitimidad/duración de acciones; `MercatumRoom.ts` programa su finalización, vuelve a validar y confirma la operación.
+- `apps/web/src/components/MarketActions.tsx` presenta la puerta, la mercancía, el inventario y la extracción.
+- `apps/web/src/app/styles/expedition.css` contiene los estilos de la nueva hoja de recuperación; se importa desde `app/layout.tsx`.
+- `apps/server/src/smoke-v1.ts` verifica la permanencia de inventario tras reiniciar el backend en un esquema PostgreSQL temporal aislado.
+
+El servidor ahora necesita PostgreSQL. La credencial local no sustituye la autenticación de producción. Véase [docs/v1.md](v1.md).

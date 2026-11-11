@@ -2,7 +2,7 @@
 
 **Mercatum** es un prototipo web de exploración en un mercado paranormal persistente. El Mercado no es una mazmorra: existe y funciona independientemente de los jugadores.
 
-El prototipo incluye 61 hexágonos, movimiento entre vecinos con cooldown individual según Destreza, ficha de personaje con siete atributos, sincronización autoritativa de estado con **Colyseus 0.18** y una sola sala para todos los exploradores.
+Mercatum V1 incluye 61 hexágonos, siete atributos, movimiento discreto por Destreza, estado compartido con **Colyseus 0.18**, cuenta y personaje persistentes en PostgreSQL, una puerta temporizada, una navaja única, inventario y extracción con depósito seguro.
 
 ## Estructura
 
@@ -26,6 +26,7 @@ El plan de desarrollo por vertical slices, historias con IDs, prioridades, depen
 
 - Node.js 22 o superior
 - pnpm 10 (recomendado: 10.34.9)
+- PostgreSQL 16+ (recomendado Docker Desktop y Compose)
 - Navegador moderno
 
 ## Ejecutar localmente
@@ -37,18 +38,19 @@ cd Mercatum
 corepack enable
 corepack prepare pnpm@10.34.9 --activate
 pnpm install
+docker compose up -d db
 pnpm dev
 ```
 
 Abre **http://localhost:3500**. Colyseus escucha en **http://localhost:3001** y expone **http://localhost:3001/health**.
 
-En cada pestaña elige una build de siete atributos y pulsa **FIRMAR REGISTRO / ENTRAR**. Una vez dentro, selecciona una casilla vecina resaltada. Las casillas bloqueadas, los saltos no adyacentes y los pasos demasiado rápidos se rechazan en el servidor.
+La primera vez, distribuye los siete atributos y pulsa **FIRMAR REGISTRO / ENTRAR**. Después el navegador recupera el mismo personaje mediante una credencial local. Explora, abre la puerta usando FUE o INT, recoge la navaja, regresa a la entrada y **extrae** el botín. Colyseus sigue validando movimiento, acciones e inventario.
 
 ### Configuración opcional
 
-Los valores por defecto funcionan sin `.env`. Puedes copiar `apps/web/.env.example` a `apps/web/.env.local` para configurar `NEXT_PUBLIC_COLYSEUS_URL`. Para cambiar el puerto del backend, copia `apps/server/.env.example` a `apps/server/.env` y establece `PORT`.
+Los valores por defecto funcionan sin `.env` **si PostgreSQL está activo en localhost:5432** con la configuración de `compose.yaml`. Puedes copiar `apps/web/.env.example` a `apps/web/.env.local` para configurar `NEXT_PUBLIC_COLYSEUS_URL`. Para cambiar el puerto del backend, copia `apps/server/.env.example` a `apps/server/.env` y establece `PORT` y `DATABASE_URL`.
 
-Colyseus gestiona el matchmaking HTTP y el transporte WebSocket en el mismo puerto. Si publicas la web por HTTPS, el backend deberá ser accesible mediante HTTPS/WSS y un proxy inverso adecuado. **No despliegues el prototipo públicamente sin autenticación y límites de abuso.**
+Colyseus gestiona el matchmaking HTTP y el transporte WebSocket en el mismo puerto. Si publicas la web por HTTPS, el backend deberá ser accesible mediante HTTPS/WSS y un proxy inverso adecuado. **No despliegues V1 públicamente:** la credencial local en `localStorage` es apropiada solamente para pruebas privadas. Falta un mecanismo de autenticación de producción y límites de abuso.
 
 ## Comandos
 
@@ -57,7 +59,8 @@ pnpm dev         # Compila shared e inicia web + server
 pnpm build       # Compila todos los paquetes
 pnpm typecheck   # Verifica TypeScript
 pnpm test        # Pruebas unitarias del paquete shared y las reglas del servidor
-pnpm --filter @mercatum/server smoke  # Prueba dos clientes reales (requiere build)
+pnpm --filter @mercatum/server smoke     # Prueba dos clientes reales (requiere build)
+pnpm --filter @mercatum/server smoke:v1  # Prueba botín + reinicio con esquema PostgreSQL temporal
 ```
 
 ## Interfaz y temas visuales
@@ -100,28 +103,15 @@ El servidor crea `MercatumRoom` al iniciar, con ID generado por Colyseus. El cli
 
 Las posiciones se sincronizan mediante `@colyseus/schema` 5; los comandos de movimiento y sus respuestas usan mensajes de Colyseus. `patchRate = 200` representa una frecuencia máxima de envío de parches, **no** un ciclo de simulación del mundo de 5 FPS.
 
-## Alcance actual
+## Estado actual — V1
 
-**Implementado**
-- Mapa hexagonal de 61 casillas y obstáculos fijos.
-- Movimiento validado en servidor (adyacencia, obstáculos y cadencia individual definida por Destreza).
-- Sincronización incremental de jugadores, posiciones y reloj fijo UTC−6 mediante Schema.
-- Siete atributos asignables y sincronizados, con validación autoritativa y cooldown de Destreza.
-- Una sala precreada, sin creación de salas desde el cliente, máximo 20 conexiones.
-- Intentos de reconexión por nueva sesión desde el frontend y endpoint de salud.
-- Pruebas unitarias del mapa y prueba de integración Colyseus con varios clientes.
+**Ciclo implementado:** elegir/recuperar personaje, explorar, abrir puerta de mantenimiento, examinar/recoger objeto único, soltarlo, extraerlo al depósito, reingresar, reconectar y recuperar el mismo personaje y su botín después de reiniciar el servidor. El botín no se duplica por recoger simultáneamente.
 
-**Todavía no implementado**
-- Inicio de sesión y personajes persistentes.
-- Guardado en PostgreSQL.
-- Criaturas autónomas, encuentros y persecuciones.
-- Comercio, inventarios y objetos únicos.
-- Múltiples pisos, elevadores y escaleras.
-- Permadeath y reglas de desconexión seguras.
+El mapa de `SECTOR_01` es un diseño de datos tipados. La identidad anónima se vincula a una credencial de navegador; los valores y la posición se restauran desde PostgreSQL, no desde `localStorage`. Las acciones tienen tiempos de servidor y pueden cancelarse. El token y el inventario son privados para su conexión.
 
-**Importante:** la sala sobrevive a la salida del último jugador, pero **no a un reinicio del servidor**. Los jugadores reconectados reciben una nueva identidad; aún falta reconexión de sesión segura para el permadeath.
+**Pendiente para cerrar todo V1 y una alfa:** autorización y cuentas de producción, herramientas/equipamiento, transferencias entre jugadores, balance del peso y efectos de ruido, expansión de sectores y evaluación visual manual. Criaturas, lesiones y permadeath son V2; mercado, transacciones y anotaciones de procedencia son V3.
 
-Consulta [docs/architecture.md](docs/architecture.md) y [docs/code-organization.md](docs/code-organization.md).
+Guía de reglas, despliegue local y limitaciones: [docs/v1.md](docs/v1.md). El backlog maestro está en [docs/backlog.md](docs/backlog.md).
 
 ## Diagnóstico de errores 521/522
 
