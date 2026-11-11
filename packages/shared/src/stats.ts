@@ -1,5 +1,6 @@
 /** Human-scale aptitudes. In V1, Dexterity sets movement cadence, Strength sets carry capacity and door force time,
- * and Intellect sets the alternative door analysis time. Other attributes await future systems. */
+ * Intellect sets the alternate door analysis time, Endurance reduces injury damage,
+ * and Perception governs visible hostiles. Trato and Temple await later systems. */
 export const STAT_KEYS = [
   "strength",
   "dexterity",
@@ -28,8 +29,8 @@ export const STAT_INFO: ReadonlyArray<{
 }> = [
   { key: "strength", short: "FUE", name: "Fuerza", description: "Peso de carga y apertura por fuerza.", active: true },
   { key: "dexterity", short: "DES", name: "Destreza", description: "Intervalo real entre hexágonos.", active: true },
-  { key: "endurance", short: "RES", name: "Resistencia", description: "Fatiga, heridas y esfuerzo sostenido.", active: false },
-  { key: "perception", short: "PER", name: "Percepción", description: "Rastros, indicios y amenazas detectables.", active: false },
+  { key: "endurance", short: "RES", name: "Resistencia", description: "Reduce daño de ataques; fatiga pendiente.", active: true },
+  { key: "perception", short: "PER", name: "Percepción", description: "Radio visual y avistamientos con línea de visión.", active: true },
   { key: "intellect", short: "INT", name: "Intelecto", description: "Análisis y apertura de mecanismos.", active: true },
   { key: "social", short: "TRA", name: "Trato", description: "Negociación e intercambio de información.", active: false },
   { key: "composure", short: "TEM", name: "Temple", description: "Control de la tensión y del pánico.", active: false },

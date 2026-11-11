@@ -8,8 +8,8 @@ Un personaje no es un héroe; es una persona que entra con capacidades y carenci
 | --- | --- | --- |
 | FUE | strength | Peso máximo de inventario y apertura de puertas (V1) |
 | DES | dexterity | **Cooldown de paso entre hexágonos (V1)** |
-| RES | endurance | Resistencia física y fatiga |
-| PER | perception | Rastros y amenaza detectable |
+| RES | endurance | Mitiga daño recibido en V2; fatiga pendiente |
+| PER | perception | Avistamientos filtrados por alcance y visibilidad en V2 |
 | INT | intellect | Apertura alternativa de puerta por análisis (V1) |
 | TRA | social | Interacciones y negociación |
 | TEM | composure | Control ante situaciones de estrés |
@@ -56,3 +56,9 @@ El indicador del frontend es informativo: si el reloj cliente diverge, el servid
 - **DES:** cooldown entre hexágonos, validado y guardado por el servidor.
 
 Los otros cuatro atributos permanecen preparados y sincronizados, pero no se les asignan efectos ficticios en V1.
+
+## Efectos activos en V2
+
+- **RES:** reduce daño de las criaturas (`máximo por especie` menos `3 × RES`, con un mínimo de daño). Las heridas siguen ralentizando el desplazamiento.
+- **PER:** el servidor calcula un radio de `1 + PER` (máximo 4 hexágonos) y comprueba la línea de visión antes de enviar un avistamiento.
+- **FUE, DES e INT** mantienen los efectos descritos en V1. **TRA y TEM** siguen reservados para comercio y presión/estrés posteriores; no generan efectos ficticios.
