@@ -30,7 +30,10 @@ export function ExplorerColumn(props: ExplorerColumnProps) {
           <section className="paper-piece entry-ticket">
             <div className="piece-meta"><span>COMPROBANTE DE INGRESO</span><span>FORMA / 17-C</span></div>
             <div className="section-number" aria-hidden="true">01</div>
-            <h1>{committedBuild ? <>Está<br />usted <em>dentro.</em></> : <>Aún está<br /><em>afuera.</em></>}</h1>
+            <h1>{!committedBuild ? <>Aún está<br /><em>afuera.</em></>
+              : me?.health===0 ? <>No hubo<br /><em>regreso.</em></>
+              : me?.inside ? <>Está<br />usted <em>dentro.</em></>
+              : <>Está<br /><em>a salvo.</em></>}</h1>
             <p className="smudged-copy">{committedBuild ? "No se garantiza que el edificio recuerde por dónde entró." : "Complete el registro antes de atravesar la puerta."}</p>
             <div className="torn-rule" aria-hidden="true" />
             <div className="field">
@@ -45,7 +48,10 @@ export function ExplorerColumn(props: ExplorerColumnProps) {
               <span className="field-label">SITUACIÓN ACTUAL</span>
               <strong>{connection === "online" ? (me?.inside ? "DENTRO DEL PERÍMETRO" : me?.health===0 ? "FALLECIDO" : "EXTRACCIÓN REGISTRADA") : "NO VERIFICADA"}</strong>
             </div>
-            <div className="entry-stamp" aria-hidden="true">{committedBuild ? <>ACEPTADO<br />BAJO RIESGO</> : <>PENDIENTE<br />DE FIRMA</>}</div>
+            <div className="entry-stamp" aria-hidden="true">{!committedBuild ? <>PENDIENTE<br />DE FIRMA</>
+              : me?.health===0 ? <>ACTA DE<br />DEFUNCIÓN</>
+              : me?.inside ? <>ACEPTADO<br />BAJO RIESGO</>
+              : <>SALIDA<br />REGISTRADA</>}</div>
             <div className="ticket-bottom" aria-hidden="true"><span>NO ES UN SEGURO DE VIDA</span><span>///////</span></div>
           </section>
 

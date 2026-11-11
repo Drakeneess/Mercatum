@@ -41,7 +41,7 @@ export function MarketActions(props:MarketActionsProps){
         <>
           <div className="expedition-status">
             <span>ESTADO DE LA INCURSIÓN</span>
-            <strong>{inside?"EN EL INTERIOR":"EXTRACCIÓN COMPLETADA"}</strong>
+            <strong>{identity.phase==="dead"?"FALLECIMIENTO CONFIRMADO":inside?"EN EL INTERIOR":"EXTRACCIÓN COMPLETADA"}</strong>
           </div>
 
           {action && (

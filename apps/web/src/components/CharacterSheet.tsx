@@ -63,7 +63,7 @@ export function CharacterSheet(props: CharacterSheetProps) {
               {committedBuild ? (
                 <>
                   <div className="attribute-seal">FICHA FIRMADA / SIN ENMIENDAS</div>
-                  <p>DES {characterStats.dexterity}: <strong>{movementDelayMs} ms por hexágono.</strong> Los demás atributos se guardan para futuras acciones del Mercado.</p>
+                  <p>DES {characterStats.dexterity}: <strong>{movementDelayMs} ms por hexágono.</strong> FUE limita la carga y permite forzar; INT permite analizar puertas. RES, PER y TEM participan en la supervivencia.</p>
                 </>
               ) : (
                 <>

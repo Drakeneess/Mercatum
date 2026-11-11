@@ -24,9 +24,9 @@ export function SectorNotes({ map, players, events, actions, identity, sightings
               <div><span>PERSONAS EN EL INTERIOR</span><strong className="mono">{players.filter(player => player.inside).length.toString().padStart(2, "0")} / 20</strong></div>
               <div><span>ESPACIOS ANOTADOS</span><strong className="mono">{map.length}</strong></div>
               <div><span>PUESTOS IDENTIFICADOS</span><strong className="mono">{map.filter((tile) => tile.kind === "shop").length}</strong></div>
-              <div><span>CRIATURAS COMPROBADAS</span><strong className="mono">SIN DATOS</strong></div>
+              <div><span>FIGURAS OBSERVABLES</span><strong className="mono">{sightings.length.toString().padStart(2, "0")} / VISTA</strong></div>
             </div>
-            <p className="margin-note">Las cifras son parciales. Este prototipo aún no simula criaturas.</p>
+            <p className="margin-note">El registro de avistamientos es parcial. Lo que permanece fuera de la vista no se muestra.</p>
             <div className="sheet-scratch" aria-hidden="true">?????????????</div>
           </section>
           <section className="paper-piece log-sheet">
