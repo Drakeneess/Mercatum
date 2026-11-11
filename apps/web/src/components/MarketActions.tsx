@@ -124,7 +124,7 @@ export function MarketActions(props:MarketActionsProps){
                 onClick={reenter}>VOLVER A INGRESAR</button>
             </>
           )}
-          <div className="expedition-fineprint">SIN SEGURO. SIN DEVOLUCIONES. CERRAR LA PESTAÑA NO REGISTRA UNA SALIDA.</div>
+          <div className="expedition-fineprint">SIN SEGURO. SIN DEVOLUCIONES. CERRAR LA PESTAÑA NO DETIENE A LAS CRIATURAS.</div>
         </>
       )}
     </section>

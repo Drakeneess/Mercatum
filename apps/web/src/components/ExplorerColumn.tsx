@@ -34,7 +34,7 @@ export function ExplorerColumn(props: ExplorerColumnProps) {
               : me?.health===0 ? <>No hubo<br /><em>regreso.</em></>
               : me?.inside ? <>Está<br />usted <em>dentro.</em></>
               : <>Está<br /><em>a salvo.</em></>}</h1>
-            <p className="smudged-copy">{committedBuild ? "No se garantiza que el edificio recuerde por dónde entró." : "Complete el registro antes de atravesar la puerta."}</p>
+            <p className="smudged-copy">{committedBuild ? "La entrada está registrada. No siempre se puede volver." : "Complete el registro antes de atravesar la puerta."}</p>
             <div className="torn-rule" aria-hidden="true" />
             <div className="field">
               <span className="field-label">NOMBRE ANOTADO</span>

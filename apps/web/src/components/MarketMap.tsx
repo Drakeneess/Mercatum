@@ -24,6 +24,7 @@ export interface MarketMapProps {
 export function MarketMap(props: MarketMapProps) {
   const { map, currentPosition, walkable, requestMove, players, playerId,
     hasBuild, characterStats, cooldownRemaining, recoveryPercentage, notice, doorOpen, groundItems, sightings } = props;
+  const canWalk=players.some(p=>p.id===playerId&&p.inside);
   return (
         <section className="map-panel" aria-label="Plano interactivo del Mercado">
           <div className="map-header">
@@ -67,7 +68,7 @@ export function MarketMap(props: MarketMapProps) {
               {map.map((tile) => {
                 const key = hexKey(tile);
                 const center = hexCenter(tile);
-                const available = !!currentPosition && hexDistance(currentPosition, tile) === 1 && walkable.has(key);
+                const available = canWalk && !!currentPosition && hexDistance(currentPosition, tile) === 1 && walkable.has(key);
                 const occupied = !!currentPosition && hexKey(currentPosition) === key;
                 return (
                   <g key={key}>
