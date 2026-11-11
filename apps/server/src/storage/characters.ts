@@ -111,6 +111,10 @@ export async function admit(options: unknown): Promise<Admission> {
   const accountId = randomUUID();
   const character = await transaction(async (client) => {
     await client.query("INSERT INTO accounts(id,token_hash) VALUES($1,$2)", [accountId, hashToken(token)]);
+    await client.query(`
+      INSERT INTO wallet_ledger(account_id,delta,balance_after,reason)
+      VALUES($1,100,100,'new_account_credit')
+    `,[accountId]);
     return createCharacter(client, accountId, stats);
   });
   return {token, character};
