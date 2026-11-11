@@ -49,6 +49,7 @@ export interface IdentityReply {
   readonly nextMoveAt: number;
   readonly health: number;
   readonly wounds: number;
+  readonly balance: number;
 }
 
 export interface WorldItemsReply {
@@ -93,4 +94,63 @@ export interface HarmReport {
   readonly message: string;
   readonly dead: boolean;
   readonly stolenItem?: string;
+}
+
+/** V3 market. All prices are integer MER credits; no real money is involved. */
+export interface MarketListing {
+  readonly id: string;
+  readonly label: string;
+  readonly weight: number;
+  readonly condition: number;
+  readonly price: number;
+}
+export interface TradeableItem extends MarketItem {
+  readonly listed: boolean;
+}
+export interface TradePeer {
+  readonly sessionId: string;
+  readonly name: string;
+  readonly listed: readonly TradeableItem[];
+}
+export interface TradeOffer {
+  readonly id: string;
+  readonly fromName: string;
+  readonly fromCharacterId: string;
+  readonly toCharacterId: string;
+  readonly item: MarketItem;
+  readonly credits: number;
+  readonly barterItem?: MarketItem;
+  readonly expiresAt: number;
+  readonly status: "pending" | "accepted" | "cancelled";
+  readonly direction: "incoming" | "outgoing";
+}
+export interface MarketReply {
+  readonly credits: number;
+  readonly stock: readonly MarketListing[];
+  readonly own: readonly TradeableItem[];
+  readonly peers: readonly TradePeer[];
+  readonly offers: readonly TradeOffer[];
+}
+export interface ProvenanceEvent {
+  readonly id: string;
+  readonly kind: "fact" | "claim";
+  readonly eventType: string;
+  readonly author: string;
+  readonly statement?: string;
+  readonly detail?: string;
+  readonly at: string;
+}
+export interface ProvenanceReply {
+  readonly itemId: string;
+  readonly history: readonly ProvenanceEvent[];
+}
+export interface MarketOperation {
+  readonly requestId: string;
+  readonly kind: "buy" | "sell" | "list" | "offer" | "accept" | "decline" | "claim";
+  readonly itemId?: string;
+  readonly value?: number;
+  readonly peerSessionId?: string;
+  readonly barterItemId?: string;
+  readonly offerId?: string;
+  readonly statement?: string;
 }
