@@ -106,6 +106,7 @@ export interface MarketListing {
 }
 export interface TradeableItem extends MarketItem {
   readonly listed: boolean;
+  readonly resalePrice: number;
 }
 export interface TradePeer {
   readonly sessionId: string;

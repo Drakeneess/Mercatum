@@ -95,7 +95,7 @@ export async function marketSnapshot(
       SELECT * FROM market_objects WHERE owner_character_id=$1
         AND state IN ('stash','carried') ORDER BY label,id
     `,[characterId]);
-    const own=owned.rows.map(cleanItem);
+    const own=owned.rows.map(x=>({...cleanItem(x),resalePrice:salePrice(x.base_price,x.condition,actor.trato)}));
     const account=await db.query<{credits:number}>("SELECT credits FROM accounts WHERE id=$1",[actor.accountId]);
     const stock=actor.phase==="outside"
       ? await db.query<ObjectRow>("SELECT * FROM market_objects WHERE state='merchant' ORDER BY label,id")
@@ -109,7 +109,7 @@ export async function marketSnapshot(
         SELECT * FROM market_objects WHERE owner_character_id=$1 AND state=$2 AND listed=TRUE
         ORDER BY label,id
       `,[other.id,storageState(other)]);
-      available.push({sessionId:peer.sessionId,name:peer.name,listed:listings.rows.map(cleanItem)});
+      available.push({sessionId:peer.sessionId,name:peer.name,listed:listings.rows.map(x=>({...cleanItem(x),resalePrice:salePrice(x.base_price,x.condition,other.trato)}))});
     }
     const offers=await db.query<{
       id:string;buyer_id:string;seller_id:string;credits:number;expires_at:Date;
