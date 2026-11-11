@@ -6,6 +6,8 @@ import {
   type TimedActionReply, type WorldItemsReply,
 } from "@mercatum/shared";
 import { mercatumClock } from "./domain/clock.js";
+import { MarketGateway } from "./MarketGateway.js";
+import { pool } from "./storage/db.js";
 import { visibleToExplorer } from "./domain/creatureLogic.js";
 import { CreatureScheduler } from "./CreatureScheduler.js";
 import { creaturePositions, type CreatureTick } from "./storage/creatures.js";
@@ -35,6 +37,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
   private readonly activeActions=new Map<string,PendingAction>();
   private readonly busy=new Set<string>();
   private creatures:CreatureScheduler|null=null;
+  private market:MarketGateway|null=null;
 
   async onCreate():Promise<void>{
     this.state.mercatumTime=mercatumClock();
@@ -51,6 +54,16 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
     this.onMessage("drop_item",(client,payload:unknown)=>void this.drop(client,payload));
     this.onMessage("reenter",(client)=>void this.reenter(client));
     this.onMessage("sightings_request",(client)=>void this.sendSightings(client));
+    this.market=new MarketGateway(
+      ()=>this.clients.flatMap(client=>{
+        const current=this.sessions.get(client.sessionId);
+        return current?[{client,characterId:current.character.id,name:current.character.displayName}]:[];
+      }),
+      client=>this.sendIdentity(client),
+    );
+    this.onMessage("market_request",(client)=>void this.market?.snapshot(client));
+    this.onMessage("market_operation",(client,payload:unknown)=>void this.market?.operate(client,payload));
+    this.onMessage("provenance_request",(client,payload:unknown)=>void this.market?.provenance(client,payload));
     // Local V1 smoke exercises extraction without external threats. Normal
     // gameplay keeps the creatures running even when nobody is connected.
     if(process.env.MERCATUM_DISABLE_CREATURES!=="1"){
@@ -86,6 +99,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
   onLeave(client:Client):void{
     this.cancelAction(client,"Acción cancelada al perder la conexión.");
     this.sessions.delete(client.sessionId);
+    this.broadcast("market_update",{});
     this.busy.delete(client.sessionId);
     this.state.players.delete(client.sessionId);
     // Position, objects and movement cooldown remain saved. No free extraction.
@@ -107,11 +121,15 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
     const admission=this.session(client);
     if(!admission)return;
     const belongings=await characterItems(admission.character.id);
+    const account=await pool.query<{credits:number}>(`
+      SELECT a.credits FROM accounts a JOIN characters c ON c.account_id=a.id WHERE c.id=$1
+    `,[admission.character.id]);
     const identity:IdentityReply={
       token:admission.token,characterId:admission.character.id,
       phase:admission.character.phase,inventory:belongings.inventory,stash:belongings.stash,
       nextMoveAt:admission.character.nextMoveAt,
       health:admission.character.health,wounds:admission.character.wounds,
+      balance:account.rows[0]?.credits??0,
     };
     client.send("identity",identity);
   }
@@ -166,7 +184,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
     }
     const positions=await creaturePositions();
     await Promise.all(this.clients.map(client=>this.sendSightings(client,positions)));
-    if(changedInventory)await this.sendWorld();
+    if(changedInventory){await this.sendWorld();this.broadcast("market_update",{});}
   }
 
   private async move(client:Client,payload:unknown):Promise<void>{
@@ -187,6 +205,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
       player.q=character.q;player.r=character.r;
       client.send("move_accepted",result.response);
       await this.sendSightings(client);
+      this.broadcast("market_update",{});
     }catch(error){
       console.error("[Mercatum] Movement:",error);this.message(client,"No se pudo registrar el movimiento.");
     }finally{this.busy.delete(client.sessionId);}
@@ -255,6 +274,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
         if(!success){this.message(client,"No puedes recoger el objeto. Puede que alguien se lo llevara.");return;}
         await this.sendIdentity(client);
         await this.sendWorld();
+        this.broadcast("market_update",{});
         message="Mercancía recogida. No es propiedad segura hasta extraerla.";
       }else{
         if(origin.q!==ENTRY.q||origin.r!==ENTRY.r){this.message(client,"Regresa a la entrada.");return;}
@@ -263,6 +283,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
         session.character.phase="outside";
         actor.inside=false;
         await this.sendIdentity(client);
+        this.broadcast("market_update",{});
         message="Extracción registrada. El botín ha pasado al depósito seguro.";
       }
       client.send("action_result",{kind:request.kind,message});
@@ -282,6 +303,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
       const success=await dropItem(session.character.id,itemId,{q:player.q,r:player.r});
       if(!success){this.message(client,"Ese objeto no está en tu inventario.");return;}
       await this.sendIdentity(client);await this.sendWorld();
+      this.broadcast("market_update",{});
       client.send("operation_ok",{message:"Objeto dejado en el suelo."});
     }catch(error){console.error("[Mercatum] Drop:",error);this.message(client,"No se pudo dejar el objeto.");}
     finally{this.busy.delete(client.sessionId);}
@@ -300,6 +322,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
       player.health=100;player.wounds=0;
       await this.sendIdentity(client);
       await this.sendSightings(client);
+      this.broadcast("market_update",{});
       client.send("operation_ok",{message:"Regreso registrado. El depósito permanece fuera del edificio."});
     }catch(error){console.error("[Mercatum] Reentry:",error);this.message(client,"No se pudo registrar la entrada.");}
     finally{this.busy.delete(client.sessionId);}
