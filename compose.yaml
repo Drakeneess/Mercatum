@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mercatum
+      POSTGRES_PASSWORD: mercatum
+      POSTGRES_DB: mercatum
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - mercatum_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mercatum -d mercatum"]
+      interval: 4s
+      timeout: 2s
+      retries: 10
+
+volumes:
+  mercatum_db:
