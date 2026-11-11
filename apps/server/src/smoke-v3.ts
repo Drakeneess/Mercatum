@@ -132,6 +132,13 @@ async function run(){
   assert.equal(afterB.stash.some(x=>x.id===gloves.id),false);
   assert.equal(afterA.balance,100-lantern.price+8);
   assert.equal(afterB.balance,100-gloves.price-8);
+  const saleEstimate=(await market(a)).own.find(x=>x.id===gloves.id)?.resalePrice;
+  assert.equal(typeof saleEstimate,"number");
+  const sold=await operation(a,{kind:"sell",itemId:gloves.id});
+  assert.ok(sold.ok,sold.message);
+  assert.equal((await identity(a)).balance,afterA.balance+(saleEstimate??0));
+  assert.ok((await market(a)).stock.some(x=>x.id===gloves.id),
+    "sold object returned to NPC stock without cloning");
 
   // No player edits a fact. A claim can allege anything, but never becomes a fact.
   const claim=await operation(b,{kind:"claim",itemId:lantern.id,
@@ -141,6 +148,13 @@ async function run(){
   assert.ok(history.history.some(e=>e.kind==="fact"&&e.eventType==="state_changed"));
   assert.ok(history.history.some(e=>e.kind==="claim"&&e.statement?.includes("MasterSex69")));
   assert.ok(history.history.find(e=>e.kind==="claim")?.author.startsWith("Registrante-"));
+  for(let i=0;i<2;i++)assert.ok((await operation(b,{
+    kind:"claim",itemId:lantern.id,statement:"Otra declaración independiente "+i,
+  })).ok);
+  const throttled=await operation(b,{
+    kind:"claim",itemId:lantern.id,statement:"Cuarta declaración dentro de la misma hora",
+  });
+  assert.equal(throttled.ok,false,"unverified claims have a spam limit");
   await assert.rejects(db.query(`
     DELETE FROM object_events WHERE item_id=$1 AND kind='fact'
   `,[lantern.id]),/append-only/i);
@@ -155,6 +169,7 @@ async function run(){
     SELECT owner_character_id FROM market_objects WHERE id=$1
   `,[key.id]);
   assert.ok([ia.characterId,ib.characterId].includes(owner.rows[0].owner_character_id??""));
+  await assert.rejects(db.query("DELETE FROM wallet_ledger WHERE delta<0"),/append-only/i);
 
   // The cash ledger must reconcile exactly with the account's balance.
   const reconciled=await db.query<{account_id:string;total:string;credits:number}>(`
