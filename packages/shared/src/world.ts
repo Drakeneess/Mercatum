@@ -1,4 +1,5 @@
 import { hexKey, type HexCoordinate } from "./hex.js";
+import { SECTOR_01 } from "./sectors.js";
 
 export type TileKind = "floor" | "wall" | "entry" | "shop" | "door";
 
@@ -6,14 +7,14 @@ export interface HexTile extends HexCoordinate {
   readonly kind: TileKind;
 }
 
-export const ENTRY: HexCoordinate = { q: 0, r: 0 };
-export const SHOP: HexCoordinate = { q: 2, r: 0 };
-export const SERVICE_DOOR: HexCoordinate = { q: 1, r: 0 };
+export const ENTRY: HexCoordinate = SECTOR_01.entry;
+export const SHOP: HexCoordinate = SECTOR_01.shop;
+export const SERVICE_DOOR: HexCoordinate = SECTOR_01.door;
 
 /** Static demo layout. The authoritative server validates against these tiles. */
-const WALLS = new Set(["-2,0", "-2,1", "-1,2", "0,-3", "1,-2", "2,-2", "3,1"]);
+const WALLS = new Set(SECTOR_01.walls.map(hexKey));
 
-export function makeDemoMap(radius = 4): HexTile[] {
+export function makeDemoMap(radius = SECTOR_01.radius): HexTile[] {
   if (!Number.isInteger(radius) || radius < 2 || radius > 12) {
     throw new RangeError("Map radius must be an integer between 2 and 12");
   }
