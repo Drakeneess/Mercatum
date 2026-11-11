@@ -11,7 +11,7 @@ export type ActionPlan =
 export function planAction(
   player:MercatumPlayer, request:unknown, doorOpen:boolean, ground:readonly MarketItem[],
 ):ActionPlan {
-  if(!player.inside)return {ok:false,reason:"El personaje está fuera del Mercado."};
+  if(!player.inside||player.health<=0)return {ok:false,reason:"El personaje no puede actuar."};
   if(!request||typeof request!=="object"||!("kind" in request))
     return {ok:false,reason:"Acción inválida."};
   const value=request as Record<string,unknown>;

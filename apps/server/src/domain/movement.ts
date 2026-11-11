@@ -3,6 +3,7 @@ import {
   type HexCoordinate, type MercatumPlayer,
   type MoveAccepted, type MoveRejected,
 } from "@mercatum/shared";
+import { woundedMovementDelay } from "./creatureLogic.js";
 
 const walkableTiles = new Set(
   makeDemoMap().filter((tile) => tile.kind !== "wall").map(hexKey),
@@ -44,6 +45,6 @@ export function resolveMovement(
     return { ok: false, response: { reason: "Aún no puedes dar el siguiente paso.", retryAfterMs: nextAllowedAt - now } };
   }
 
-  const cooldownMs = getMovementDelayMs(player.dexterity);
+  const cooldownMs = woundedMovementDelay(getMovementDelayMs(player.dexterity), player.wounds);
   return { ok: true, response: { to, cooldownMs }, nextMoveAt: now + cooldownMs };
 }
