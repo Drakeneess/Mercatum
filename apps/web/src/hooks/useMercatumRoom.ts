@@ -108,7 +108,9 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
           try{window.localStorage.setItem(SESSION_KEY,reply.token);}
           catch{setNotice("No se pudo guardar la credencial: no recargues la página.");}
           setIdentity(reply);
-          setCooldownUntil(Math.max(0,reply.nextMoveAt));
+          const now=Date.now();
+          setClock(now);
+          setCooldownUntil(reply.nextMoveAt>now?reply.nextMoveAt:0);
         });
         room.onMessage("world_items",(reply:WorldItemsReply)=>{
           if(!mounted)return;
@@ -117,12 +119,18 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
         });
         room.onMessage("move_accepted",(message:MoveAccepted)=>{
           if(!mounted)return;
-          setCooldownUntil(Date.now()+message.cooldownMs);
+          const now=Date.now();
+          setClock(now);
+          setCooldownUntil(now+message.cooldownMs);
           setNotice("Paso registrado.");
         });
         room.onMessage("move_rejected",(message:MoveRejected)=>{
           if(!mounted)return;
-          if(message.retryAfterMs)setCooldownUntil(Date.now()+message.retryAfterMs);
+          if(message.retryAfterMs){
+            const now=Date.now();
+            setClock(now);
+            setCooldownUntil(now+message.retryAfterMs);
+          }
           setNotice(message.reason);
           if(!message.retryAfterMs)record(message.reason);
         });
