@@ -35,3 +35,4 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @mercatum/server smoke
+      - run: pnpm --filter @mercatum/server smoke:v1
