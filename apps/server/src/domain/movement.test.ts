@@ -43,3 +43,9 @@ test("cannot enter a blocked hex even with enough time", () => {
 test("Mercatum's clock uses fixed UTC−06:00", () => {
   assert.equal(mercatumClock(new Date("2026-01-01T12:00:00Z")), "06:00");
 });
+
+test("the locked maintenance door rejects an otherwise adjacent step",()=>{
+  const decision=resolveMovement(explorer(),{to:{q:1,r:0}},1000,0,false);
+  assert.equal(decision.ok,false);
+  if(!decision.ok)assert.match(decision.response.reason,/puerta/);
+});

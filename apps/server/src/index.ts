@@ -2,6 +2,7 @@ import "dotenv/config";
 import { createEndpoint, createRouter, defineRoom, defineServer, matchMaker } from "colyseus";
 import { MERCATUM_ROOM_NAME } from "@mercatum/shared";
 import { MercatumRoom } from "./MercatumRoom.js";
+import { initializeDatabase } from "./storage/db.js";
 
 const port = Number(process.env.PORT ?? 3001);
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -37,6 +38,7 @@ const server = defineServer({
   }),
 });
 
+await initializeDatabase();
 await server.listen(port);
 const world = await matchMaker.createRoom(MERCATUM_ROOM_NAME, {});
 if (!world.roomId) {

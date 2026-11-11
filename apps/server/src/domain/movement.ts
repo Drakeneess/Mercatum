@@ -1,5 +1,5 @@
 import {
-  getMovementDelayMs, hexKey, isNeighbor, makeDemoMap,
+  getMovementDelayMs, hexKey, isNeighbor, makeDemoMap, SERVICE_DOOR,
   type HexCoordinate, type MercatumPlayer,
   type MoveAccepted, type MoveRejected,
 } from "@mercatum/shared";
@@ -24,6 +24,7 @@ export function resolveMovement(
   payload: unknown,
   now: number,
   nextAllowedAt: number,
+  doorOpen = true,
 ): MovementDecision {
   if (typeof payload !== "object" || payload === null || !("to" in payload) || !isCoordinate(payload.to)) {
     return { ok: false, response: { reason: "Coordenadas inválidas." } };
@@ -31,6 +32,10 @@ export function resolveMovement(
   const to = payload.to;
   if (!isNeighbor({ q: player.q, r: player.r }, to)) {
     return { ok: false, response: { reason: "Solo puedes desplazarte a un hexágono vecino." } };
+  }
+  if (!player.inside) return { ok: false, response: { reason: "Debes reingresar al Mercado." } };
+  if (!doorOpen && hexKey(to) === hexKey(SERVICE_DOOR)) {
+    return { ok: false, response: { reason: "La puerta de mantenimiento sigue cerrada." } };
   }
   if (!walkableTiles.has(hexKey(to))) {
     return { ok: false, response: { reason: "Esta casilla está bloqueada." } };
