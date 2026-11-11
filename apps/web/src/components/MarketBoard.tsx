@@ -62,7 +62,7 @@ export function MarketBoard({identity,market,operate,requestMarket}:MarketBoardP
                 {item.listed?"RETIRAR ANUNCIO":"ANUNCIAR"}
               </button>
               {outside&&<button type="button" onClick={()=>operate({kind:"sell",itemId:item.id})}>
-                VENDER / +{item.resalePrice} CR
+                VENDER / +{item.resalePrice ?? "?"} CR
               </button>}
             </div>
           </div>
