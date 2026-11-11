@@ -9,6 +9,8 @@ export const MercatumPlayer = schema({
   q: t.int16().default(0),
   r: t.int16().default(0),
   inside: t.boolean().default(true),
+  health: t.int16().default(100),
+  wounds: t.int16().default(0),
   strength: t.int16().default(2),
   dexterity: t.int16().default(2),
   endurance: t.int16().default(2),

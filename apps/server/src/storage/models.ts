@@ -8,6 +8,8 @@ export interface CharacterRecord {
   r: number;
   phase: ExpeditionPhase;
   nextMoveAt: number;
+  health: number;
+  wounds: number;
 }
 export interface Admission {
   token: string;

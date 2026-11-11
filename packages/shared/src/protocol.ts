@@ -10,6 +10,8 @@ export interface PlayerSnapshot {
   readonly position: HexCoordinate;
   readonly inside: boolean;
   readonly stats: CharacterStats;
+  readonly health: number;
+  readonly wounds: number;
 }
 
 /** One-shot commands are Colyseus messages, not synchronized Schema fields. */
@@ -27,7 +29,7 @@ export interface MoveRejected {
 }
 
 /** V1's inventory and ground objects use private or explicitly public room messages. */
-export type ExpeditionPhase = "inside" | "outside";
+export type ExpeditionPhase = "inside" | "outside" | "dead";
 
 export interface MarketItem {
   readonly id: string;
@@ -45,6 +47,8 @@ export interface IdentityReply {
   readonly inventory: readonly MarketItem[];
   readonly stash: readonly MarketItem[];
   readonly nextMoveAt: number;
+  readonly health: number;
+  readonly wounds: number;
 }
 
 export interface WorldItemsReply {
@@ -68,4 +72,25 @@ export interface TimedActionReply {
 export interface ActionResult {
   readonly kind: ActionKind;
   readonly message: string;
+}
+
+/** Deliberately private: no hostile coordinates are put in the public Schema. */
+export type CreatureKind = "stalker" | "scavenger";
+export interface CreatureSighting {
+  readonly id: string;
+  readonly kind: CreatureKind;
+  readonly name: string;
+  readonly q: number;
+  readonly r: number;
+}
+export interface SightingsReply {
+  readonly creatures: readonly CreatureSighting[];
+}
+export interface HarmReport {
+  readonly damage: number;
+  readonly health: number;
+  readonly wounds: number;
+  readonly message: string;
+  readonly dead: boolean;
+  readonly stolenItem?: string;
 }

@@ -53,6 +53,35 @@ const migrations: ReadonlyArray<string> = [
       'Navaja oxidada',2,34,'ground',2,0)
     ON CONFLICT DO NOTHING;
   `,
+  `
+  -- Multiple dead characters may belong to one account; only one living character.
+  ALTER TABLE characters DROP CONSTRAINT IF EXISTS characters_account_id_key;
+  CREATE UNIQUE INDEX IF NOT EXISTS active_character_per_account
+    ON characters(account_id) WHERE phase <> 'dead';
+  ALTER TABLE characters DROP CONSTRAINT IF EXISTS characters_phase_check;
+  ALTER TABLE characters ADD CONSTRAINT characters_phase_check
+    CHECK (phase IN ('inside','outside','dead'));
+  ALTER TABLE characters ADD COLUMN IF NOT EXISTS health INTEGER NOT NULL DEFAULT 100
+    CHECK (health BETWEEN 0 AND 100);
+  ALTER TABLE characters ADD COLUMN IF NOT EXISTS wounds INTEGER NOT NULL DEFAULT 0
+    CHECK (wounds BETWEEN 0 AND 5);
+  CREATE TABLE IF NOT EXISTS creatures (
+    id TEXT PRIMARY KEY,
+    kind TEXT NOT NULL CHECK (kind IN ('stalker','scavenger')),
+    name TEXT NOT NULL,
+    q INTEGER NOT NULL,
+    r INTEGER NOT NULL,
+    next_action_at BIGINT NOT NULL DEFAULT 0,
+    steps INTEGER NOT NULL DEFAULT 0,
+    last_known_q INTEGER,
+    last_known_r INTEGER,
+    search_left INTEGER NOT NULL DEFAULT 0
+  );
+  INSERT INTO creatures(id,kind,name,q,r,next_action_at,steps)
+    VALUES ('stalker-01','stalker','El Rastrero',4,-3,0,0),
+           ('scavenger-01','scavenger','El Rebuscador',-4,1,0,0)
+  ON CONFLICT DO NOTHING;
+  `,
 ];
 
 /** Run once per process startup. A failed migration rolls back completely. */
