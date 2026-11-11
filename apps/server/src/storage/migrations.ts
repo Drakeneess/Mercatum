@@ -82,6 +82,26 @@ const migrations: ReadonlyArray<string> = [
            ('scavenger-01','scavenger','El Rebuscador',-4,1,0,0)
   ON CONFLICT DO NOTHING;
   `,
+  `
+  -- A scavenger may temporarily hold an item; it can drop the item later.
+  ALTER TABLE market_objects ADD COLUMN IF NOT EXISTS creature_id TEXT
+    REFERENCES creatures(id);
+  ALTER TABLE market_objects DROP CONSTRAINT IF EXISTS market_objects_state_check;
+  ALTER TABLE market_objects ADD CONSTRAINT market_objects_state_check
+    CHECK (state IN ('ground','carried','stash','stolen'));
+  ALTER TABLE market_objects DROP CONSTRAINT IF EXISTS object_location;
+  ALTER TABLE market_objects ADD CONSTRAINT object_location CHECK (
+    (state='ground' AND owner_character_id IS NULL AND creature_id IS NULL
+      AND q IS NOT NULL AND r IS NOT NULL)
+    OR
+    (state IN ('carried','stash') AND owner_character_id IS NOT NULL
+      AND creature_id IS NULL AND q IS NULL AND r IS NULL)
+    OR
+    (state='stolen' AND creature_id IS NOT NULL AND owner_character_id IS NULL
+      AND q IS NULL AND r IS NULL)
+  );
+  CREATE INDEX IF NOT EXISTS idx_creature_held_objects ON market_objects(creature_id);
+  `,
 ];
 
 /** Run once per process startup. A failed migration rolls back completely. */
