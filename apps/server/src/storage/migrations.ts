@@ -208,6 +208,30 @@ const migrations: ReadonlyArray<string> = [
     ('00000000-0000-4000-8000-000000000103','Guantes de cuero viejo',2,73,'merchant',38)
   ON CONFLICT DO NOTHING;
   `,
+  `
+  -- An object must never stay advertised when it changes location or owner.
+  -- Prevent stale public listings after death, theft, extraction or pickup.
+  CREATE OR REPLACE FUNCTION reset_listing_on_transfer() RETURNS TRIGGER LANGUAGE plpgsql AS $fn$
+  BEGIN
+    IF OLD.owner_character_id IS DISTINCT FROM NEW.owner_character_id
+       OR OLD.state IS DISTINCT FROM NEW.state THEN
+      NEW.listed=FALSE;
+    END IF;
+    RETURN NEW;
+  END $fn$;
+  CREATE TRIGGER object_transfer_unlists
+    BEFORE UPDATE ON market_objects
+    FOR EACH ROW EXECUTE FUNCTION reset_listing_on_transfer();
+  UPDATE market_objects SET listed=FALSE WHERE state NOT IN ('carried','stash');
+  -- Monetary audit records are append-only as well as public object facts.
+  CREATE OR REPLACE FUNCTION forbid_ledger_edits() RETURNS TRIGGER LANGUAGE plpgsql AS $fn$
+  BEGIN
+    RAISE EXCEPTION 'Ledger entries are append-only';
+  END $fn$;
+  CREATE TRIGGER wallet_ledger_immutable
+    BEFORE UPDATE OR DELETE ON wallet_ledger
+    FOR EACH ROW EXECUTE FUNCTION forbid_ledger_edits();
+  `,
 ];
 
 /** Run once per process startup. A failed migration rolls back completely. */
