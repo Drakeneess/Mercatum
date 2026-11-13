@@ -134,7 +134,7 @@ El Mercado funciona sin jugadores y la amenaza puede perseguir, herir, robar y c
 | ID | Estado V3 | Evidencia / alcance restante |
 | --- | --- | --- |
 | E-029 | Implementado V3 | Saldo no negativo por cuenta, créditos ficticios iniciales y movimientos contables append-only |
-| E-030 | Implementado V3 | Stock único finito, compra/venta NPC fuera, valoración por condición/TRA |
+| E-030 | Implementado V3 | Stock NPC finito desde exterior o puesto adyacente; mochila y capacidad verificadas en el interior, valoración por condición/TRA |
 | E-031 | Implementado V3 | Anuncios voluntarios y propuestas directas de crédito/objeto con aceptación atómica y caducidad |
 | E-032 | Parcial | TRA modifica tasación NPC; sin diálogos de persuasión independientes |
 | E-033 | Parcial | Transferencias y criaturas deterioran objetos; falta desgaste natural, reparación y uso de equipo |

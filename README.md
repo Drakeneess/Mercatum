@@ -83,7 +83,7 @@ Consulta [docs/ui-themes.md](docs/ui-themes.md) para la guía de estilos.
 
 La interfaz usa **Explorar** como mapa permanente; **Personaje**, **Comercio** y **Archivo** se abren como modales documentales encima del plano, en vez de sustituir la pantalla de juego. La mochila y los informes secundarios siguen siendo desplegables situacionales.
 
-**Comercio** tiene dos apartados dentro del mismo modal: **Comerciante** (NPC, solo desde el exterior) e **Intercambios** (anuncios y ofertas P2P desde el exterior o a un hexágono de distancia). **Archivo** es otro modal, consultable solo después de extraer. Los modales muestran salud y alertas en vivo, se cierran con Escape o el botón Cerrar y **no pausan** el mundo.
+**Comercio** tiene dos apartados dentro del mismo modal: **Comerciante** (NPC fuera del edificio o frente a un puesto del mapa) e **Intercambios** (anuncios y ofertas P2P desde el exterior o a un hexágono de distancia). **Archivo** es otro modal, consultable solo después de extraer. Los modales muestran salud y alertas en vivo, se cierran con Escape o el botón Cerrar y **no pausan** el mundo.
 
 [Guía completa de navegación, comercio y QA](docs/ui-navigation.md).
 
@@ -119,7 +119,7 @@ Las posiciones se sincronizan mediante `@colyseus/schema` 5; los comandos de mov
 
 **V2:** dos criaturas autónomas, persecución, heridas, robo de mercancía y muerte permanente sin desconexión segura. **Balance posterior a V3:** detección limitada, ataques con recuperación individual y umbral de acceso protegido; los cambios se guardan sin borrar partidas.
 
-**V3:** 100 créditos ficticios por cuenta, mercado NPC finito en el exterior, tasaciones por condición y Trato, publicaciones voluntarias de objetos, ofertas de intercambio con consentimiento, transacciones SQL atómicas, desgaste, historia de procedencia y testimonios atribuidos **no verificados**. Consultar el registro de objeto solo es posible **fuera del Mercado**.
+**V3:** 100 créditos ficticios por cuenta, mercado NPC finito en el exterior y en el puesto del primer sector, tasaciones por condición y Trato, publicaciones voluntarias de objetos, ofertas de intercambio con consentimiento, transacciones SQL atómicas, desgaste, historia de procedencia y testimonios atribuidos **no verificados**. Consultar el registro de objeto solo es posible **fuera del Mercado**.
 
 No se utiliza blockchain ni dinero real. Las afirmaciones públicas pueden ser falsas y no existe castigo automático por estafar mediante la narrativa del juego. Falta un sistema formal de reputación, moderación y chat de cercanía.
 

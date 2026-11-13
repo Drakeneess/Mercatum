@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | **Explorar** | Primaria | Croquis hexagonal, movimientos, puerta, mercancía al alcance, mochila y extracción; informes adicionales en desplegables |
 | **Personaje** | Secundaria | Comprobante, ficha de siete atributos, hora de referencia y nota de seguridad; registro inicial cuando todavía no hay identidad |
-| **Comercio** | Secundaria | Secciones **Comerciante** (comprar/vender al NPC desde el exterior) e **Intercambios** (anunciar, proponer, aceptar, rechazar o cancelar ofertas) |
+| **Comercio** | Secundaria | Secciones **Comerciante** (comprar/vender al NPC exterior o junto al puesto del mapa) e **Intercambios** (anunciar, proponer, aceptar, rechazar o cancelar ofertas) |
 | **Archivo** | Exterior | Consultar por UUID o pieza conocida; distinguir eventos verificados del servidor y testimonios atribuibles que pueden ser falsos |
 
 El menú superior conserva cuatro accesos: **Explorar** vuelve al mapa y los otros tres abren un **modal sobre la exploración**. Solo puede haber un modal abierto. El plano, la hoja de acciones, la franja de estado y la conexión de Colyseus permanecen montados durante toda la consulta. **Archivo** puede abrirse desde dentro para explicar que el registro solo se consulta después de extraer. El cliente no altera esta restricción del servidor.
@@ -29,14 +29,14 @@ Una franja de estado persistente sobre el mapa muestra salud, localización, cr�
 
 ## Comercio paso a paso
 
-1. **NPC:** extraer, abrir **Comercio → Comerciante**, comprar un objeto del stock finito o vender uno del depósito exterior.
+1. **NPC interior:** llegar al hexágono marcado **PUESTO (2,0)** o a una casilla vecina; aparece **COMERCIAR** sobre el mapa. Al pulsarlo se abre directamente el modal del comerciante. Las compras van a la mochila y las ventas se extraen de ella. **NPC exterior:** extraer, abrir Comercio → Comerciante y comerciar desde el depósito seguro.
 2. **P2P:** con ambos exploradores conectados fuera o a máximo un hexágono dentro, abrir **Comercio → Intercambios**.
 3. El dueño pulsa **Anunciar objeto**; el otro encuentra el anuncio y pulsa **Hacer oferta**.
 4. Introduce créditos y, opcionalmente, un objeto propio; **Enviar propuesta** no transfiere nada.
 5. El propietario ve la propuesta en **Ofertas pendientes**, y acepta o rechaza. El comprador puede cancelarla.
 6. La operación final la valida y confirma el servidor en una sola transacción SQL.
 
-Dentro del edificio, Comercio abre directamente **Intercambios**; el NPC informa que solo opera desde fuera. El saldo sigue siendo propiedad de la cuenta y no del navegador.
+Dentro del edificio, abrir Comercio desde la navegación lleva a **Intercambios** si no estás junto a una tienda. Frente al puesto, el botón **COMERCIAR** abre directamente **Comerciante**. El backend vuelve a comprobar la proximidad y la capacidad de carga en todas las compras. El saldo sigue siendo propiedad de la cuenta y no del navegador.
 
 ## Archivo público
 
@@ -67,7 +67,7 @@ Ejecutar `pnpm build`, `pnpm typecheck`, `pnpm test` y los smoke tests existente
 - Probar los tres soportes: **Libro de incidencias**, **Cinta de vigilancia**, **Turno de cierre**.
 - Crear un personaje, abrir/cerrar Personaje, Comercio y Archivo sin desconectarse ni desmontar el mapa; comprobar Escape, foco, clic en el fondo y scroll en cada modal.
 - Ver la salud y alarma de criaturas dentro de Comercio; comprobar que el mundo sigue avanzando y que la muerte cierra el modal.
-- Comprar al NPC tras extraer, anunciar y ofrecer desde un segundo navegador.
+- Probar el botón en el puesto desde un hexágono vecino (teclado y clic), su ausencia desde lejos, la compra en la mochila y el rechazo en servidor de compras remotas o que excedan la carga. Comprar al NPC exterior tras extraer, anunciar y ofrecer desde un segundo navegador.
 - Consultar el Archivo fuera; confirmar que dentro solo aparece la explicación.
 - Probar navegación por teclado y la presentación de ofertas pendientes.
 

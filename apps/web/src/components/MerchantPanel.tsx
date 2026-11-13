@@ -10,7 +10,10 @@ interface MerchantPanelProps {
 
 /** NPC stock and player sell-back stay in the same task context. */
 export function MerchantPanel({identity,market,operate}:MerchantPanelProps){
-  if(!market?.merchantAvailable)return (
+  if(!market)return (
+    <p className="expedition-muted">Consultando disponibilidad del puesto...</p>
+  );
+  if(!market.merchantAvailable)return (
     <div className="commerce-section-note">
       <strong>NO ESTÁS FRENTE A UN PUESTO</strong>
       <p>Acércate al símbolo PUESTO del mapa. Cuando estés a una casilla, aparecerá
