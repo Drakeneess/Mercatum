@@ -4,7 +4,7 @@ import {
   parseCharacterStats, type CharacterStats, type ExpeditionPhase, type HexCoordinate,
 } from "@mercatum/shared";
 import { pool, transaction } from "./db.js";
-import { ENTRY_GRACE_MS } from "../domain/creatureLogic.js";
+import { ENTRY_GRACE_MS, inProtectedThreshold } from "../domain/creatureLogic.js";
 import type { Admission, CharacterRecord } from "./models.js";
 
 type CharacterRow = {
@@ -128,10 +128,13 @@ export async function saveStep(
   characterId: string, from: HexCoordinate, to: HexCoordinate, now: number, nextMoveAt: number,
 ): Promise<boolean> {
   const r = await pool.query(`
-    UPDATE characters SET q=$2,r=$3,next_move_at=$4
+    UPDATE characters SET q=$2,r=$3,next_move_at=$4,
+      protected_until=CASE WHEN $8 THEN LEAST(protected_until,$7)
+        ELSE protected_until END
     WHERE id=$1 AND phase='inside' AND health>0
       AND q=$5 AND r=$6 AND next_move_at<=$7
-  `, [characterId,to.q,to.r,nextMoveAt,from.q,from.r,now]);
+  `, [characterId,to.q,to.r,nextMoveAt,from.q,from.r,now,
+    !inProtectedThreshold(to)]);
   return r.rowCount === 1;
 }
 

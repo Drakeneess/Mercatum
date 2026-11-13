@@ -8,7 +8,7 @@ import {
 import { mercatumClock } from "./domain/clock.js";
 import { MarketGateway } from "./MarketGateway.js";
 import { pool } from "./storage/db.js";
-import { ENTRY_GRACE_MS, visibleToExplorer } from "./domain/creatureLogic.js";
+import { ENTRY_GRACE_MS, inProtectedThreshold, visibleToExplorer } from "./domain/creatureLogic.js";
 import { CreatureScheduler } from "./CreatureScheduler.js";
 import { creaturePositions, type CreatureTick } from "./storage/creatures.js";
 import { resolveMovement } from "./domain/movement.js";
@@ -205,6 +205,11 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
       character.q=result.response.to.q;character.r=result.response.to.r;
       player.q=character.q;player.r=character.r;
       client.send("move_accepted",result.response);
+      if(!inProtectedThreshold(result.response.to) && character.protectedUntil>0){
+        const hadProtection=character.protectedUntil>Date.now();
+        character.protectedUntil=Math.min(character.protectedUntil,Date.now());
+        if(hadProtection)await this.sendIdentity(client);
+      }
       await this.sendSightings(client);
       this.broadcast("market_update",{});
     }catch(error){
