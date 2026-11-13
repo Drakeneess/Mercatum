@@ -216,3 +216,6 @@
 .workspace-commerce .commerce-entry {grid-template-columns:minmax(0,1fr);padding:15px 9px;}
 .workspace-commerce .commerce-entry button {width:max-content;max-width:100%;}
 .workspace-commerce .commerce-entry-actions {justify-content:space-between;}
+
+.expedition-quickbar__warning--link {border:0;cursor:pointer;text-align:left;}
+.expedition-quickbar__warning--link:hover {filter:brightness(1.24);}

@@ -53,15 +53,17 @@ export default function Home() {
       />
 
       <main className="workspace-main" id="mercatum-content">
+        {committedBuild&&(
+          <ExpeditionStatus identity={identity} position={currentPosition}
+            time={marketTime} connection={connection} creatures={sightings}
+            action={action} onNavigate={navigate}/>
+        )}
         {view==="explore" && (
           <section className="workspace-route" aria-label="Exploración">
             <header className="workspace-route__heading">
               <div><span>01 / OPERACIONES DE INCURSIÓN</span><h1>Exploración <em>activa.</em></h1></div>
               <p>Muévete por las casillas vecinas. El Mercado no espera a que termines de leer.</p>
             </header>
-            <ExpeditionStatus identity={identity} position={currentPosition}
-              time={marketTime} connection={connection} creatures={sightings}
-              action={action} onNavigate={navigate}/>
             <div className="workspace-expedition">
               <MarketMap
                 map={map} currentPosition={currentPosition} walkable={walkable}

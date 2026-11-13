@@ -42,13 +42,20 @@ export function ExpeditionStatus({
       <div className="expedition-quickbar__metric">
         <span>CRÉDITOS</span><strong>{identity?.balance??"—"}</strong>
       </div>
-      <div className="expedition-quickbar__warning" role="status">
-        {connection!=="online"?"SIN CONEXIÓN":
-          action?"ACCIÓN EN CURSO: "+action.kind.toUpperCase():
-          danger?creatures.length+" FIGURA"+(creatures.length===1?"":"S")+" A LA VISTA":
-          phase==="dead"?"REGISTRO CERRADO":
-          phase==="outside"?"DEPÓSITO SEGURO":"SIN AMENAZAS VISIBLES"}
-      </div>
+      {danger ? (
+        <button type="button" className="expedition-quickbar__warning expedition-quickbar__warning--link"
+          aria-label="Amenazas visibles, volver al plano de exploración"
+          onClick={()=>onNavigate("explore")}>
+          {creatures.length} FIGURA{creatures.length===1?"":"S"} A LA VISTA · VER PLANO
+        </button>
+      ) : (
+        <div className="expedition-quickbar__warning" role="status">
+          {connection!=="online"?"SIN CONEXIÓN":
+            action?"ACCIÓN EN CURSO: "+action.kind.toUpperCase():
+            phase==="dead"?"REGISTRO CERRADO":
+            phase==="outside"?"DEPÓSITO SEGURO":"SIN AMENAZAS VISIBLES"}
+        </div>
+      )}
     </div>
   );
 }
