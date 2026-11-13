@@ -125,3 +125,7 @@ Los objetos son instancias únicas de PostgreSQL. Su cambio de estado, dueño o 
 Las compras y los intercambios utilizan bloqueo ordenado y transacciones con recibos idempotentes; `wallet_ledger` permite reconciliar saldos. El comerciante posee mercancía finita, y el depósito exterior es el estado seguro de inventario. La UI conserva los tres temas documentales con `MarketBoard` y `ProvenanceBoard`.
 
 Las afirmaciones **no son certificaciones** y la base no implementa blockchain. [Contrato completo de V3](v3.md).
+
+## Presentación organizada después de V3
+
+La pantalla no es un dashboard monolítico de tres columnas. `app/page.tsx` mantiene una sola sesión `useMercatumRoom` y alterna entre exploración, personaje, comercio y archivo sin perder el estado de red. El estado físico/alertas se muestra fuera de la vista de mapa para que el jugador advierta amenazas aunque consulte otros expedientes. Comercio subdivide NPC y ofertas en componentes, sin alterar `MarketGateway`. Ver [docs/ui-navigation.md](ui-navigation.md).

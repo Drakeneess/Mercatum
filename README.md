@@ -79,6 +79,14 @@ Los temas modifican la interfaz, la textura y la lectura del mapa hexagonal; **n
 
 Consulta [docs/ui-themes.md](docs/ui-themes.md) para la guía de estilos.
 
+## Navegación de la interfaz
+
+La interfaz se organiza por trabajo en **Explorar**, **Personaje**, **Comercio** y **Archivo**, en vez de apilar todas las hojas en tres columnas interminables. El plano es protagonista de la exploración y solo muestra las acciones situacionales cerca de cada hexágono. La mochila y los informes secundarios son desplegables.
+
+**Comercio** tiene dos apartados: **Comerciante** (NPC, solo desde el exterior) e **Intercambios** (anuncios y ofertas P2P desde el exterior o a un hexágono de distancia). **Archivo** es una vista independiente, consultable solo después de extraer. La franja de estado permanece visible durante todas las vistas, porque el mundo sigue funcionando aunque consultes otros menús.
+
+[Guía completa de navegación, comercio y QA](docs/ui-navigation.md).
+
 ## Siete atributos y creación de personaje
 
 El **anexo de aptitudes** de la interfaz permite registrar la build antes de conectar con Colyseus. Cada rasgo empieza en 1; se distribuyen 7 puntos extra (14 puntos en total) con máximo 3 en la creación. El formulario comienza equilibrado con 2 en todos los atributos y permite redistribuir, además de elegir las plantillas «Corredor» y «Rastreador». El cliente envía la ficha al entrar y el servidor **valida todos los valores** y la suma para impedir estadísticas arbitrarias.

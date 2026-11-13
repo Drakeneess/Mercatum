@@ -4,54 +4,44 @@
 
 Cada módulo debe tener una responsabilidad estable. La UI no decide si se permite un movimiento; Colyseus es la fuente de autoridad. Una habilidad nueva debe introducirse como una regla de dominio reutilizable, no como lógica incrustada en un archivo de página o en un callback de transporte.
 
-## Estructura
+## Estructura actual del frontend
 
 ```text
 apps/web/src/
 ├── app/
-│   ├── page.tsx                  # Composición de la pantalla, sin lógica de red
-│   ├── layout.tsx                # Imports ordenados de CSS global
-│   ├── globals.css              # Reset, paleta y texturas compartidas
+│   ├── page.tsx                 # Destino seleccionado y composición
+│   ├── layout.tsx               # CSS importado en orden
+│   ├── globals.css              # Tokens y superficies compartidas
 │   └── styles/
-│       ├── masthead.css         # Nombre, avisos y selector de apariencia
-│       ├── paper.css            # Fichas de papel, comprobantes y reloj
-│       ├── map.css              # Croquis hexagonal y leyenda
-│       ├── evidence.css         # Incidencias, bitácora y pie de página
-│       ├── variants.css         # Tres tratamientos de horror documental
-│       ├── responsive.css       # Adaptación para pantallas estrechas
-│       ├── character.css        # Ficha de stats y cooldown del movimiento
-      └── expedition.css       # Acciones y botín
+│       ├── workspace.css        # Navegación, vistas y responsive
+│       ├── commerce.css         # Formularios de mercado y archivo
+│       ├── expedition.css       # Acciones e inventario
+│       ├── threat.css           # Riesgos y heridas
+│       ├── character.css        # Registro y stats
+│       └── ...                  # Mapa, encabezado y tres temas
 ├── components/
-│   ├── MarketHeader.tsx
-│   ├── ExplorerColumn.tsx
-│   ├── CharacterSheet.tsx
-│   ├── MarketMap.tsx
-│   └── SectorNotes.tsx
+│   ├── WorkspaceNavigation.tsx # Explorar / Personaje / Comercio / Archivo
+│   ├── ExpeditionStatus.tsx     # Estado persistente en todas las vistas
+│   ├── MarketMap.tsx            # Croquis hexagonal
+│   ├── SectorNotes.tsx          # Acciones e informes desplegables
+│   ├── ExplorerColumn.tsx       # Registro y datos personales
+│   ├── MarketActions.tsx        # Puerta, botín cercano, mochila y extracción
+│   ├── MarketBoard.tsx          # Selección de modalidad comercial
+│   ├── MerchantPanel.tsx        # Comprar/vender al NPC
+│   ├── ExchangePanel.tsx        # Anunciar, ofertar y aceptar trueques
+│   ├── ProvenanceBoard.tsx      # Archivo público de objetos
+│   └── ...                      # Otros componentes documentales
 ├── hooks/
-│   ├── useTheme.ts              # Tema guardado localmente
-│   ├── useCharacterBuild.ts     # Distribución y firma de aptitudes
-│   └── useMercatumRoom.ts       # Red, reconexión, estado y movimiento
+│   ├── useTheme.ts              # Tema local
+│   ├── useCharacterBuild.ts     # Registro y sucesión de personajes
+│   └── useMercatumRoom.ts       # Una sola sesión Colyseus
 └── lib/
-    ├── hexMapView.ts            # Geometría SVG
-    └── roomSnapshots.ts         # Proyección Schema → vista y diagnóstico
-
-apps/server/src/
-├── index.ts                     # Bootstrap, health y sala canónica
-├── MercatumRoom.ts              # Lifecycle y aplicación de comandos
-├── smoke.ts                     # Integración real de Colyseus
-└── domain/
-    ├── character.ts            # Validación y creación de exploradores
-    ├── clock.ts                # Tiempo oficial UTC−06:00
-    ├── movement.ts             # Decisión pura de movimiento
-    └── movement.test.ts        # Pruebas unitarias de movimiento
-
-packages/shared/src/
-├── schema.ts                    # Estado sincronizado
-├── protocol.ts                  # Mensajes y snapshots
-├── stats.ts                     # Límites, atributos y tiempos
-├── hex.ts                       # Reglas hexagonales
-└── world.ts                     # Mapa base
+    ├── hexMapView.ts
+    └── roomSnapshots.ts
 ```
+
+El backend conserva las capas `MercatumRoom` / `MarketGateway` / `storage` /
+`domain` y el paquete `@mercatum/shared` como contrato común.
 
 ## Flujo
 
@@ -76,7 +66,7 @@ packages/shared/src/
 - Las reglas se prueban sin necesidad de montar componentes React.
 - La reconexión y el estado del jugador están centralizados en un hook.
 - Los tres temas mantienen la misma jugabilidad.
-- No se ha agregado persistencia de personajes ni control de visibilidad de entidades ocultas.
+- PostgreSQL persiste personajes y mercancías; las criaturas se filtran por visión en mensajes privados. Aún falta filtrar la posición de otros exploradores.
 
 ## Verificación
 
@@ -118,9 +108,15 @@ El servidor ahora necesita PostgreSQL. La credencial local no sustituye la auten
 - `apps/server/src/storage/trades.ts`: ofertas por sesión, aceptación de ambas partes y transferencias SQL atómicas.
 - `apps/server/src/storage/provenance.ts`: testimonios atribuidos y consulta externa de historial.
 - `apps/server/src/domain/marketRules.ts` y `marketRules.test.ts`: precios, rangos, cantidad e IDs seguros.
-- `apps/web/src/components/MarketBoard.tsx`: mostrador, trueques y ofertas.
+- `apps/web/src/components/MarketBoard.tsx`: pestañas de comercio; `MerchantPanel.tsx` contiene el mostrador y `ExchangePanel.tsx` los trueques y ofertas.
 - `apps/web/src/components/ProvenanceBoard.tsx`: registro externo que separa hechos y claims.
 - `apps/web/src/app/styles/commerce.css`: materiales gastados compatibles con los tres temas.
 - `apps/server/src/smoke-v3.ts`: pruebas transaccionales y de procedencia contra esquema PostgreSQL temporal.
 
 Para reglas económicas, precauciones de confianza y requisitos de despliegue: [docs/v3.md](v3.md).
+
+## Reorganización del espacio de trabajo (después de V3)
+
+`WorkspaceNavigation` selecciona uno de cuatro destinos sin cerrar `useMercatumRoom`. `ExpeditionStatus` permanece visible siempre que exista registro; sus avisos de peligro son un acceso directo al mapa. El panel lateral `SectorNotes` se limita a acciones de exploración y extractos desplegables. Comercio y Archivo se renderizan como páginas de contenido independientes. Todos los estilos específicos están en `app/styles/workspace.css` importado al final de `layout.tsx`.
+
+[Guía de navegación](ui-navigation.md). El refactor no altera el protocolo ni la autoridad del servidor.
