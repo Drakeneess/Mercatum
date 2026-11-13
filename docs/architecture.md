@@ -128,4 +128,4 @@ Las afirmaciones **no son certificaciones** y la base no implementa blockchain. 
 
 ## Presentación organizada después de V3
 
-La pantalla no es un dashboard monolítico de tres columnas. `app/page.tsx` mantiene una sola sesión `useMercatumRoom` y alterna entre exploración, personaje, comercio y archivo sin perder el estado de red. El estado físico/alertas se muestra fuera de la vista de mapa para que el jugador advierta amenazas aunque consulte otros expedientes. Comercio subdivide NPC y ofertas en componentes, sin alterar `MarketGateway`. Ver [docs/ui-navigation.md](ui-navigation.md).
+La pantalla no es un dashboard monolítico de tres columnas. `app/page.tsx` mantiene una sola sesión `useMercatumRoom` y un mapa permanente. Personaje, comercio y archivo se abren mediante `WorkspaceModal` (`<dialog>` nativo), sin desmontar la exploración ni perder la conexión de red. La ventana muestra la salud y la alarma de amenazas en vivo; la interacción con el plano vuelve después de cerrarla. Comercio subdivide NPC y ofertas en componentes dentro de un mismo modal, sin alterar `MarketGateway`. Ver [docs/ui-navigation.md](ui-navigation.md).

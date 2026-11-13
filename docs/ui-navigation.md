@@ -1,8 +1,8 @@
 # Navegación y composición — Mercatum (refactorización de V3)
 
-**Objetivo:** eliminar el exceso de paneles simultáneos sin convertir Mercatum en un HUD genérico. La UI conserva los tres soportes documentales deteriorados; **no cambia ninguna regla de juego**.
+**Objetivo:** eliminar el exceso de paneles simultáneos sin convertir Mercatum en un HUD genérico. La UI conserva los tres soportes documentales deteriorados; **no cambia ninguna regla de juego**. Tras la reorganización inicial, se adoptó un patrón de **mapa permanente + expedientes modales**.
 
-## Vistas principales
+## Superficie principal y expedientes modales
 
 | Pestaña | Prioridad | Contenido |
 | --- | --- | --- |
@@ -11,9 +11,9 @@
 | **Comercio** | Secundaria | Secciones **Comerciante** (comprar/vender al NPC desde el exterior) e **Intercambios** (anunciar, proponer, aceptar, rechazar o cancelar ofertas) |
 | **Archivo** | Exterior | Consultar por UUID o pieza conocida; distinguir eventos verificados del servidor y testimonios atribuibles que pueden ser falsos |
 
-El menú superior siempre conserva estas cuatro rutas; las tres primeras se encuentran disponibles en cuanto el usuario registra su ficha, y **Archivo** puede abrirse incluso dentro del edificio para explicar que el registro solamente se consulta después de extraer. El cliente no altera esta restricción del servidor.
+El menú superior conserva cuatro accesos: **Explorar** vuelve al mapa y los otros tres abren un **modal sobre la exploración**. Solo puede haber un modal abierto. El plano, la hoja de acciones, la franja de estado y la conexión de Colyseus permanecen montados durante toda la consulta. **Archivo** puede abrirse desde dentro para explicar que el registro solo se consulta después de extraer. El cliente no altera esta restricción del servidor.
 
-Antes del primer ingreso solo se habilita **Personaje**, con el registro de atributos. Después de firmar se muestra **Explorar**. Un personaje muerto conserva acceso a su registro; la acción para registrar sucesor sigue en **Explorar**.
+Antes del primer ingreso solo se habilita **Personaje**, en un formulario de registro de página completa para no ocultar un mapa todavía inexistente. Después de firmar se muestra **Explorar**, con los expedientes secundarios en modal. Un personaje muerto conserva su registro; si fallece mientras hay un modal abierto, este se cierra para mostrar la defunción y la acción de registrar sucesor.
 
 ## Exploración sin saturación
 
@@ -25,7 +25,7 @@ La pantalla de juego prioriza el mapa como superficie de trabajo. El panel later
 - Botón de extracción en la entrada y, fuera del edificio, opción de regresar y desplegable de depósito exterior.
 - Informe médico/avistamientos e incidencias recientes en dos desplegables cerrados por defecto.
 
-Una franja de estado persistente, visible **en todas las vistas después del registro**, muestra salud, localización, créditos, hora y estado del personaje. Si aparece una criatura, la advertencia puede pulsarse para volver directamente al mapa. **Cambiar de pestaña no pausa al personaje, los ataques, el reloj ni las transacciones de Colyseus.**
+Una franja de estado persistente sobre el mapa muestra salud, localización, créditos, hora y estado del personaje. Como el modal impide interactuar con el fondo, su encabezado **duplica la salud y la alerta de criaturas en vivo**. Se puede cerrar con **Escape**, el botón Cerrar o clic en el fondo; el foco retorna al botón que lo abrió. **Abrir un modal no pausa al personaje, los ataques, el reloj ni las transacciones de Colyseus**.
 
 ## Comercio paso a paso
 
@@ -40,19 +40,20 @@ Dentro del edificio, Comercio abre directamente **Intercambios**; el NPC informa
 
 ## Archivo público
 
-Se presenta como una vista distinta; no aparece debajo de otros 20 paneles de incursión. Muestra hechos del servidor y testimonios en estilos separados, con el autor y fecha. No concede acceso gratuito al archivo desde dentro ni convierte declaraciones de los jugadores en hechos verificados.
+Se presenta como un modal independiente; no aparece debajo de otros 20 paneles de incursión. Muestra hechos del servidor y testimonios en estilos separados, con el autor y fecha. No concede acceso gratuito al archivo desde dentro ni convierte declaraciones de los jugadores en hechos verificados.
 
 ## Organización técnica
 
-- `app/page.tsx`: composición y destino seleccionado; la navegación **no desmonta `useMercatumRoom`**.
-- `components/WorkspaceNavigation.tsx`: rutas accesibles y contador de ofertas entrantes.
-- `components/ExpeditionStatus.tsx`: franja persistente de estado/amenazas.
+- `app/page.tsx`: mapa permanente y modal seleccionado; la navegación **no desmonta `useMercatumRoom` ni `MarketMap`**.
+- `components/WorkspaceNavigation.tsx`: botones de acceso a expedientes modales y contador de ofertas entrantes.
+- `components/WorkspaceModal.tsx`: `<dialog>` nativo, foco atrapado, tecla Escape, restauración del foco, clic fuera y encabezado con riesgo en vivo.
+- `components/ExpeditionStatus.tsx`: franja de estado/amenazas sobre el mapa.
 - `components/SectorNotes.tsx`: solo acciones situacionales y registros secundarios de la incursión.
 - `components/MarketBoard.tsx`: marco y selección entre comercio NPC e intercambios.
 - `components/MerchantPanel.tsx`: stock NPC y objetos depositados para venta.
 - `components/ExchangePanel.tsx`: anuncios, ofertas, formulario y decisiones.
 - `components/ProvenanceBoard.tsx`: archivo exterior.
-- `app/styles/workspace.css`: composición y adaptación responsive; los colores continúan siendo los de los tres temas.
+- `app/styles/workspace.css`: composición y adaptación responsive; `app/styles/modals.css`: ventanas centradas en escritorio y hojas inferiores en móvil. Los colores siguen los tres temas.
 
 No se añadieron endpoints ni mutaciones de esquema. La comunicación de Colyseus y los contratos del servidor siguen siendo la autoridad.
 
@@ -64,10 +65,10 @@ Ejecutar `pnpm build`, `pnpm typecheck`, `pnpm test` y los smoke tests existente
 
 - Tamaños 375 px, 768 px y 1440 px; verificar que el mapa no tenga desplazamiento horizontal y que la navegación se lea.
 - Probar los tres soportes: **Libro de incidencias**, **Cinta de vigilancia**, **Turno de cierre**.
-- Crear un personaje, pasar al mapa, volver a Personaje sin desconectarse.
-- Ver la salud y la alarma de criaturas al entrar a Comercio; volver al mapa desde el aviso.
+- Crear un personaje, abrir/cerrar Personaje, Comercio y Archivo sin desconectarse ni desmontar el mapa; comprobar Escape, foco, clic en el fondo y scroll en cada modal.
+- Ver la salud y alarma de criaturas dentro de Comercio; comprobar que el mundo sigue avanzando y que la muerte cierra el modal.
 - Comprar al NPC tras extraer, anunciar y ofrecer desde un segundo navegador.
 - Consultar el Archivo fuera; confirmar que dentro solo aparece la explicación.
 - Probar navegación por teclado y la presentación de ofertas pendientes.
 
-Esta modificación mejora la **organización visual**; no es una sustitución de la futura revisión UX con jugadores reales.
+Esta modificación mejora la **organización visual**; no es una sustitución de la futura revisión UX con jugadores reales. No se usa modal para cada paso de exploración: mover, inspeccionar, recoger o extraer deben seguir siendo acciones inmediatas y situacionales. Evitar una pila de modales anidados es una regla deliberada.

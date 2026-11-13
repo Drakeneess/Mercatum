@@ -9,18 +9,20 @@ Cada módulo debe tener una responsabilidad estable. La UI no decide si se permi
 ```text
 apps/web/src/
 ├── app/
-│   ├── page.tsx                 # Destino seleccionado y composición
+│   ├── page.tsx                 # Mapa permanente y modal seleccionado
 │   ├── layout.tsx               # CSS importado en orden
 │   ├── globals.css              # Tokens y superficies compartidas
 │   └── styles/
-│       ├── workspace.css        # Navegación, vistas y responsive
+│       ├── workspace.css        # Navegación, mapa y responsive
+│       ├── modals.css           # Ventanas documentales y hoja móvil
 │       ├── commerce.css         # Formularios de mercado y archivo
 │       ├── expedition.css       # Acciones e inventario
 │       ├── threat.css           # Riesgos y heridas
 │       ├── character.css        # Registro y stats
 │       └── ...                  # Mapa, encabezado y tres temas
 ├── components/
-│   ├── WorkspaceNavigation.tsx # Explorar / Personaje / Comercio / Archivo
+│   ├── WorkspaceNavigation.tsx # Abrir expedientes sin desmontar el mapa
+│   ├── WorkspaceModal.tsx      # Dialog nativo con manejo de foco
 │   ├── ExpeditionStatus.tsx     # Estado persistente en todas las vistas
 │   ├── MarketMap.tsx            # Croquis hexagonal
 │   ├── SectorNotes.tsx          # Acciones e informes desplegables
@@ -117,6 +119,6 @@ Para reglas económicas, precauciones de confianza y requisitos de despliegue: [
 
 ## Reorganización del espacio de trabajo (después de V3)
 
-`WorkspaceNavigation` selecciona uno de cuatro destinos sin cerrar `useMercatumRoom`. `ExpeditionStatus` permanece visible siempre que exista registro; sus avisos de peligro son un acceso directo al mapa. El panel lateral `SectorNotes` se limita a acciones de exploración y extractos desplegables. Comercio y Archivo se renderizan como páginas de contenido independientes. Todos los estilos específicos están en `app/styles/workspace.css` importado al final de `layout.tsx`.
+`WorkspaceNavigation` mantiene Explorar como superficie principal y abre Personaje, Comercio y Archivo en un `WorkspaceModal` nativo sin cerrar `useMercatumRoom` ni desmontar el mapa. El modal incorpora salud y amenazas en vivo. `ExpeditionStatus` permanece visible en el plano y sus avisos de peligro facilitan orientarse. El panel lateral `SectorNotes` se limita a acciones de exploración y extractos desplegables. Comercio y Archivo son expedientes superpuestos independientes, nunca modales anidados. Los estilos del espacio de trabajo están en `app/styles/workspace.css` y los de ventanas superpuestas en `app/styles/modals.css`, importados al final de `layout.tsx`.
 
 [Guía de navegación](ui-navigation.md). El refactor no altera el protocolo ni la autoridad del servidor.

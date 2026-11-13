@@ -81,9 +81,9 @@ Consulta [docs/ui-themes.md](docs/ui-themes.md) para la guía de estilos.
 
 ## Navegación de la interfaz
 
-La interfaz se organiza por trabajo en **Explorar**, **Personaje**, **Comercio** y **Archivo**, en vez de apilar todas las hojas en tres columnas interminables. El plano es protagonista de la exploración y solo muestra las acciones situacionales cerca de cada hexágono. La mochila y los informes secundarios son desplegables.
+La interfaz usa **Explorar** como mapa permanente; **Personaje**, **Comercio** y **Archivo** se abren como modales documentales encima del plano, en vez de sustituir la pantalla de juego. La mochila y los informes secundarios siguen siendo desplegables situacionales.
 
-**Comercio** tiene dos apartados: **Comerciante** (NPC, solo desde el exterior) e **Intercambios** (anuncios y ofertas P2P desde el exterior o a un hexágono de distancia). **Archivo** es una vista independiente, consultable solo después de extraer. La franja de estado permanece visible durante todas las vistas, porque el mundo sigue funcionando aunque consultes otros menús.
+**Comercio** tiene dos apartados dentro del mismo modal: **Comerciante** (NPC, solo desde el exterior) e **Intercambios** (anuncios y ofertas P2P desde el exterior o a un hexágono de distancia). **Archivo** es otro modal, consultable solo después de extraer. Los modales muestran salud y alertas en vivo, se cierran con Escape o el botón Cerrar y **no pausan** el mundo.
 
 [Guía completa de navegación, comercio y QA](docs/ui-navigation.md).
 
