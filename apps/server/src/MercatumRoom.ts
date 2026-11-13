@@ -8,7 +8,7 @@ import {
 import { mercatumClock } from "./domain/clock.js";
 import { MarketGateway } from "./MarketGateway.js";
 import { pool } from "./storage/db.js";
-import { visibleToExplorer } from "./domain/creatureLogic.js";
+import { ENTRY_GRACE_MS, visibleToExplorer } from "./domain/creatureLogic.js";
 import { CreatureScheduler } from "./CreatureScheduler.js";
 import { creaturePositions, type CreatureTick } from "./storage/creatures.js";
 import { resolveMovement } from "./domain/movement.js";
@@ -128,6 +128,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
       token:admission.token,characterId:admission.character.id,
       phase:admission.character.phase,inventory:belongings.inventory,stash:belongings.stash,
       nextMoveAt:admission.character.nextMoveAt,
+      protectedUntil:admission.character.protectedUntil,
       health:admission.character.health,wounds:admission.character.wounds,
       balance:account.rows[0]?.credits??0,
     };
@@ -318,6 +319,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
       if(!success){this.message(client,"El personaje no puede reingresar.");return;}
       session.character.phase="inside";session.character.q=ENTRY.q;session.character.r=ENTRY.r;
       session.character.health=100;session.character.wounds=0;
+      session.character.protectedUntil=Date.now()+ENTRY_GRACE_MS;
       player.inside=true;player.q=ENTRY.q;player.r=ENTRY.r;
       player.health=100;player.wounds=0;
       await this.sendIdentity(client);

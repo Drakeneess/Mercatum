@@ -24,3 +24,12 @@
 .app-shell[data-theme="phosphor"] .hostile-name { fill:#b9d6b2;stroke:#0a100a; }
 .app-shell[data-theme="phosphor"] .hostile-glyph { fill:#bbd4ae; }
 @media(max-width:720px){.threat-sheet{transform:none;}}
+
+.threshold-note {
+  color:var(--ink);
+  font:900 10px/1.65 var(--machine-type);
+  padding:12px;
+  border:2px dashed var(--hairline);
+  margin:12px 0 16px;
+}
+.app-shell[data-theme="phosphor"] .threshold-note { border-color:#8ba78a; }

@@ -15,6 +15,7 @@ type CharacterRow = {
   r: number;
   phase: ExpeditionPhase;
   next_move_at: string;
+  protected_until: string;
   health: number;
   wounds: number;
 };
@@ -26,6 +27,7 @@ function fromRow(row: CharacterRow): CharacterRecord {
     id: row.id, displayName: row.display_name, stats,
     q: row.q, r: row.r, phase: row.phase,
     nextMoveAt: Number(row.next_move_at),
+    protectedUntil: Number(row.protected_until),
     health: row.health, wounds: row.wounds,
   };
 }

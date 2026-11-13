@@ -22,7 +22,7 @@ interface SectorNotesProps {
 export function SectorNotes({ map, players, events, actions, identity, sightings, market, provenance, operateMarket, requestMarket, requestProvenance }: SectorNotesProps) {
   return (
         <aside className="side-column side-column--notes" aria-label="Notas del sector">
-          <ThreatReport identity={identity} sightings={sightings} />
+          <ThreatReport identity={identity} sightings={sightings} position={actions.position} clock={actions.clock} />
           <MarketActions {...actions} />
           <MarketBoard identity={identity} market={market}
             operate={operateMarket} requestMarket={requestMarket} />

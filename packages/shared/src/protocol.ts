@@ -47,6 +47,7 @@ export interface IdentityReply {
   readonly inventory: readonly MarketItem[];
   readonly stash: readonly MarketItem[];
   readonly nextMoveAt: number;
+  readonly protectedUntil: number;
   readonly health: number;
   readonly wounds: number;
   readonly balance: number;

@@ -43,14 +43,14 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
   const map=useMemo(()=>makeDemoMap(),[]);
 
   useEffect(()=>{
-    if(!cooldownUntil && !action)return;
+    if(!cooldownUntil && !action && (identity?.protectedUntil??0)<=Date.now())return;
     const id=window.setInterval(()=>{
       const now=Date.now();
       setClock(now);
       if(cooldownUntil&&now>=cooldownUntil)setCooldownUntil(0);
     },100);
     return ()=>window.clearInterval(id);
-  },[cooldownUntil,action]);
+  },[cooldownUntil,action,identity?.protectedUntil]);
 
   useEffect(()=>{
     if(!committedBuild)return;
@@ -246,7 +246,7 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
     tile.kind!=="wall" && (tile.kind!=="door" || doorOpen)
   ).map(hexKey)),[map,doorOpen]);
   const characterStats=me?.stats??committedBuild??draftStats;
-  const movementDelayMs=getMovementDelayMs(characterStats.dexterity) + (me?.wounds??0)*180;
+  const movementDelayMs=getMovementDelayMs(characterStats.dexterity) + (me?.wounds??0)*80;
   const cooldownRemaining=Math.max(0,cooldownUntil-clock);
   const recoveryPercentage=Math.min(100,Math.max(0,100*(1-cooldownRemaining/movementDelayMs)));
 

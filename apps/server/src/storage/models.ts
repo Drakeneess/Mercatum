@@ -8,6 +8,7 @@ export interface CharacterRecord {
   r: number;
   phase: ExpeditionPhase;
   nextMoveAt: number;
+  protectedUntil: number;
   health: number;
   wounds: number;
 }
