@@ -1,5 +1,5 @@
 import {
-  hexDistance, hexKey, hexNeighbors, makeDemoMap, SERVICE_DOOR,
+  ENTRY, hexDistance, hexKey, hexNeighbors, makeDemoMap, SERVICE_DOOR,
   type CreatureKind, type HexCoordinate,
 } from "@mercatum/shared";
 
@@ -29,6 +29,24 @@ const tiles = makeDemoMap();
 const walls = new Set(tiles.filter(t => t.kind === "wall").map(hexKey));
 const existing = new Set(tiles.map(hexKey));
 const DOOR = hexKey(SERVICE_DOOR);
+
+/** Small checked-in entrance: living explorers can orient themselves before a run.
+ * This is spatial, not a respawn invulnerability exploit. */
+export const ENTRY_THRESHOLD_RADIUS = 1;
+export const ENTRY_GRACE_MS = 18_000;
+export const POST_HIT_GRACE_MS = 5_500;
+const CREATURE_BEHAVIOUR = {
+  stalker: { moveMs: 1_750, attackMs: 8_000, sense: 2, memory: 2 },
+  scavenger: { moveMs: 2_900, attackMs: 11_000, sense: 2, memory: 1 },
+} as const;
+
+export function inProtectedThreshold(tile: HexCoordinate): boolean {
+  return hexDistance(tile, ENTRY) <= ENTRY_THRESHOLD_RADIUS;
+}
+
+function creaturePassable(tile: HexCoordinate, doorOpen: boolean): boolean {
+  return passable(tile, doorOpen) && !inProtectedThreshold(tile);
+}
 
 export function passable(tile: HexCoordinate, doorOpen: boolean): boolean {
   const key = hexKey(tile);
@@ -76,7 +94,7 @@ function nextStepToward(
     const current=queue[i];
     for(const neighbor of hexNeighbors(current.tile)){
       const key=hexKey(neighbor);
-      if(visited.has(key)||!passable(neighbor,doorOpen))continue;
+      if(visited.has(key)||!creaturePassable(neighbor,doorOpen))continue;
       const first=current.first??neighbor;
       if(key===hexKey(target))return first;
       visited.add(key);
@@ -93,9 +111,22 @@ export function decideCreatureMove(
   doorOpen: boolean,
 ): CreatureDecision {
   const from={q:creature.q,r:creature.r};
-  const senseRange=creature.kind==="stalker"?4:3;
+  const behaviour=CREATURE_BEHAVIOUR[creature.kind];
+
+  // On upgrading a running world, a creature may already stand inside the
+  // protected threshold. It must leave it rather than camp at the doorway.
+  if(inProtectedThreshold(from)){
+    const away=hexNeighbors(from).filter(neighbor=>
+      passable(neighbor,doorOpen) &&
+      hexDistance(neighbor,ENTRY)>hexDistance(from,ENTRY)
+    );
+    const to=away[creature.steps%Math.max(1,away.length)] ?? from;
+    return {to,lastKnownQ:null,lastKnownR:null,searchLeft:0,victimId:null};
+  }
   const detectable=characters.filter(prey=>
-    hexDistance(from,prey)<=senseRange && hasLineOfSight(from,prey,doorOpen)
+    !inProtectedThreshold(prey) &&
+    hexDistance(from,prey)<=behaviour.sense &&
+    hasLineOfSight(from,prey,doorOpen)
   ).sort((a,b)=>hexDistance(from,a)-hexDistance(from,b) || a.id.localeCompare(b.id));
   const prey=detectable[0];
   let knownQ=creature.lastKnownQ;
@@ -104,8 +135,9 @@ export function decideCreatureMove(
   let goal:HexCoordinate|null=null;
   if(prey){
     goal={q:prey.q,r:prey.r};
-    knownQ=prey.q; knownR=prey.r; search=3;
-  }else if(knownQ!==null&&knownR!==null&&search>0){
+    knownQ=prey.q; knownR=prey.r; search=behaviour.memory;
+  }else if(knownQ!==null&&knownR!==null&&search>0 &&
+    !inProtectedThreshold({q:knownQ,r:knownR})){
     goal={q:knownQ,r:knownR};
     search--;
   }
@@ -121,7 +153,7 @@ export function decideCreatureMove(
   }
   if(!to||hexKey(to)===hexKey(from)){
     // Rotation is deterministic and persisted (steps). No random global ticks.
-    const neighbors=hexNeighbors(from).filter(n=>passable(n,doorOpen));
+    const neighbors=hexNeighbors(from).filter(n=>creaturePassable(n,doorOpen));
     if(neighbors.length){
       const seed=[...creature.id].reduce((n,c)=>n+c.charCodeAt(0),0);
       to=neighbors[(seed+creature.steps)%neighbors.length];
@@ -129,19 +161,27 @@ export function decideCreatureMove(
     if(!prey&&search===0){knownQ=null;knownR=null;}
   }
   const destination=to??from;
-  const victim=characters.find(p=>p.q===destination.q&&p.r===destination.r);
+  const victim=characters.find(p=>p.q===destination.q&&p.r===destination.r&&
+    !inProtectedThreshold(p));
   return {
     to:destination,lastKnownQ:knownQ,lastKnownR:knownR,searchLeft:search,
     victimId:victim?.id??null,
   };
 }
 
-export function creatureDelayMs(kind:CreatureKind):number {
-  return kind==="stalker"?950:2100;
+/** The expedited profile is only for integration smoke, never normal play. */
+export function creatureDelayMs(kind:CreatureKind, smoke=false):number {
+  return smoke?200:CREATURE_BEHAVIOUR[kind].moveMs;
+}
+export function creatureAttackCooldownMs(kind:CreatureKind, smoke=false):number {
+  return smoke?180:CREATURE_BEHAVIOUR[kind].attackMs;
+}
+export function postHitRecoveryMs(smoke=false):number {
+  return smoke?150:POST_HIT_GRACE_MS;
 }
 export function woundDamage(kind:CreatureKind, endurance:number):number {
-  return Math.max(kind==="stalker"?12:7,(kind==="stalker"?37:20)-3*endurance);
+  return Math.max(kind==="stalker"?9:5,(kind==="stalker"?26:16)-2*endurance);
 }
 export function woundedMovementDelay(base:number,wounds:number):number {
-  return base + Math.max(0,Math.min(5,wounds))*180;
+  return base + Math.max(0,Math.min(5,wounds))*80;
 }

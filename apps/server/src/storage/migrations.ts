@@ -232,6 +232,19 @@ const migrations: ReadonlyArray<string> = [
     BEFORE UPDATE OR DELETE ON wallet_ledger
     FOR EACH ROW EXECUTE FUNCTION forbid_ledger_edits();
   `,
+  `
+  -- V3.1 pacing: grace, per-character hit recovery and per-creature attack cooldown.
+  -- Do not reset these timestamps on socket reconnect.
+  ALTER TABLE characters ADD COLUMN IF NOT EXISTS protected_until BIGINT NOT NULL DEFAULT 0;
+  ALTER TABLE characters ADD COLUMN IF NOT EXISTS next_harm_at BIGINT NOT NULL DEFAULT 0;
+  ALTER TABLE creatures ADD COLUMN IF NOT EXISTS next_attack_at BIGINT NOT NULL DEFAULT 0;
+  -- Existing V2 characters receive a one-off grace after this migration.
+  UPDATE characters SET protected_until=(EXTRACT(EPOCH FROM clock_timestamp())*1000)::bigint+18000
+    WHERE phase='inside';
+  UPDATE creatures
+    SET next_action_at=GREATEST(next_action_at,
+      (EXTRACT(EPOCH FROM clock_timestamp())*1000)::bigint+3000);
+  `,
 ];
 
 /** Run once per process startup. A failed migration rolls back completely. */
