@@ -16,7 +16,7 @@ const routes: readonly {id:WorkspaceView;number:string;label:string;sub:string}[
   {id:"registry",number:"04",label:"Archivo",sub:"Procedencia pública"},
 ];
 
-/** One destination at a time; none of these navigation actions changes game state. */
+/** Exploration stays in place; secondary destinations open native dialogs. */
 export function WorkspaceNavigation({view,registered,incomingOffers,onNavigate}:WorkspaceNavigationProps){
   return (
     <nav className="workspace-navigation" aria-label="Secciones de Mercatum">
@@ -26,7 +26,9 @@ export function WorkspaceNavigation({view,registered,incomingOffers,onNavigate}:
           const disabled=!registered&&route.id!=="character";
           return <button type="button" key={route.id}
             className={"workspace-navigation__tab"+(active?" workspace-navigation__tab--current":"")}
-            aria-current={active?"page":undefined}
+            aria-pressed={active}
+            aria-haspopup={route.id==="explore"?undefined:"dialog"}
+            aria-expanded={route.id==="explore"?undefined:active}
             disabled={disabled}
             onClick={()=>onNavigate(route.id)}>
             <span className="workspace-navigation__index">{route.number} /</span>
