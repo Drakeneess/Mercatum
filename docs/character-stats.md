@@ -59,6 +59,8 @@ Los otros cuatro atributos permanecen preparados y sincronizados, pero no se les
 
 ## Efectos activos en V2
 
-- **RES:** reduce daño de las criaturas (`máximo por especie` menos `3 × RES`, con un mínimo de daño). Las heridas siguen ralentizando el desplazamiento.
+- **RES:** reduce daño de las criaturas (`26 - 2 × RES` contra el Rastrero y `16 - 2 × RES` contra el Rebuscador, con mínimos de 9 y 5). Las heridas siguen ralentizando el desplazamiento.
 - **PER:** el servidor calcula un radio de `1 + PER` (máximo 4 hexágonos) y comprueba la línea de visión antes de enviar un avistamiento.
 - **FUE, DES e INT** mantienen los efectos descritos en V1. **TRA y TEM** siguen reservados para comercio y presión/estrés posteriores; no generan efectos ficticios.
+
+En el balance posterior a V3, cada herida agrega **80 ms** al desplazamiento (antes eran 180 ms); hay recuperación ante golpes consecutivos de 5,5 segundos. El perímetro de acceso y sus seis casillas adyacentes forman un umbral de seguridad para preparar la exploración, no una protección para toda la incursión.

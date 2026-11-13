@@ -108,7 +108,7 @@ Primer vertical slice: entrar, inspeccionar, obtener algo, transportarlo, salir 
 | H-025 | Implementado V2 | Desconexión no elimina al personaje del mapa ni lo protege ante criaturas |
 | H-026 | Parcial | Escapar depende de rutas y velocidad; falta ocultarse activamente |
 | H-027 | Parcial | Se mantiene un reloj de referencia único sin bonificaciones nocturnas; faltan rutinas horarias propias |
-| H-028 | Implementado en código | Rastrero/Rebuscador con distintos intervalos y daños; falta balance manual de sesiones largas |
+| H-028 | Implementado en código | Intervalos y daños reducidos, umbral de entrada y recuperación entre ataques; falta balance manual de sesiones largas |
 
 **Prueba de aceptación del corte:** `smoke:v2` usa PostgreSQL temporal, comprueba peligro offline, muerte persistente, botín único, avistamientos filtrados y sucesión sin resurrección. Para reglas y limitaciones: [docs/v2.md](v2.md).
 

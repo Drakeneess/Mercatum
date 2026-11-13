@@ -95,7 +95,7 @@ El **anexo de aptitudes** de la interfaz permite registrar la build antes de con
 
 El cooldown de DES sigue la tabla `[1400, 1200, 1050, 900, 800, 700]` ms para valores 0–5. En la creación se permiten 1–3: **1200, 1050 y 900 ms por hexágono**. El servidor impide movimientos prematuros y la interfaz muestra la recuperación del paso. El jugador mueve **un solo hexágono por acción**.
 
-**Alcance real:** solo DES modifica una mecánica por ahora. Los otros seis valores se sincronizan, pero sus interacciones todavía no están implementadas. No hay nivelación, heridas, comercio, inventario ni efectos de criaturas todavía. La build dura la sesión; no existe aún cuenta ni persistencia de personaje. La UI y su estética de horror documental se mantienen.
+**Alcance actual (V3):** FUE determina carga y fuerza, DES el intervalo de movimiento, RES mitiga daño, PER permite observar criaturas, INT afecta aperturas y TRA modifica precios de comerciante. TEM permanece reservado para sistemas de tensión. Personajes, heridas, inventario, objetos y créditos persisten en PostgreSQL.
 
 Consulta [docs/character-stats.md](docs/character-stats.md) para la especificación.
 
@@ -109,7 +109,7 @@ Las posiciones se sincronizan mediante `@colyseus/schema` 5; los comandos de mov
 
 **V1:** mapa, personaje, objetos únicos, mochila y extracción persistentes.
 
-**V2:** dos criaturas autónomas, persecución, heridas, robo de mercancía y muerte permanente sin desconexión segura.
+**V2:** dos criaturas autónomas, persecución, heridas, robo de mercancía y muerte permanente sin desconexión segura. **Balance posterior a V3:** detección limitada, ataques con recuperación individual y umbral de acceso protegido; los cambios se guardan sin borrar partidas.
 
 **V3:** 100 créditos ficticios por cuenta, mercado NPC finito en el exterior, tasaciones por condición y Trato, publicaciones voluntarias de objetos, ofertas de intercambio con consentimiento, transacciones SQL atómicas, desgaste, historia de procedencia y testimonios atribuidos **no verificados**. Consultar el registro de objeto solo es posible **fuera del Mercado**.
 
