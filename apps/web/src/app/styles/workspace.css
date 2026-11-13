@@ -189,3 +189,30 @@
 @media(prefers-reduced-motion:reduce){
   .workspace-navigation__tab {transition:none;}
 }
+
+/* Action sidebar displays nearby choices, not the entire world catalogue. */
+.expedition-inventory { margin:17px 0; border-top:2px dashed var(--hairline); }
+.expedition-inventory summary { padding:12px 0 8px; display:flex; flex-wrap:wrap;
+  justify-content:space-between;align-items:center;gap:8px;
+  cursor:pointer; font:900 11px var(--machine-type);color:var(--blood); }
+.expedition-inventory summary span { color:var(--smudge);font:9px var(--machine-type); }
+.expedition-inventory .expedition-object button { background:transparent;border:1px solid var(--hairline);
+  padding:8px;color:var(--ink);font:900 10px var(--machine-type); }
+.expedition-inventory .expedition-object button:disabled {opacity:.35;cursor:not-allowed;}
+.expedition-context { padding-top:2px; }
+.commerce-sections { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;
+  margin:18px 0 14px;padding:5px;background:var(--ink); }
+.commerce-sections button { display:grid;gap:5px;min-width:0;padding:14px 10px;
+  color:var(--paper);background:transparent;border:1px solid transparent;
+  font:900 12px var(--machine-type);text-align:left; }
+.commerce-sections button small {font:9px var(--machine-type);opacity:.78;}
+.commerce-sections button:hover {border-color:var(--paper);}
+.commerce-sections .commerce-sections__active {background:var(--paper);
+  color:var(--ink);border-color:var(--hairline);}
+.commerce-section-note {margin:15px 0;border:2px dashed var(--hairline);padding:18px;}
+.commerce-section-note strong {color:var(--blood);font:900 12px var(--machine-type);}
+.commerce-section-note p {font:12px/1.7 var(--machine-type);}
+.commerce-task {max-width:100%;min-width:0;}
+.workspace-commerce .commerce-entry {grid-template-columns:minmax(0,1fr);padding:15px 9px;}
+.workspace-commerce .commerce-entry button {width:max-content;max-width:100%;}
+.workspace-commerce .commerce-entry-actions {justify-content:space-between;}

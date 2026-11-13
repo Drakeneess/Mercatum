@@ -33,6 +33,12 @@ export function MarketActions(props:MarketActionsProps){
   const canDoor=inside&&!doorOpen&&closeTo(position,SERVICE_DOOR);
   const canExtract=inside&&!!position&&hexDistance(position,ENTRY)===0;
   const pendingSeconds=action?Math.max(0,(action.finishesAt-clock)/1000):0;
+  // The old panel listed every object on the whole map; only show actionable
+  // nearby merchandise here. Authority and visibility still belong to server.
+  const reachableItems=inside?groundItems.filter(item=>
+    position&&item.q!==undefined&&item.r!==undefined&&
+    closeTo(position,{q:item.q,r:item.r})
+  ):[];
   return (
     <section className="paper-piece expedition-sheet" aria-label="Acciones e inventario">
       <div className="piece-meta"><span>HOJA DE RECUPERACIÓN</span><span>V1 / INCURSIÓN</span></div>
@@ -63,49 +69,47 @@ export function MarketActions(props:MarketActionsProps){
             </div>
           ) : inside ? (
             <>
-              <div className="expedition-subheading">PUERTA DE MANTENIMIENTO</div>
-              <p className="expedition-muted">{doorOpen
-                ?"La hoja de metal está abierta. El tránsito es posible."
-                :"Bloquea el paso al puesto cercano. También puede rodearse."}</p>
-              {!doorOpen&&(
-                <div className="expedition-actions">
-                  <button type="button" disabled={blocked||!canDoor}
-                    onClick={()=>requestAction({kind:"open",method:"force"})}>FORZAR / FUE</button>
-                  <button type="button" disabled={blocked||!canDoor}
-                    onClick={()=>requestAction({kind:"open",method:"intellect"})}>ANALIZAR / INT</button>
+              {canDoor && (
+                <div className="expedition-context">
+                  <div className="expedition-subheading">PUERTA DE MANTENIMIENTO</div>
+                  <p className="expedition-muted">Está bloqueada. Elige un método para intentar abrirla.</p>
+                  <div className="expedition-actions">
+                    <button type="button" disabled={blocked}
+                      onClick={()=>requestAction({kind:"open",method:"force"})}>FORZAR / FUE</button>
+                    <button type="button" disabled={blocked}
+                      onClick={()=>requestAction({kind:"open",method:"intellect"})}>ANALIZAR / INT</button>
+                  </div>
                 </div>
               )}
-              <div className="expedition-subheading">OBJETOS EN EL SECTOR</div>
-              {groundItems.length===0 ? (
-                <p className="expedition-muted">No quedan piezas registradas en el suelo.</p>
-              ) : groundItems.map(item=>{
-                const near=!!position&&item.q!==undefined&&item.r!==undefined&&
-                  closeTo(position,{q:item.q,r:item.r});
-                return (
-                  <div key={item.id} className="expedition-object">
-                    <strong>{item.label}</strong>
-                    <span className="expedition-muted">Q {item.q} / R {item.r} · ESTADO {item.condition}/100</span>
-                    <div className="expedition-actions">
-                      <button disabled={blocked||!near} type="button"
-                        onClick={()=>requestAction({kind:"inspect",itemId:item.id})}>EXAMINAR</button>
-                      <button disabled={blocked||!near} type="button"
-                        onClick={()=>requestAction({kind:"take",itemId:item.id})}>RECOGER</button>
-                    </div>
+              <div className="expedition-subheading">OBJETOS A TU ALCANCE</div>
+              {reachableItems.length===0 ? (
+                <p className="expedition-muted">No hay mercancía que puedas recoger desde este hexágono.</p>
+              ) : reachableItems.map(item=>(
+                <div key={item.id} className="expedition-object">
+                  <strong>{item.label}</strong>
+                  <span className="expedition-muted">Q {item.q} / R {item.r} · ESTADO {item.condition}/100</span>
+                  <div className="expedition-actions">
+                    <button disabled={blocked} type="button"
+                      onClick={()=>requestAction({kind:"inspect",itemId:item.id})}>EXAMINAR</button>
+                    <button disabled={blocked} type="button"
+                      onClick={()=>requestAction({kind:"take",itemId:item.id})}>RECOGER</button>
                   </div>
-                );
-              })}
-              <div className="expedition-subheading">MOCHILA / EN RIESGO</div>
-              {identity.inventory.length===0 ? <p className="expedition-muted">Sin pertenencias transportadas.</p> :
-                identity.inventory.map(item=>(
-                  <div key={item.id} className="expedition-object">
-                    <strong>{item.label}</strong>
-                    <span className="expedition-muted">Peso {item.weight} · condición {item.condition}/100</span>
-                    <div className="expedition-actions">
-                      <button type="button" disabled={blocked} onClick={()=>dropItem(item.id)}>DEJAR EN EL SUELO</button>
+                </div>
+              ))}
+              <details className="expedition-inventory">
+                <summary>MOCHILA <span>{identity.inventory.length} OBJETOS / EN RIESGO</span></summary>
+                {identity.inventory.length===0 ?
+                  <p className="expedition-muted">No llevas ningún objeto.</p> :
+                  identity.inventory.map(item=>(
+                    <div key={item.id} className="expedition-object">
+                      <strong>{item.label}</strong>
+                      <span className="expedition-muted">PESO {item.weight} · ESTADO {item.condition}/100</span>
+                      <button type="button" disabled={blocked}
+                        onClick={()=>dropItem(item.id)}>DEJAR EN EL SUELO</button>
                     </div>
-                  </div>
-                ))
-              }
+                  ))
+                }
+              </details>
               <div className="expedition-subheading">SALIDA / ENTRADA 00</div>
               <p className="expedition-muted">Solo aquí puedes depositar de forma segura lo que llevas.</p>
               <button className="expedition-primary" type="button" disabled={blocked||!canExtract}
@@ -113,15 +117,21 @@ export function MarketActions(props:MarketActionsProps){
             </>
           ) : (
             <>
-              <div className="expedition-subheading">DEPÓSITO EXTERIOR</div>
-              <p className="expedition-muted">Estos objetos han sido extraídos y permanecen registrados fuera del edificio.</p>
-              {identity.stash.length===0 ? <p className="expedition-muted">Depósito vacío.</p> :
-                identity.stash.map(item=><div className="expedition-object" key={item.id}>
-                  <strong>{item.label}</strong><span className="expedition-muted">ESTADO {item.condition}/100 · RESGUARDADO</span>
-                </div>)
-              }
+              <p className="expedition-muted">
+                La incursión terminó. El comerciante y el archivo público están disponibles
+                en sus secciones. Puedes reingresar cuando lo decidas.
+              </p>
               <button className="expedition-primary" type="button" disabled={blocked}
                 onClick={reenter}>VOLVER A INGRESAR</button>
+              <details className="expedition-inventory">
+                <summary>DEPÓSITO EXTERIOR <span>{identity.stash.length} OBJETOS A SALVO</span></summary>
+                {identity.stash.length===0 ? <p className="expedition-muted">Depósito vacío.</p> :
+                  identity.stash.map(item=><div className="expedition-object" key={item.id}>
+                    <strong>{item.label}</strong>
+                    <span className="expedition-muted">ESTADO {item.condition}/100 · RESGUARDADO</span>
+                  </div>)
+                }
+              </details>
             </>
           )}
           <div className="expedition-fineprint">SIN SEGURO. SIN DEVOLUCIONES. CERRAR LA PESTAÑA NO DETIENE A LAS CRIATURAS.</div>
