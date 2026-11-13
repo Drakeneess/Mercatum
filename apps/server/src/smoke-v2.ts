@@ -36,6 +36,7 @@ async function boot(creaturesEnabled:boolean){
     env:{
       ...process.env,PORT:String(PORT),DATABASE_URL:isolatedUrl.toString(),
       MERCATUM_DISABLE_CREATURES:creaturesEnabled?"0":"1",
+      MERCATUM_CREATURE_SMOKE_FAST:"1",
     },
     stdio:["ignore","pipe","pipe"],
   });
@@ -86,7 +87,8 @@ async function run(){
   const charId=first.characterId;
   const stashId=randomUUID();
   await db.query(`
-    UPDATE characters SET q=4,r=-3 WHERE id=$1 AND phase='inside'
+    UPDATE characters SET q=4,r=-3,protected_until=0,next_harm_at=0
+    WHERE id=$1 AND phase='inside'
   `,[charId]);
   await db.query(`
     UPDATE market_objects SET state='carried',owner_character_id=$1,q=NULL,r=NULL
@@ -97,7 +99,7 @@ async function run(){
     VALUES($1,'Moneda del depósito',1,90,'stash',$2)
   `,[stashId,charId]);
   await db.query(`
-    UPDATE creatures SET q=4,r=-3,next_action_at=0
+    UPDATE creatures SET q=4,r=-3,next_action_at=0,next_attack_at=0
     WHERE id='stalker-01'
   `);
   await db.query(`

@@ -4,6 +4,7 @@ import {
   parseCharacterStats, type CharacterStats, type ExpeditionPhase, type HexCoordinate,
 } from "@mercatum/shared";
 import { pool, transaction } from "./db.js";
+import { ENTRY_GRACE_MS } from "../domain/creatureLogic.js";
 import type { Admission, CharacterRecord } from "./models.js";
 
 type CharacterRow = {
@@ -42,10 +43,10 @@ async function createCharacter(
   const id = randomUUID();
   const displayName = `Explorador-${id.slice(0, 4).toUpperCase()}`;
   const rows = await client.query<CharacterRow>(`
-    INSERT INTO characters(id, account_id, display_name, stats, q, r, phase, next_move_at)
-    VALUES ($1, $2, $3, $4, 0, 0, 'inside', 0)
+    INSERT INTO characters(id, account_id, display_name, stats, q, r, phase, next_move_at, protected_until)
+    VALUES ($1, $2, $3, $4, 0, 0, 'inside', 0, $5)
     RETURNING *
-  `, [id, accountId, displayName, JSON.stringify(stats)]);
+  `, [id, accountId, displayName, JSON.stringify(stats), Date.now()+ENTRY_GRACE_MS]);
   if (predecessorId) {
     // The exterior deposit belongs to the account, not the dead explorer's
     // body. Only objects already extracted are inherited.
@@ -135,9 +136,10 @@ export async function saveStep(
 export async function reenter(characterId: string): Promise<boolean> {
   return transaction(async client => {
     const r = await client.query(`
-      UPDATE characters SET phase='inside', q=0, r=0, health=100, wounds=0
+      UPDATE characters SET phase='inside', q=0, r=0, health=100, wounds=0,
+        protected_until=$2, next_harm_at=0
       WHERE id=$1 AND phase='outside'
-    `, [characterId]);
+    `, [characterId,Date.now()+ENTRY_GRACE_MS]);
     if (r.rowCount !== 1) return false;
     await client.query("INSERT INTO event_log(kind,character_id) VALUES('entered',$1)", [characterId]);
     return true;

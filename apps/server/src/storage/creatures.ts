@@ -3,18 +3,20 @@ import {
 } from "@mercatum/shared";
 import { pool, transaction } from "./db.js";
 import {
-  creatureDelayMs, decideCreatureMove, woundDamage, type CreatureMind,
+  creatureAttackCooldownMs, creatureDelayMs, decideCreatureMove,
+  inProtectedThreshold, postHitRecoveryMs, woundDamage, type CreatureMind,
   type Prey,
 } from "../domain/creatureLogic.js";
 
 type CreatureRow = {
   id: string; kind: CreatureKind; name: string; q: number; r: number;
-  next_action_at: string; steps: number;
+  next_action_at: string; next_attack_at:string; steps: number;
   last_known_q: number|null; last_known_r: number|null; search_left: number;
 };
 type PlayerRow = {
   id: string; q: number; r: number; health: number; wounds: number;
   stats: {endurance: number}; phase: string;
+  protected_until:string; next_harm_at:string;
 };
 export interface CreatureAttack {
   characterId: string;
@@ -42,6 +44,7 @@ export async function creaturePositions(): Promise<CreatureSighting[]> {
 
 /** One creature, at most one step per due event. Delays do not cause catch-up bursts. */
 export async function advanceCreature(now:number): Promise<CreatureTick> {
+  const smoke=process.env.MERCATUM_CREATURE_SMOKE_FAST==="1" && process.env.NODE_ENV!=="production";
   return transaction(async db=>{
     const found=await db.query<CreatureRow>(`
       SELECT * FROM creatures WHERE next_action_at<=$1
@@ -55,8 +58,9 @@ export async function advanceCreature(now:number): Promise<CreatureTick> {
     );
     const doorOpen=door.rows[0]?.door_open??false;
     const prey=await db.query<Prey>(`
-      SELECT id,q,r FROM characters WHERE phase='inside' AND health>0
-    `);
+      SELECT id,q,r FROM characters
+      WHERE phase='inside' AND health>0 AND protected_until<=$1
+    `,[now]);
     const mind:CreatureMind={
       id:creature.id,kind:creature.kind,q:creature.q,r:creature.r,
       steps:creature.steps,lastKnownQ:creature.last_known_q,
@@ -68,7 +72,7 @@ export async function advanceCreature(now:number): Promise<CreatureTick> {
       UPDATE creatures SET q=$2,r=$3,next_action_at=$4,steps=steps+1,
         last_known_q=$5,last_known_r=$6,search_left=$7 WHERE id=$1
     `,[
-      creature.id,q,r,now+creatureDelayMs(creature.kind),
+      creature.id,q,r,now+creatureDelayMs(creature.kind,smoke),
       decision.lastKnownQ,decision.lastKnownR,decision.searchLeft,
     ]);
 
@@ -87,18 +91,27 @@ export async function advanceCreature(now:number): Promise<CreatureTick> {
     const attacks:CreatureAttack[]=[];
     if(decision.victimId){
       const victims=await db.query<PlayerRow>(`
-        SELECT id,q,r,health,wounds,stats,phase FROM characters
-        WHERE id=$1 FOR UPDATE
+        SELECT id,q,r,health,wounds,stats,phase,protected_until,next_harm_at
+        FROM characters WHERE id=$1 FOR UPDATE
       `,[decision.victimId]);
       const victim=victims.rows[0];
-      if(victim&&victim.phase==="inside"&&victim.health>0&&victim.q===q&&victim.r===r){
+      if(victim && victim.phase==="inside" && victim.health>0 &&
+        victim.q===q && victim.r===r &&
+        !inProtectedThreshold(victim) &&
+        now>=Number(victim.protected_until) &&
+        now>=Number(victim.next_harm_at) &&
+        now>=Number(creature.next_attack_at)){
         const damage=woundDamage(creature.kind,Number(victim.stats.endurance??1));
         const health=Math.max(0,victim.health-damage);
         const wounds=Math.min(5,victim.wounds+1);
         const dead=health===0;
         await db.query(`
-          UPDATE characters SET health=$2,wounds=$3,phase=$4 WHERE id=$1
-        `,[victim.id,health,wounds,dead?"dead":"inside"]);
+          UPDATE characters SET health=$2,wounds=$3,phase=$4,next_harm_at=$5
+          WHERE id=$1
+        `,[victim.id,health,wounds,dead?"dead":"inside",now+postHitRecoveryMs(smoke)]);
+        await db.query(`
+          UPDATE creatures SET next_attack_at=$2 WHERE id=$1
+        `,[creature.id,now+creatureAttackCooldownMs(creature.kind,smoke)]);
         let stolenItem:string|undefined;
         if(dead){
           // Loot is never duplicated: previously carried items return to
