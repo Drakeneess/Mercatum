@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCharacterBuild } from "../hooks/useCharacterBuild";
 import { useMercatumRoom } from "../hooks/useMercatumRoom";
 import { useTheme } from "../hooks/useTheme";
@@ -11,7 +11,16 @@ import { SectorNotes } from "../components/SectorNotes";
 import { MarketBoard } from "../components/MarketBoard";
 import { ProvenanceBoard } from "../components/ProvenanceBoard";
 import { ExpeditionStatus } from "../components/ExpeditionStatus";
+import { WorkspaceModal } from "../components/WorkspaceModal";
 import { WorkspaceNavigation, type WorkspaceView } from "../components/WorkspaceNavigation";
+
+type OverlayView = Exclude<WorkspaceView, "explore">;
+
+const overlayMeta:Record<OverlayView,{title:string;subtitle:string}> = {
+  character:{title:"Ficha del explorador",subtitle:"02 / REGISTRO PERSONAL"},
+  commerce:{title:"Comercio y trueque",subtitle:"03 / TRANSACCIONES"},
+  registry:{title:"Archivo de procedencia",subtitle:"04 / REGISTRO EXTERIOR"},
+};
 
 export default function Home() {
   const { theme, activeTheme, themeMenuRef, selectTheme } = useTheme();
@@ -28,19 +37,35 @@ export default function Home() {
     market, provenance, operateMarket, requestMarket, requestProvenance,
   } = useMercatumRoom(committedBuild, draftStats, createSuccessor);
 
-  // Unregistered explorers see their intake form first. A signed form
-  // returns them to the map without changing their live Colyseus session.
-  const [selectedView, setSelectedView] = useState<WorkspaceView>("explore");
-  const view:WorkspaceView = committedBuild ? selectedView : "character";
+  // Keep the game surface and the Colyseus connection mounted while a modal
+  // shows character, trade or archived paperwork. Only one can be open.
+  const [activeModal, setActiveModal] = useState<OverlayView|null>(null);
+  const view:WorkspaceView = !committedBuild ? "character" : activeModal ?? "explore";
   const incomingOffers = market?.offers.filter(o=>o.direction==="incoming").length ?? 0;
+
+  useEffect(()=>{
+    // A death while browsing another dossier must expose the main death record.
+    if(identity?.phase==="dead")setActiveModal(null);
+  },[identity?.phase]);
+
   function navigate(destination:WorkspaceView) {
-    if(!committedBuild && destination!=="character")return;
-    setSelectedView(destination);
+    if(!committedBuild)return;
+    if(destination==="explore"){
+      setActiveModal(null);
+      return;
+    }
+    setActiveModal(destination);
     if(destination==="commerce")requestMarket();
   }
 
+  const explorerProps = {
+    me, currentPosition, connection, committedBuild, draftStats,
+    pointsLeft, adjustStat, setDraftStats, enterMarket,
+    characterStats, movementDelayMs, marketTime,
+  };
+
   return (
-    <div className="app-shell app-shell--organized" data-theme={theme}>
+    <div className="app-shell app-shell--organized app-shell--modal" data-theme={theme}>
       <div className="filth" aria-hidden="true" />
       <div className="screen-damage" aria-hidden="true" />
       <MarketHeader
@@ -53,81 +78,75 @@ export default function Home() {
       />
 
       <main className="workspace-main" id="mercatum-content">
-        {committedBuild&&(
-          <ExpeditionStatus identity={identity} position={currentPosition}
-            time={marketTime} connection={connection} creatures={sightings}
-            action={action} onNavigate={navigate}/>
-        )}
-        {view==="explore" && (
-          <section className="workspace-route" aria-label="Exploración">
-            <header className="workspace-route__heading">
-              <div><span>01 / OPERACIONES DE INCURSIÓN</span><h1>Exploración <em>activa.</em></h1></div>
-              <p>Muévete por las casillas vecinas. El Mercado no espera a que termines de leer.</p>
-            </header>
-            <div className="workspace-expedition">
-              <MarketMap
-                map={map} currentPosition={currentPosition} walkable={walkable}
-                requestMove={requestMove} players={players} playerId={playerId}
-                hasBuild={Boolean(committedBuild)} characterStats={characterStats}
-                cooldownRemaining={cooldownRemaining} recoveryPercentage={recoveryPercentage}
-                notice={notice} doorOpen={doorOpen} groundItems={groundItems} sightings={sightings}
-              />
-              <SectorNotes map={map} players={players} events={events}
-                identity={identity} sightings={sightings}
-                actions={{connection,identity,position:currentPosition,groundItems,doorOpen,
-                  onNewCharacter:prepareSuccessor,action,clock,requestAction,
-                  cancelAction,dropItem,reenter}}
-              />
-            </div>
-          </section>
-        )}
-        {view==="character" && (
-          <section className="workspace-route workspace-route--character" aria-label="Ficha de personaje">
+        {!committedBuild ? (
+          <section className="workspace-route workspace-route--character" aria-label="Registro de personaje">
             <header className="workspace-route__heading">
               <div><span>02 / REGISTRO PERSONAL</span><h1>Ficha del <em>explorador.</em></h1></div>
-              <p>{committedBuild?"Tu personaje sigue en el mundo mientras consultas sus datos.":
-                "Distribuye tus siete atributos para registrar un nuevo explorador."}</p>
+              <p>Distribuye tus siete atributos para registrar un nuevo explorador.</p>
             </header>
             <div className="workspace-character">
-              <ExplorerColumn
-                me={me} currentPosition={currentPosition} connection={connection}
-                committedBuild={committedBuild} draftStats={draftStats}
-                pointsLeft={pointsLeft} adjustStat={adjustStat}
-                setDraftStats={setDraftStats} enterMarket={enterMarket}
-                characterStats={characterStats} movementDelayMs={movementDelayMs}
-                marketTime={marketTime}
-              />
+              <ExplorerColumn {...explorerProps}/>
             </div>
           </section>
+        ) : (
+          <>
+            <ExpeditionStatus identity={identity} position={currentPosition}
+              time={marketTime} connection={connection} creatures={sightings}
+              action={action} onNavigate={navigate}/>
+            <section className="workspace-route" aria-label="Exploración activa">
+              <header className="workspace-route__heading">
+                <div><span>01 / OPERACIONES DE INCURSIÓN</span><h1>Exploración <em>activa.</em></h1></div>
+                <p>El mapa permanece disponible. Otros expedientes se consultan sin pausar la incursión.</p>
+              </header>
+              <div className="workspace-expedition">
+                <MarketMap
+                  map={map} currentPosition={currentPosition} walkable={walkable}
+                  requestMove={requestMove} players={players} playerId={playerId}
+                  hasBuild={Boolean(committedBuild)} characterStats={characterStats}
+                  cooldownRemaining={cooldownRemaining} recoveryPercentage={recoveryPercentage}
+                  notice={notice} doorOpen={doorOpen} groundItems={groundItems} sightings={sightings}
+                />
+                <SectorNotes map={map} players={players} events={events}
+                  identity={identity} sightings={sightings}
+                  actions={{connection,identity,position:currentPosition,groundItems,doorOpen,
+                    onNewCharacter:prepareSuccessor,action,clock,requestAction,
+                    cancelAction,dropItem,reenter}}
+                />
+              </div>
+            </section>
+          </>
         )}
-        {view==="commerce" && (
-          <section className="workspace-route workspace-route--commerce" aria-label="Comercio">
-            <header className="workspace-route__heading">
-              <div><span>03 / HOJA DE TRANSACCIONES</span><h1>Comprar. <em>Negociar.</em></h1></div>
-              <p>El comerciante opera en el exterior. Los intercambios entre exploradores
-                también funcionan a un hexágono de distancia dentro del Mercado.</p>
-            </header>
-            {identity?.phase==="dead" ? (
+      </main>
+
+      {committedBuild && activeModal && (
+        <WorkspaceModal key={activeModal}
+          title={overlayMeta[activeModal].title}
+          subtitle={overlayMeta[activeModal].subtitle}
+          health={identity?.health??null}
+          inside={identity?.phase==="inside"}
+          sightings={sightings.length}
+          onRequestClose={()=>setActiveModal(null)}>
+          {activeModal==="character" && (
+            <div className="workspace-character">
+              <ExplorerColumn {...explorerProps}/>
+            </div>
+          )}
+          {activeModal==="commerce" && (
+            identity?.phase==="dead" ? (
               <div className="workspace-gate" role="status">
                 <strong>EXPEDIENTE CERRADO</strong>
-                <p>Un personaje fallecido no puede comerciar. Registra un sucesor desde la vista de exploración.</p>
-                <button type="button" onClick={()=>navigate("explore")}>VER EXPEDIENTE DE INCURSIÓN</button>
+                <p>Un personaje fallecido no puede comerciar. Registra un sucesor desde el plano.</p>
+                <button type="button" onClick={()=>setActiveModal(null)}>VOLVER AL PLANO</button>
               </div>
             ) : (
               <div className="workspace-commerce">
                 <MarketBoard identity={identity} market={market}
                   operate={operateMarket} requestMarket={requestMarket}/>
               </div>
-            )}
-          </section>
-        )}
-        {view==="registry" && (
-          <section className="workspace-route workspace-route--registry" aria-label="Registro público">
-            <header className="workspace-route__heading">
-              <div><span>04 / ARCHIVO EXTERNO</span><h1>Hechos y <em>versiones.</em></h1></div>
-              <p>El registro conserva hechos verificables y afirmaciones de jugadores. Que algo conste no significa que sea verdad.</p>
-            </header>
-            {identity?.phase==="outside" ? (
+            )
+          )}
+          {activeModal==="registry" && (
+            identity?.phase==="outside" ? (
               <div className="workspace-registry">
                 <ProvenanceBoard identity={identity} market={market}
                   record={provenance} operate={operateMarket} inspect={requestProvenance}/>
@@ -137,13 +156,14 @@ export default function Home() {
                 <strong>ARCHIVO INACCESIBLE</strong>
                 <p>{identity?.phase==="dead"
                   ?"Este expediente ha sido cerrado. El siguiente explorador podrá consultar el archivo exterior."
-                  :"La consulta del historial público no está disponible desde el interior. Regresa al hexágono de entrada y completa una extracción para acceder."}</p>
-                <button type="button" onClick={()=>navigate("explore")}>REGRESAR A EXPLORACIÓN</button>
+                  :"La consulta de procedencia solo existe fuera del edificio. Vuelve a la entrada y completa una extracción."}</p>
+                <button type="button" onClick={()=>setActiveModal(null)}>REGRESAR AL PLANO</button>
               </div>
-            )}
-          </section>
-        )}
-      </main>
+            )
+          )}
+        </WorkspaceModal>
+      )}
+
       <footer className="main-footer">
         <span>LA ORGANIZACIÓN / DOCUMENTO SIN GARANTÍAS</span>
         <span>MERCATUM — NO DEJAR EN EL INTERIOR DEL EDIFICIO</span>
