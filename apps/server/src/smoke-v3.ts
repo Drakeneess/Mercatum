@@ -89,6 +89,52 @@ async function run(){
   const b=await client.join<MercatumState>(MERCATUM_ROOM_NAME,{stats:BALANCED_STATS});
   const [ia,ib]=await Promise.all([identity(a),identity(b)]);
   assert.equal(ia.balance,100);assert.equal(ib.balance,100);
+  // The in-world booth at (2,0) is not a teleporting merchant menu.
+  const visitor=await client.join<MercatumState>(MERCATUM_ROOM_NAME,{stats:BALANCED_STATS});
+  const visitorIdentity=await identity(visitor);
+  const unopened=await market(visitor);
+  assert.equal(unopened.merchantAvailable,false);
+  assert.equal(unopened.stock.length,0);
+  const lanternId="00000000-0000-4000-8000-000000000101";
+  const remote=await operation(visitor,{kind:"buy",itemId:lanternId});
+  assert.equal(remote.ok,false,"remote buy blocked even with a forged message");
+
+  // An isolated actor moves to the storefront in SQL, bypassing lengthy walk
+  // animations without compromising the authoritative market position check.
+  await db.query("UPDATE characters SET q=2,r=0 WHERE id=$1",[visitorIdentity.characterId]);
+  const counter=await market(visitor);
+  assert.equal(counter.merchantAvailable,true,"storefront authorized within one hex");
+  const lamp=counter.stock.find(item=>item.id===lanternId);
+  assert.ok(lamp);
+  assert.ok((await operation(visitor,{kind:"buy",itemId:lanternId})).ok);
+  const inBag=await identity(visitor);
+  assert.equal(inBag.inventory.filter(item=>item.id===lanternId).length,1);
+  assert.equal(inBag.stash.length,0,"in-world purchases go into carried inventory");
+  assert.equal(inBag.balance,100-lamp.price);
+
+  // Over-capacity purchases must fail without debiting currency or duplicating.
+  const heavyId=randomUUID();
+  await db.query(`
+    INSERT INTO market_objects(id,label,weight,condition,state,owner_character_id)
+    VALUES($1,'Fardo pesado',90,100,'carried',$2)
+  `,[heavyId,visitorIdentity.characterId]);
+  const creditsBefore=(await identity(visitor)).balance;
+  const overloaded=await operation(visitor,{
+    kind:"buy",itemId:"00000000-0000-4000-8000-000000000103",
+  });
+  assert.equal(overloaded.ok,false);
+  assert.equal((await identity(visitor)).balance,creditsBefore);
+
+  // Selling from the counter consumes the same object ID as the purchase.
+  assert.ok((await operation(visitor,{kind:"sell",itemId:lanternId})).ok);
+  const afterSale=await identity(visitor);
+  assert.equal(afterSale.inventory.some(item=>item.id===lanternId),false);
+  assert.ok((await market(visitor)).stock.some(item=>item.id===lanternId));
+  await db.query("UPDATE characters SET q=0,r=0 WHERE id=$1",[visitorIdentity.characterId]);
+  assert.equal((await market(visitor)).merchantAvailable,false);
+  const remoteAgain=await operation(visitor,{kind:"buy",itemId:lanternId});
+  assert.equal(remoteAgain.ok,false);
+  await visitor.leave();
   // The register is outside, and hidden behind an explicit server check.
   const rejected=wait<{message:string}>(a,"market_error");
   a.send("provenance_request",{itemId:"00000000-0000-4000-8000-000000000001"});
