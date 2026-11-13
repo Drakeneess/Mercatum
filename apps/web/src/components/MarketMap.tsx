@@ -19,11 +19,12 @@ export interface MarketMapProps {
   doorOpen: boolean;
   groundItems: readonly MarketItem[];
   sightings: readonly CreatureSighting[];
+  onOpenShop: () => void;
 }
 
 export function MarketMap(props: MarketMapProps) {
   const { map, currentPosition, walkable, requestMove, players, playerId,
-    hasBuild, characterStats, cooldownRemaining, recoveryPercentage, notice, doorOpen, groundItems, sightings } = props;
+    hasBuild, characterStats, cooldownRemaining, recoveryPercentage, notice, doorOpen, groundItems, sightings, onOpenShop } = props;
   const canWalk=players.some(p=>p.id===playerId&&p.inside);
   return (
         <section className="map-panel" aria-label="Plano interactivo del Mercado">
@@ -105,6 +106,28 @@ export function MarketMap(props: MarketMapProps) {
                 );
               })}
 
+              {/* This button exists on the floor plan only while the explorer
+                  stands directly in front of a mapped storefront. */}
+              {canWalk && currentPosition && map.filter(tile=>
+                tile.kind==="shop" && hexDistance(tile,currentPosition)<=1
+              ).map(shop=>{
+                const center=hexCenter(shop);
+                const activate=()=>onOpenShop();
+                return (
+                  <g key={"visit-"+hexKey(shop)} className="shop-interaction"
+                    transform={`translate(${center.x} ${center.y-46})`}
+                    role="button" tabIndex={0} aria-label="Comerciar en el puesto"
+                    onClick={event=>{event.stopPropagation();activate();}}
+                    onKeyDown={event=>{
+                      if(event.key==="Enter"||event.key===" "){
+                        event.preventDefault();event.stopPropagation();activate();
+                      }
+                    }}>
+                    <rect x="-50" y="-13" width="100" height="26" rx="3"/>
+                    <text textAnchor="middle" dominantBaseline="central">COMERCIAR</text>
+                  </g>
+                );
+              })}
               {groundItems.map((item) => {
                 if (item.q===undefined||item.r===undefined) return null;
                 const center=hexCenter({q:item.q,r:item.r});

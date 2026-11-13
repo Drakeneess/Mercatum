@@ -140,3 +140,13 @@
 .loot-marker { pointer-events: none; }
 .loot-marker rect { fill: #8e3028; stroke: #f1d7ac; stroke-width: 1; transform: rotate(12deg); }
 .loot-marker text { fill: #f5deb3; font: 900 13px var(--machine-type); }
+
+/* A situational storefront action, anchored to the shop on the hex plan. */
+.shop-interaction {cursor:pointer;outline:none;}
+.shop-interaction rect {fill:#39261d;stroke:#c1986d;stroke-width:1.6;stroke-dasharray:3 1.5;}
+.shop-interaction text {fill:#f6e5c4;font:900 10px var(--machine-type);pointer-events:none;}
+.shop-interaction:hover rect,.shop-interaction:focus-visible rect {fill:#853b2d;stroke:#f1c89e;stroke-width:2.5;}
+.shop-interaction:focus-visible {filter:drop-shadow(0 0 5px #cb7865);}
+.app-shell[data-theme="phosphor"] .shop-interaction rect {fill:#193322;stroke:#a7c8a4;}
+.app-shell[data-theme="phosphor"] .shop-interaction text {fill:#e5f4da;}
+.app-shell[data-theme="vigil"] .shop-interaction rect {fill:#39402c;stroke:#d9c6a4;}

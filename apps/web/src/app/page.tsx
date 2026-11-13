@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SHOP, hexDistance } from "@mercatum/shared";
 import { useCharacterBuild } from "../hooks/useCharacterBuild";
 import { useMercatumRoom } from "../hooks/useMercatumRoom";
 import { useTheme } from "../hooks/useTheme";
@@ -40,6 +41,9 @@ export default function Home() {
   // Keep the game surface and the Colyseus connection mounted while a modal
   // shows character, trade or archived paperwork. Only one can be open.
   const [activeModal, setActiveModal] = useState<OverlayView|null>(null);
+  const [commerceSection, setCommerceSection] = useState<"merchant"|"exchange">("merchant");
+  const nearShop=identity?.phase==="inside" && !!currentPosition &&
+    hexDistance(currentPosition,SHOP)<=1;
   const view:WorkspaceView = !committedBuild ? "character" : activeModal ?? "explore";
   const incomingOffers = market?.offers.filter(o=>o.direction==="incoming").length ?? 0;
 
@@ -54,8 +58,18 @@ export default function Home() {
       setActiveModal(null);
       return;
     }
+    if(destination==="commerce"){
+      setCommerceSection(identity?.phase==="outside"||nearShop?"merchant":"exchange");
+      requestMarket();
+    }
     setActiveModal(destination);
-    if(destination==="commerce")requestMarket();
+  }
+
+  function openShop(){
+    if(connection!=="online"||!nearShop)return;
+    setCommerceSection("merchant");
+    setActiveModal("commerce");
+    requestMarket();
   }
 
   const explorerProps = {
@@ -105,6 +119,7 @@ export default function Home() {
                   hasBuild={Boolean(committedBuild)} characterStats={characterStats}
                   cooldownRemaining={cooldownRemaining} recoveryPercentage={recoveryPercentage}
                   notice={notice} doorOpen={doorOpen} groundItems={groundItems} sightings={sightings}
+                  onOpenShop={openShop}
                 />
                 <SectorNotes map={map} players={players} events={events}
                   identity={identity} sightings={sightings}
@@ -140,7 +155,8 @@ export default function Home() {
               </div>
             ) : (
               <div className="workspace-commerce">
-                <MarketBoard identity={identity} market={market}
+                <MarketBoard key={commerceSection} initialSection={commerceSection}
+                  identity={identity} market={market}
                   operate={operateMarket} requestMarket={requestMarket}/>
               </div>
             )

@@ -10,16 +10,22 @@ interface MerchantPanelProps {
 
 /** NPC stock and player sell-back stay in the same task context. */
 export function MerchantPanel({identity,market,operate}:MerchantPanelProps){
-  if(identity.phase!=="outside")return (
+  if(!market?.merchantAvailable)return (
     <div className="commerce-section-note">
-      <strong>VENTANILLA CERRADA DESDE EL INTERIOR</strong>
-      <p>El comerciante está fuera del edificio. Vuelve a la entrada y completa una extracción
-        para comprar o vender. Para negociar con exploradores cercanos, abre «Intercambios».</p>
+      <strong>NO ESTÁS FRENTE A UN PUESTO</strong>
+      <p>Acércate al símbolo PUESTO del mapa. Cuando estés a una casilla, aparecerá
+        el botón COMERCIAR. El comerciante exterior sigue disponible después de extraer.
+        Los intercambios con otros jugadores se hacen en «Intercambios».</p>
     </div>
   );
-  const items=market?.own.filter(item=>identity.stash.some(stored=>stored.id===item.id))??[];
+  const inside=identity.phase==="inside";
+  const carried=inside?identity.inventory:identity.stash;
+  const items=market.own.filter(item=>carried.some(stored=>stored.id===item.id));
   return (
     <div className="commerce-task">
+      {inside&&<p className="commerce-section-note">Estás comprando dentro del Mercado.
+        Las compras van a tu mochila y pueden perderse si mueres. La capacidad de carga
+        se comprueba antes de confirmar.</p>}
       <div className="expedition-subheading">01 / MERCANCÍA DEL MOSTRADOR</div>
       <p className="expedition-muted">El stock es finito. Alguien puede llevarse una pieza antes que tú.</p>
       {!market?<p className="expedition-muted">Consultando inventario del comerciante...</p>:
@@ -35,8 +41,8 @@ export function MerchantPanel({identity,market,operate}:MerchantPanelProps){
             </div>
           </div>
         ))}
-      <div className="expedition-subheading">02 / VENDER DESDE MI DEPÓSITO</div>
-      {items.length===0?<p className="expedition-muted">No hay objetos depositados para vender.</p>:
+      <div className="expedition-subheading">02 / VENDER DESDE {inside?"MI MOCHILA":"MI DEPÓSITO"}</div>
+      {items.length===0?<p className="expedition-muted">No tienes objetos disponibles para vender aquí.</p>:
         items.map(item=>(
           <div className="commerce-entry" key={item.id}>
             <strong>{item.label}</strong>
