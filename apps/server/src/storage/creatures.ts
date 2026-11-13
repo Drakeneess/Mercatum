@@ -3,8 +3,8 @@ import {
 } from "@mercatum/shared";
 import { pool, transaction } from "./db.js";
 import {
-  creatureAttackCooldownMs, creatureDelayMs, decideCreatureMove,
-  inProtectedThreshold, postHitRecoveryMs, woundDamage, type CreatureMind,
+  canDealContactDamage, creatureAttackCooldownMs, creatureDelayMs, decideCreatureMove,
+  postHitRecoveryMs, woundDamage, type CreatureMind,
   type Prey,
 } from "../domain/creatureLogic.js";
 
@@ -97,10 +97,9 @@ export async function advanceCreature(now:number): Promise<CreatureTick> {
       const victim=victims.rows[0];
       if(victim && victim.phase==="inside" && victim.health>0 &&
         victim.q===q && victim.r===r &&
-        !inProtectedThreshold(victim) &&
-        now>=Number(victim.protected_until) &&
-        now>=Number(victim.next_harm_at) &&
-        now>=Number(creature.next_attack_at)){
+        canDealContactDamage(victim,now,
+          Number(creature.next_attack_at),Number(victim.next_harm_at),
+          Number(victim.protected_until))){
         const damage=woundDamage(creature.kind,Number(victim.stats.endurance??1));
         const health=Math.max(0,victim.health-damage);
         const wounds=Math.min(5,victim.wounds+1);

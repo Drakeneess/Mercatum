@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  creatureDelayMs, creatureAttackCooldownMs, decideCreatureMove, hasLineOfSight,
+  creatureDelayMs, creatureAttackCooldownMs, canDealContactDamage, decideCreatureMove, hasLineOfSight,
   inProtectedThreshold, postHitRecoveryMs, visibleToExplorer,
   woundDamage, woundedMovementDelay,
 } from "./creatureLogic.js";
@@ -68,4 +68,21 @@ test("players have an actionable lead and repeated attacks are individually pace
   assert.ok(woundDamage("stalker",1)<30);
   assert.ok(woundDamage("scavenger",1)<20);
   assert.equal(woundedMovementDelay(1200,5),1600);
+});
+
+test("a contact must respect persisted creature cooldown, player recovery and entry grace",()=>{
+  const position={q:3,r:0};
+  assert.equal(canDealContactDamage(position,10_000,8_000,9_000,0),true);
+  assert.equal(canDealContactDamage(position,10_000,12_000,9_000,0),false);
+  assert.equal(canDealContactDamage(position,10_000,8_000,11_000,0),false);
+  assert.equal(canDealContactDamage(position,10_000,8_000,9_000,15_000),false);
+  assert.equal(canDealContactDamage({q:1,r:0},10_000,0,0,0),false);
+});
+test("an old memory inside the entry threshold is discarded",()=>{
+  const mind={id:"stalker-01",kind:"stalker" as const,q:3,r:0,steps:3,
+    lastKnownQ:0,lastKnownR:0,searchLeft:2};
+  const decision=decideCreatureMove(mind,[],true);
+  assert.equal(decision.lastKnownQ,null);
+  assert.equal(decision.searchLeft,0);
+  assert.ok(!inProtectedThreshold(decision.to));
 });

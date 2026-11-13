@@ -133,6 +133,9 @@ export function decideCreatureMove(
   let knownR=creature.lastKnownR;
   let search=creature.searchLeft;
   let goal:HexCoordinate|null=null;
+  if(knownQ!==null && knownR!==null && inProtectedThreshold({q:knownQ,r:knownR})){
+    knownQ=null;knownR=null;search=0;
+  }
   if(prey){
     goal={q:prey.q,r:prey.r};
     knownQ=prey.q; knownR=prey.r; search=behaviour.memory;
@@ -184,4 +187,15 @@ export function woundDamage(kind:CreatureKind, endurance:number):number {
 }
 export function woundedMovementDelay(base:number,wounds:number):number {
   return base + Math.max(0,Math.min(5,wounds))*80;
+}
+
+/** Two persisted clocks and a safe-entry rule must ALL allow damage.
+ * A creature standing on a player's tile does not automatically deal damage
+ * every time its movement scheduler runs. */
+export function canDealContactDamage(
+  position: HexCoordinate, now:number, nextAttackAt:number,
+  nextHarmAt:number, protectedUntil:number,
+):boolean {
+  return !inProtectedThreshold(position) &&
+    now>=nextAttackAt && now>=nextHarmAt && now>=protectedUntil;
 }
