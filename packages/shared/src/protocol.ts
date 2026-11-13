@@ -127,6 +127,7 @@ export interface TradeOffer {
   readonly direction: "incoming" | "outgoing";
 }
 export interface MarketReply {
+  readonly merchantAvailable: boolean;
   readonly credits: number;
   readonly stock: readonly MarketListing[];
   readonly own: readonly TradeableItem[];

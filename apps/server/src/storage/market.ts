@@ -4,7 +4,7 @@ import {
   type TradePeer, type TradeableItem,
 } from "@mercatum/shared";
 import { pool, transaction } from "./db.js";
-import { isUuid, purchasePrice, salePrice, tradeAllowed } from "../domain/marketRules.js";
+import { canVisitMerchant, isUuid, purchasePrice, salePrice, tradeAllowed } from "../domain/marketRules.js";
 
 export class MarketError extends Error {}
 
@@ -97,7 +97,8 @@ export async function marketSnapshot(
     `,[characterId]);
     const own=owned.rows.map(x=>({...cleanItem(x),resalePrice:salePrice(x.base_price,x.condition,actor.trato)}));
     const account=await db.query<{credits:number}>("SELECT credits FROM accounts WHERE id=$1",[actor.accountId]);
-    const stock=actor.phase==="outside"
+    const merchantAvailable=canVisitMerchant(actor);
+    const stock=merchantAvailable
       ? await db.query<ObjectRow>("SELECT * FROM market_objects WHERE state='merchant' ORDER BY label,id")
       : {rows:[] as ObjectRow[]};
     const available:TradePeer[]=[];
@@ -140,6 +141,7 @@ export async function marketSnapshot(
       status:"pending",direction:x.seller_id===characterId?"incoming":"outgoing",
     }));
     return {
+      merchantAvailable,
       credits:account.rows[0]?.credits??0,
       stock:stock.rows.map(item=>({...cleanItem(item),price:purchasePrice(item.base_price,item.condition,actor.trato)} as MarketListing)),
       own,peers:available,offers:result,
@@ -151,7 +153,7 @@ export async function merchantBuy(characterId:string,requestId:string,itemId:str
   if(!isUuid(itemId))throw new MarketError("Objeto inválido.");
   return transaction(async db=>{
     const actor=await actorFor(characterId,db,true);
-    if(actor.phase!=="outside")throw new MarketError("La compraventa está fuera del Mercado.");
+    if(!canVisitMerchant(actor))throw new MarketError("Acércate al puesto para comprar o extrae al comerciante exterior.");
     const balance=await lockedAccount(db,actor.accountId);
     if(!(await receipt(db,actor.accountId,requestId,"buy")))return "Compra ya registrada.";
     const r=await db.query<ObjectRow>(`
@@ -160,11 +162,20 @@ export async function merchantBuy(characterId:string,requestId:string,itemId:str
     const item=r.rows[0];if(!item)throw new MarketError("La mercancía ya no está a la venta.");
     const price=purchasePrice(item.base_price,item.condition,actor.trato);
     if(balance<price)throw new MarketError("Saldo insuficiente.");
+    const destination=storageState(actor);
+    if(destination==="carried"){
+      const carried=await db.query<{total:string}>(`
+        SELECT COALESCE(SUM(weight),0)::text AS total FROM market_objects
+        WHERE owner_character_id=$1 AND state='carried'
+      `,[characterId]);
+      if(Number(carried.rows[0]?.total??0)+item.weight>4+2*actor.strength)
+        throw new MarketError("Tu mochila no tiene capacidad para esta compra.");
+    }
     await wallet(db,actor.accountId,-price,"merchant_purchase",requestId,item.id);
     await db.query(`
-      UPDATE market_objects SET state='stash',owner_character_id=$2,listed=FALSE,
+      UPDATE market_objects SET state=$3,owner_character_id=$2,listed=FALSE,
         condition=GREATEST(0,condition-1) WHERE id=$1
-    `,[itemId,characterId]);
+    `,[itemId,characterId,destination]);
     return `Compra registrada: ${item.label} por ${price} créditos.`;
   });
 }
@@ -173,14 +184,15 @@ export async function merchantSell(characterId:string,requestId:string,itemId:st
   if(!isUuid(itemId))throw new MarketError("Objeto inválido.");
   return transaction(async db=>{
     const actor=await actorFor(characterId,db,true);
-    if(actor.phase!=="outside")throw new MarketError("Solo puedes vender desde el exterior.");
+    if(!canVisitMerchant(actor))throw new MarketError("Acércate al puesto para vender o extrae al comerciante exterior.");
+    const source=storageState(actor);
     await lockedAccount(db,actor.accountId);
     if(!(await receipt(db,actor.accountId,requestId,"sell")))return "Venta ya registrada.";
     const r=await db.query<ObjectRow>(`
-      SELECT * FROM market_objects WHERE id=$1 AND owner_character_id=$2 AND state='stash'
+      SELECT * FROM market_objects WHERE id=$1 AND owner_character_id=$2 AND state=$3
       FOR UPDATE
-    `,[itemId,characterId]);
-    const item=r.rows[0];if(!item)throw new MarketError("El objeto no está en tu depósito.");
+    `,[itemId,characterId,source]);
+    const item=r.rows[0];if(!item)throw new MarketError("No llevas ese objeto a este mostrador.");
     const price=salePrice(item.base_price,item.condition,actor.trato);
     await wallet(db,actor.accountId,price,"merchant_sale",requestId,itemId);
     await db.query(`

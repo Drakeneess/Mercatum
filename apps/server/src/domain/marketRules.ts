@@ -1,4 +1,4 @@
-import { hexDistance, type HexCoordinate } from "@mercatum/shared";
+import { SHOP, hexDistance, type HexCoordinate } from "@mercatum/shared";
 
 /** All prices are integral fictional credits. Condition directly affects appraisal.
  * Trade is deliberately free-price: players can overpay for a convincing story. */
@@ -22,6 +22,14 @@ export function tradeAllowed(a: TradeParticipant, b: TradeParticipant): boolean 
   if (a.health<=0 || b.health<=0 || a.phase!==b.phase || a.phase==="dead") return false;
   if (a.phase==="outside") return true;
   return hexDistance({q:a.q,r:a.r} as HexCoordinate, {q:b.q,r:b.r})<=1;
+}
+/** A merchant can be visited from the exterior or by standing in front of a
+ * mapped storefront. All buy/sell calls must recheck this on the server. */
+export function canVisitMerchant(actor: TradeParticipant): boolean {
+  return actor.health > 0 && (
+    actor.phase === "outside" ||
+    (actor.phase === "inside" && hexDistance(actor, SHOP) <= 1)
+  );
 }
 export function safeAmount(input: unknown): number | null {
   return Number.isInteger(input) && typeof input==="number" && input>=0 && input<=100_000
