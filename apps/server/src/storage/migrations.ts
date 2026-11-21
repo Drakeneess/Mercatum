@@ -292,8 +292,10 @@ const migrations: ReadonlyArray<string> = [
           AND other.q=mob.q AND other.r=mob.r
       ) THEN
         SELECT coords.q,coords.r INTO free_cell
-        FROM generate_series(-4,4) q CROSS JOIN generate_series(-4,4) r
-        CROSS JOIN LATERAL (SELECT q AS q,r AS r) coords
+        FROM (
+          SELECT x.q,y.r FROM generate_series(-4,4) AS x(q)
+          CROSS JOIN generate_series(-4,4) AS y(r)
+        ) AS coords
         WHERE GREATEST(ABS(coords.q),ABS(coords.r),ABS(coords.q+coords.r))<=4
           AND GREATEST(ABS(coords.q),ABS(coords.r),ABS(coords.q+coords.r))>=2
           AND (coords.q,coords.r) NOT IN
