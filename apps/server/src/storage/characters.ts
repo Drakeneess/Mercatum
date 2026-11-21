@@ -88,7 +88,7 @@ export async function admit(options: unknown): Promise<Admission> {
         SELECT * FROM characters WHERE account_id=$1 AND phase <> 'dead'
         LIMIT 1 FOR UPDATE
       `, [accountId]);
-      if (living.rows[0]) return {token: suppliedToken, character: fromRow(living.rows[0])};
+      if (living.rows[0]) return {accountId, token: suppliedToken, character: fromRow(living.rows[0])};
 
       const previous = await client.query<CharacterRow>(`
         SELECT * FROM characters WHERE account_id=$1
@@ -97,12 +97,12 @@ export async function admit(options: unknown): Promise<Admission> {
       const stats = parseCharacterStats(props.stats);
       if (stats) {
         const next = await createCharacter(client, accountId, stats, previous.rows[0]?.id);
-        return {token: suppliedToken, character: next};
+        return {accountId, token: suppliedToken, character: next};
       }
       if (previous.rows[0]) {
         // Rejoin as a dead character to view the death record. Never respawn
         // automatically when reconnecting with only the saved credential.
-        return {token: suppliedToken, character: fromRow(previous.rows[0])};
+        return {accountId, token: suppliedToken, character: fromRow(previous.rows[0])};
       }
       throw new ServerError(400, "No existe un personaje ni una nueva ficha válida.");
     });
@@ -120,7 +120,7 @@ export async function admit(options: unknown): Promise<Admission> {
     `,[accountId]);
     return createCharacter(client, accountId, stats);
   });
-  return {token, character};
+  return {accountId, token, character};
 }
 
 /** Conditional update protects against duplicate/reordered movement requests. */

@@ -245,6 +245,32 @@ const migrations: ReadonlyArray<string> = [
     SET next_action_at=GREATEST(next_action_at,
       (EXTRACT(EPOCH FROM clock_timestamp())*1000)::bigint+3000);
   `,
+
+  `
+  -- V4 / S-041,S-042: account-level social controls survive character permadeath.
+  -- Ordinary proximity chat is ephemeral: only reported messages store content.
+  CREATE TABLE IF NOT EXISTS chat_relationships (
+    owner_account_id UUID NOT NULL REFERENCES accounts(id),
+    target_account_id UUID NOT NULL REFERENCES accounts(id),
+    mode TEXT NOT NULL CHECK (mode IN ('mute','block')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(owner_account_id,target_account_id),
+    CHECK(owner_account_id <> target_account_id)
+  );
+  CREATE INDEX IF NOT EXISTS chat_relationships_target ON chat_relationships(target_account_id);
+  CREATE TABLE IF NOT EXISTS chat_reports (
+    id UUID PRIMARY KEY,
+    reporter_account_id UUID NOT NULL REFERENCES accounts(id),
+    sender_account_id UUID NOT NULL REFERENCES accounts(id),
+    message_id UUID NOT NULL,
+    reason TEXT NOT NULL CHECK (reason IN ('harassment','threat','spam','other')),
+    evidence_text TEXT NOT NULL CHECK(char_length(evidence_text) BETWEEN 1 AND 160),
+    reported_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(reporter_account_id,message_id),
+    CHECK(reporter_account_id <> sender_account_id)
+  );
+  CREATE INDEX IF NOT EXISTS chat_reports_reported_at ON chat_reports(reported_at);
+  `,
 ];
 
 /** Run once per process startup. A failed migration rolls back completely. */

@@ -157,3 +157,36 @@ export interface MarketOperation {
   readonly offerId?: string;
   readonly statement?: string;
 }
+
+/** V4: ephemeral conversation, restricted server-side by hex and obstruction. */
+export interface ChatMessage {
+  readonly id: string;
+  readonly senderCharacterId: string;
+  readonly senderName: string;
+  readonly text: string;
+  readonly at: number;
+  readonly self: boolean;
+}
+export interface ChatPeer {
+  readonly characterId: string;
+  readonly name: string;
+}
+export type ChatPreferenceMode = "mute" | "block";
+export interface ChatPreference extends ChatPeer {
+  readonly mode: ChatPreferenceMode;
+}
+export interface ChatPeersReply {
+  readonly peers: readonly ChatPeer[];
+  readonly preferences: readonly ChatPreference[];
+}
+export interface ChatPost { readonly text: string; }
+export interface ChatPreferenceRequest {
+  readonly characterId: string;
+  readonly mode: ChatPreferenceMode | "none";
+}
+export type ChatReportReason = "harassment" | "threat" | "spam" | "other";
+export interface ChatReportRequest {
+  readonly messageId: string;
+  readonly reason: ChatReportReason;
+}
+export interface ChatNotice { readonly message: string; }

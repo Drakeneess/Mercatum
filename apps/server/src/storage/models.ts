@@ -13,6 +13,7 @@ export interface CharacterRecord {
   wounds: number;
 }
 export interface Admission {
+  accountId: string;
   token: string;
   character: CharacterRecord;
 }
