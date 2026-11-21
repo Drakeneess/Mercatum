@@ -80,7 +80,8 @@ async function run(){
   const sightings=message<SightingsReply>(room,"sightings");
   room.send("sightings_request");
   const initial=await sightings;
-  assert.deepEqual(initial.creatures,[],"both creatures start beyond perception");
+  assert.equal(initial.creatures.length,2,"all active enemies are shown regardless of perception");
+  assert.ok(initial.creatures.every(x=>x.health>0&&x.maxHealth>=x.health));
   await room.leave();
   await stop();
 
@@ -153,7 +154,7 @@ async function run(){
     const old=await db.query<{phase:string}>("SELECT phase FROM characters WHERE id=$1",[charId]);
     assert.equal(old.rows[0].phase,"dead","old explorer remains permanently deceased");
   }finally{await successor.leave();}
-  console.log("V2 smoke passed: filtered visibility, offline wounds, permadeath, dropped loot and explicit successor.");
+  console.log("V2 smoke passed: full active visibility, offline wounds, permadeath, dropped loot and explicit successor.");
 }
 
 try{await run();}

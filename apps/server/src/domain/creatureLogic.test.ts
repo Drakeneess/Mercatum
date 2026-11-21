@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  creatureDelayMs, creatureAttackCooldownMs, canDealContactDamage, decideCreatureMove, hasLineOfSight,
+  creatureDelayMs, creatureAttackCooldownMs, canDealContactDamage, chooseCreatureRival,
+  clashDamage, decideCreatureMove, hasLineOfSight,
   inProtectedThreshold, postHitRecoveryMs, visibleToExplorer,
   woundDamage, woundedMovementDelay,
 } from "./creatureLogic.js";
@@ -85,4 +86,37 @@ test("an old memory inside the entry threshold is discarded",()=>{
   assert.equal(decision.lastKnownQ,null);
   assert.equal(decision.searchLeft,0);
   assert.ok(!inProtectedThreshold(decision.to));
+});
+
+test("no rival may share the moving creature's destination or be crossed",()=>{
+  const mob={id:"stalker-01",kind:"stalker" as const,q:3,r:-2,steps:4,
+    lastKnownQ:null,lastKnownR:null,searchLeft:0};
+  const occupied=[{q:2,r:-2},{q:4,r:-2},{q:4,r:-3}];
+  for(let i=0;i<20;i++){
+    const decision=decideCreatureMove({...mob,steps:i},[],true,occupied);
+    assert.ok(!occupied.some(x=>x.q===decision.to.q&&x.r===decision.to.r));
+    assert.ok(Math.abs(decision.to.q-mob.q)<=1);
+    assert.ok(Math.abs(decision.to.r-mob.r)<=1);
+  }
+});
+test("roaming avoids immediate backtracking when there is another path",()=>{
+  const mob={id:"scavenger-01",kind:"scavenger" as const,q:-3,r:0,steps:2,
+    lastKnownQ:null,lastKnownR:null,searchLeft:0};
+  const previous={q:-4,r:0};
+  for(let i=0;i<10;i++){
+    const decision=decideCreatureMove({...mob,steps:i},[],true,[],previous);
+    assert.notDeepEqual(decision.to,previous);
+  }
+});
+test("rivals only clash on adjacent hexes, if their cooldown permits it",()=>{
+  const attacker={id:"stalker-01",kind:"stalker" as const,q:4,r:-3,steps:3,
+    lastKnownQ:null,lastKnownR:null,searchLeft:0};
+  const rival={id:"scavenger-01",kind:"scavenger" as const,q:3,r:-3,health:120};
+  assert.equal(chooseCreatureRival(attacker,[rival],10_000,0)?.id,rival.id);
+  assert.equal(chooseCreatureRival({...attacker,steps:4},[rival],10_000,0),null);
+  assert.equal(chooseCreatureRival(attacker,[rival],10_000,12_000),null);
+  assert.equal(chooseCreatureRival(attacker,[{...rival,q:1,r:3}],10_000,0),null);
+  assert.equal(chooseCreatureRival(attacker,[{...rival,health:0}],10_000,0),null);
+  assert.equal(clashDamage("stalker"),14);
+  assert.equal(clashDamage("scavenger"),9);
 });
