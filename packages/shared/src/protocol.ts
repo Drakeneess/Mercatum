@@ -76,12 +76,23 @@ export interface ActionResult {
   readonly message: string;
 }
 
-/** Deliberately private: no hostile coordinates are put in the public Schema. */
+/** All active hostiles are visible on the map, independent of Perception. */
 export type CreatureKind = "stalker" | "scavenger";
 export interface CreatureSighting {
   readonly id: string;
   readonly kind: CreatureKind;
   readonly name: string;
+  readonly q: number;
+  readonly r: number;
+  readonly health: number;
+  readonly maxHealth: number;
+}
+export interface CreatureClash {
+  readonly attackerName: string;
+  readonly defenderName: string;
+  readonly damage: number;
+  readonly defenderHealth: number;
+  readonly defeated: boolean;
   readonly q: number;
   readonly r: number;
 }
