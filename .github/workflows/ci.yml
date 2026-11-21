@@ -44,3 +44,4 @@ jobs:
       - run: pnpm --filter @mercatum/server smoke:v3
       - run: pnpm --filter @mercatum/server smoke:v4
       - run: pnpm --filter @mercatum/server smoke:ecology
+      - run: pnpm --filter @mercatum/server load:20
