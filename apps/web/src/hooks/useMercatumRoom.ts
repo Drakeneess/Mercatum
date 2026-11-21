@@ -7,6 +7,7 @@ import {
   type CreatureSighting, type HarmReport, type IdentityReply, type MarketItem, type MercatumState, type MoveAccepted,
   type MoveRejected, type MoveRequest, type PlayerSnapshot, type TimedActionReply,
   type MarketOperation, type MarketReply, type ProvenanceReply,
+  type ChatMessage, type ChatPeer, type ChatPreference, type ChatPreferenceMode, type ChatReportReason,
   type SightingsReply, type WorldItemsReply,
 } from "@mercatum/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -34,6 +35,10 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
   const [sightings,setSightings]=useState<readonly CreatureSighting[]>([]);
   const [doorOpen,setDoorOpen]=useState(false);
   const [market,setMarket]=useState<MarketReply|null>(null);
+  const [chatMessages,setChatMessages]=useState<readonly ChatMessage[]>([]);
+  const [chatPeers,setChatPeers]=useState<readonly ChatPeer[]>([]);
+  const [chatPreferences,setChatPreferences]=useState<readonly ChatPreference[]>([]);
+  const [chatNotice,setChatNotice]=useState<string|null>(null);
   const [provenance,setProvenance]=useState<ProvenanceReply|null>(null);
   const [action,setAction]=useState<TimedActionReply|null>(null);
   const [cooldownUntil,setCooldownUntil]=useState(0);
@@ -133,6 +138,22 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
           if(report.stolenItem)record("OBJETO PERDIDO: "+report.stolenItem);
           if(report.dead)setAction(null);
         });
+        room.onMessage("chat_message",(message:ChatMessage)=>{
+          if(!mounted)return;
+          setChatMessages(prev=>[...prev,message].slice(-40));
+          if(!message.self)record("Una voz cercana: "+message.senderName);
+        });
+        room.onMessage("chat_peers",(reply:{peers:ChatPeer[];preferences:ChatPreference[]})=>{
+          if(!mounted)return;
+          setChatPeers(reply.peers);
+          setChatPreferences(reply.preferences);
+        });
+        room.onMessage("chat_notice",(reply:{message:string})=>{
+          if(mounted)setChatNotice(reply.message);
+        });
+        room.onMessage("chat_error",(reply:{message:string})=>{
+          if(mounted)setChatNotice(reply.message);
+        });
         room.onMessage("market_snapshot",(reply:MarketReply)=>{
           if(mounted)setMarket(reply);
         });
@@ -205,6 +226,10 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
           setSightings([]);
           setMarket(null);
           setProvenance(null);
+          setChatPeers([]);
+          setChatPreferences([]);
+          setChatMessages([]);
+          setChatNotice(null);
           setAction(null);
           record("Señal interrumpida. El personaje permanece en el Mercado.");
           retry();
@@ -214,6 +239,7 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
         room.send("world_request");
         room.send("sightings_request");
         room.send("market_request");
+        room.send("chat_peers_request");
       }catch(error){
         if(!mounted)return;
         setConnection("offline");
@@ -223,6 +249,10 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
         setSightings([]);
         setMarket(null);
         setProvenance(null);
+        setChatPeers([]);
+        setChatPreferences([]);
+        setChatMessages([]);
+        setChatNotice(null);
         setAction(null);
         const reason=connectionErrorMessage(error);
         setNotice(reason);
@@ -276,6 +306,19 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
     setProvenance(null);
     roomRef.current?.send("provenance_request",{itemId});
   }
+  function sendChat(text:string){
+    if(connection!=="online"||!roomRef.current)return;
+    roomRef.current.send("chat_send",{text});
+  }
+  function chatPreference(characterId:string,mode:ChatPreferenceMode|"none"){
+    if(connection!=="online"||!roomRef.current)return;
+    roomRef.current.send("chat_preference",{characterId,mode});
+  }
+  function reportChat(messageId:string,reason:ChatReportReason){
+    if(connection!=="online"||!roomRef.current)return;
+    roomRef.current.send("chat_report",{messageId,reason});
+  }
+  function refreshChat(){roomRef.current?.send("chat_peers_request");}
   function operateMarket(operation:Omit<MarketOperation,"requestId">){
     if(connection!=="online"||!roomRef.current)return;
     roomRef.current.send("market_operation",{
@@ -288,5 +331,6 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
     characterStats,movementDelayMs,cooldownRemaining,recoveryPercentage,walkable,requestMove,
     identity,groundItems,doorOpen,action,clock,requestAction,cancelAction,dropItem,reenter,sightings,
     market,provenance,requestMarket,requestProvenance,operateMarket,
+    chatMessages,chatPeers,chatPreferences,chatNotice,sendChat,chatPreference,reportChat,refreshChat,
   };
 }
