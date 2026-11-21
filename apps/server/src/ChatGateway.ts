@@ -141,23 +141,25 @@ export class ChatGateway {
       const nearby=this.nearby(actor);
       if(!nearby.length){this.error(client,"No hay nadie al alcance de tu voz.");return;}
       const rels=await this.relationships(actor.accountId,nearby.map(x=>x.accountId));
-      // Re-evaluate positions AFTER SQL, never trusting a stale audience list.
-      if(!this.current(client)||actor.phase!=="inside"||actor.health<=0)return;
-      const actual=this.nearby(actor).filter(other=>this.canHear(actor.accountId,other.accountId,rels));
+      // Re-evaluate both ends AFTER SQL, including movement during query.
+      const fresh=this.current(client);
+      if(!fresh||fresh.phase!=="inside"||fresh.health<=0)return;
+      const actual=this.nearby(fresh).filter(other=>
+        this.canHear(fresh.accountId,other.accountId,rels));
       // A newly arrived recipient without relationship data is not part of
       // the original verified audience; no delivery until next message.
       const original=new Set(nearby.map(x=>x.client.sessionId));
       const recipients=actual.filter(x=>original.has(x.client.sessionId));
       const at=Date.now(),id=randomUUID();
       const message:ChatMessage={
-        id,senderCharacterId:actor.characterId,senderName:actor.name,text,at,self:false,
+        id,senderCharacterId:fresh.characterId,senderName:fresh.name,text,at,self:false,
       };
       client.send("chat_message",{...message,self:true});
       for(const recipient of recipients){
         recipient.client.send("chat_message",message);
         this.remember(recipient.client,{
-          id,at,senderAccountId:actor.accountId,
-          senderCharacterId:actor.characterId,senderName:actor.name,text,
+          id,at,senderAccountId:fresh.accountId,
+          senderCharacterId:fresh.characterId,senderName:fresh.name,text,
         });
       }
     });

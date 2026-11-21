@@ -22,7 +22,7 @@ export function chatReachable(a:Speaker,b:Speaker,doorOpen:boolean):boolean {
     && hasLineOfSight(a,b,doorOpen);
 }
 export function parseChatText(input:unknown):string|null {
-  if(typeof input!=="string")return null;
+  if(typeof input!=="string"||input.length>500)return null;
   const normalized=input.normalize("NFC").replace(/[\u0000-\u001f\u007f-\u009f]/g," ")
     .replace(/\s+/gu," ").trim();
   const length=[...normalized].length;
