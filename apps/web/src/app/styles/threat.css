@@ -38,3 +38,9 @@
 .hostile-health-base {fill:#24120e;stroke:#d0bd9a;stroke-width:.45;}
 .hostile-health-fill {fill:#b33d34;}
 .app-shell[data-theme="phosphor"] .hostile-health-fill {fill:#89b887;}
+
+.creature-clash-marker {pointer-events:none;}
+.creature-clash-marker rect {fill:#2a1915;stroke:#ca795c;stroke-width:1.5;}
+.creature-clash-marker text {font:900 7px var(--machine-type);fill:#f4d7a8;}
+.app-shell[data-theme="phosphor"] .creature-clash-marker rect {fill:#152318;stroke:#9bcf9c;}
+@media(prefers-reduced-motion:reduce){.creature-clash-marker {animation:none;}}

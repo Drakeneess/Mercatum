@@ -33,6 +33,7 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
   const [identity,setIdentity]=useState<IdentityReply|null>(null);
   const [groundItems,setGroundItems]=useState<readonly MarketItem[]>([]);
   const [sightings,setSightings]=useState<readonly CreatureSighting[]>([]);
+  const [latestClash,setLatestClash]=useState<CreatureClash|null>(null);
   const [doorOpen,setDoorOpen]=useState(false);
   const [market,setMarket]=useState<MarketReply|null>(null);
   const [chatMessages,setChatMessages]=useState<readonly ChatMessage[]>([]);
@@ -46,6 +47,12 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
   const roomRef=useRef<Room<MercatumState>|null>(null);
   const failedAttempts=useRef(0);
   const map=useMemo(()=>makeDemoMap(),[]);
+
+  useEffect(()=>{
+    if(!latestClash)return;
+    const timer=window.setTimeout(()=>setLatestClash(null),2600);
+    return ()=>window.clearTimeout(timer);
+  },[latestClash]);
 
   useEffect(()=>{
     if(!cooldownUntil && !action && (identity?.protectedUntil??0)<=Date.now())return;
@@ -133,6 +140,7 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
         });
         room.onMessage("creature_clash",(fight:CreatureClash)=>{
           if(!mounted)return;
+          setLatestClash(fight);
           const sentence=fight.attackerName+" atacó a "+fight.defenderName+
             " ("+fight.damage+" daño)"+(fight.defeated?". Criatura derrotada.":".");
           record(sentence);
@@ -230,6 +238,7 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
           setPlayers([]);
           setIdentity(null);
           setSightings([]);
+          setLatestClash(null);
           setMarket(null);
           setProvenance(null);
           setChatPeers([]);
@@ -253,6 +262,7 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
         setPlayers([]);
         setIdentity(null);
         setSightings([]);
+        setLatestClash(null);
         setMarket(null);
         setProvenance(null);
         setChatPeers([]);
@@ -335,7 +345,7 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
   return {
     connection,playerId,players,map,marketTime,notice,events,me,currentPosition,
     characterStats,movementDelayMs,cooldownRemaining,recoveryPercentage,walkable,requestMove,
-    identity,groundItems,doorOpen,action,clock,requestAction,cancelAction,dropItem,reenter,sightings,
+    identity,groundItems,doorOpen,action,clock,requestAction,cancelAction,dropItem,reenter,sightings,latestClash,
     market,provenance,requestMarket,requestProvenance,operateMarket,
     chatMessages,chatPeers,chatPreferences,chatNotice,sendChat,chatPreference,reportChat,refreshChat,
   };

@@ -1,7 +1,7 @@
 "use client";
 
 import { hexDistance, hexKey, type CharacterStats, type HexCoordinate,
-  type CreatureSighting, type HexTile, type MarketItem, type PlayerSnapshot } from "@mercatum/shared";
+  type CreatureClash, type CreatureSighting, type HexTile, type MarketItem, type PlayerSnapshot } from "@mercatum/shared";
 import { getTileName, hexCenter, hexPoints } from "../lib/hexMapView";
 
 export interface MarketMapProps {
@@ -19,12 +19,13 @@ export interface MarketMapProps {
   doorOpen: boolean;
   groundItems: readonly MarketItem[];
   sightings: readonly CreatureSighting[];
+  latestClash?:CreatureClash|null;
   onOpenShop: () => void;
 }
 
 export function MarketMap(props: MarketMapProps) {
   const { map, currentPosition, walkable, requestMove, players, playerId,
-    hasBuild, characterStats, cooldownRemaining, recoveryPercentage, notice, doorOpen, groundItems, sightings, onOpenShop } = props;
+    hasBuild, characterStats, cooldownRemaining, recoveryPercentage, notice, doorOpen, groundItems, sightings, latestClash, onOpenShop } = props;
   const canWalk=players.some(p=>p.id===playerId&&p.inside);
   return (
         <section className="map-panel" aria-label="Plano interactivo del Mercado">
@@ -153,6 +154,18 @@ export function MarketMap(props: MarketMapProps) {
                   </g>
                 );
               })}
+              {latestClash&&(()=>{
+                const point=hexCenter({q:latestClash.q,r:latestClash.r});
+                return <g key={"clash-"+latestClash.q+"-"+latestClash.r}
+                  transform={`translate(${point.x} ${point.y-42})`}
+                  className="creature-clash-marker">
+                  <rect x="-55" y="-14" width="110" height="29" rx="2"/>
+                  <text textAnchor="middle" y="-2">COMBATE ENTRE CRIATURAS</text>
+                  <text textAnchor="middle" y="10">
+                    {latestClash.defeated?"DERROTA":`−${latestClash.damage} SALUD`}
+                  </text>
+                </g>;
+              })()}
               {players.filter(p=>p.inside).map((player, index, visiblePlayers) => {
                 const center = hexCenter(player.position);
                 const sameCellIndex = visiblePlayers.slice(0, index).filter((other) => hexKey(other.position) === hexKey(player.position)).length;

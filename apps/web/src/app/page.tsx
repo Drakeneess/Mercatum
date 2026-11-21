@@ -34,7 +34,7 @@ export default function Home() {
     currentPosition, characterStats, movementDelayMs, cooldownRemaining,
     recoveryPercentage, walkable, requestMove,
     identity, groundItems, doorOpen, action, clock, requestAction, cancelAction,
-    dropItem, reenter, sightings,
+    dropItem, reenter, sightings, latestClash,
     market, provenance, operateMarket, requestMarket, requestProvenance,
     chatMessages, chatPeers, chatPreferences, chatNotice,
     sendChat, chatPreference, reportChat,
@@ -123,6 +123,7 @@ export default function Home() {
                   hasBuild={Boolean(committedBuild)} characterStats={characterStats}
                   cooldownRemaining={cooldownRemaining} recoveryPercentage={recoveryPercentage}
                   notice={notice} doorOpen={doorOpen} groundItems={groundItems} sightings={sightings}
+                  latestClash={latestClash}
                   onOpenShop={openShop}
                 />
                 <SectorNotes map={map} players={players} events={events}
