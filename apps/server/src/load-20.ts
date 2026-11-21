@@ -27,6 +27,9 @@ type LoadClient={
   chatReceived:number;
   receivedBytes:number;
   chatTransitMs:number[];
+  marketUpdatesReceived:number;
+  sightingsReceived:number;
+  peerUpdatesReceived:number;
   errors:string[];
   move:((result:MoveOutcome)=>void)|null;
 };
@@ -121,10 +124,24 @@ async function join(index:number,canonicalRoomId:string):Promise<LoadClient>{
   );
   const participant:LoadClient={
     room,joinMs:performance.now()-start,chatReceived:0,
-    receivedBytes:0,chatTransitMs:[],errors:[],move:null,
+    receivedBytes:0,chatTransitMs:[],
+    marketUpdatesReceived:0,sightingsReceived:0,peerUpdatesReceived:0,
+    errors:[],move:null,
   };
   participants.push(participant);
   assert.equal(room.roomId,canonicalRoomId,"No alternate world allowed");
+  // The load client does not render these game events, but must subscribe to
+  // them: the server broadcasts them during movement, creature ticks, and
+  // player joins. Otherwise @colyseus/sdk floods stderr with 'not registered'
+  // warnings, interleaving with the benchmark's structured JSON report.
+  // Count the fanout instead of ignoring the packets.
+  room.onMessage("market_update",()=>{participant.marketUpdatesReceived++;});
+  room.onMessage("sightings",(_reply:SightingsReply)=>{
+    participant.sightingsReceived++;
+  });
+  room.onMessage("chat_peers",()=>{
+    participant.peerUpdatesReceived++;
+  });
   room.onMessage("chat_message",(message:ChatMessage)=>{
     participant.chatReceived++;
     participant.receivedBytes+=Buffer.byteLength(JSON.stringify(message));
@@ -257,6 +274,11 @@ async function run():Promise<void>{
       approxReceivedPayloadKiB:rounded(chatApproxBytes/1024)},
     sightings:{requests:maps.length,
       countPerPlayer:maps.map(x=>x.creatures.length)},
+    serverEvents:{
+      marketUpdatesReceived:participants.reduce((a,p)=>a+p.marketUpdatesReceived,0),
+      sightingsReceived:participants.reduce((a,p)=>a+p.sightingsReceived,0),
+      peerUpdatesReceived:participants.reduce((a,p)=>a+p.peerUpdatesReceived,0),
+    },
     runtime:{rssPeakMB:Math.max(0,...metrics.map(x=>x.rssMB)),
       heapPeakMB:Math.max(0,...metrics.map(x=>x.heapMB)),
       cpuPeakPercent:Math.max(0,...metrics.map(x=>x.cpuPercent)),
