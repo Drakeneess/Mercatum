@@ -13,7 +13,8 @@
     "smoke:v1": "node dist/smoke-v1.js",
     "smoke:v2": "node dist/smoke-v2.js",
     "smoke:v3": "node dist/smoke-v3.js",
-    "smoke:v4": "node dist/smoke-v4.js"
+    "smoke:v4": "node dist/smoke-v4.js",
+    "smoke:ecology": "node dist/smoke-ecology.js"
   },
   "dependencies": {
     "@mercatum/shared": "workspace:*",
