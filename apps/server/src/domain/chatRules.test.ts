@@ -18,8 +18,9 @@ test("a locked door and wall block acoustic line of sight",()=>{
   const behindDoor={...one,q:2,r:0};
   assert.equal(chatReachable(one,behindDoor,false),false);
   assert.equal(chatReachable(one,behindDoor,true),true);
-  const acrossWall={...one,q:-2,r:0};
-  assert.equal(chatReachable(one,acrossWall,true),false);
+  const acrossWall={...one,q:-1,r:0};
+  const beforeWall={...one,q:-3,r:0};
+  assert.equal(chatReachable(beforeWall,acrossWall,true),false);
 });
 test("chat validation prevents empty, control-only and oversized packets",()=>{
   assert.equal(parseChatText("  hola  \n  mundo  "),"hola mundo");
