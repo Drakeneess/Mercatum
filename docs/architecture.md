@@ -82,7 +82,7 @@ La semilla inicial crea **una sola navaja oxidada** y no la repone al reiniciar.
 ## Seguridad, visibilidad y deuda pendiente
 
 - Solo `onJoin` con build válida o token real. `create` y `joinOrCreate` están deshabilitados.
-- Los objetos de suelo son **públicos en V1**; no habrá criaturas ocultas hasta filtrar información por usuario (`X-018`).
+- Los objetos de suelo y todas las criaturas activas son visibles públicamente en el mapa por decisión de diseño. Las ubicaciones de otros jugadores siguen globales, a la espera de una política específica de visibilidad (`X-018`).
 - El token y los inventarios se envían únicamente por mensaje privado al dueño; los nombres/atributos están compartidos por el esquema de sala.
 - Aún faltan autenticación de producción, recuperación de cuenta, rotación de credenciales, validación de orígenes, límites de admisión, protección XSS y respaldos probados.
 - No hay muertes ni reglas de desconexión bajo amenaza. La sesión no equivale a extracción automática.
@@ -110,7 +110,7 @@ Para ejecución local (incluidos los pasos de Docker Compose), consultar [v1.md]
 
 El scheduler `apps/server/src/CreatureScheduler.ts` mantiene un temporizador para la acción más próxima de cualquier criatura; las posiciones, intervalos y memoria se guardan en `storage/creatures.ts` con transacciones PostgreSQL. `domain/creatureLogic.ts` calcula visión, patrulla, caminos y daño con funciones probables unitariamente.
 
-**No hay entidades hostiles en el Schema público.** `MercatumRoom.sendSightings` filtra la lista por estado, PER, rango y línea de visión y la envía solo al jugador por mensajes `sightings`. Tras un ataque, el servidor actualiza la salud/heridas del personaje, su Schema y el inventario privado. Las criaturas persiguen también a personajes desconectados, cuya situación continúa en PostgreSQL.
+**No hay entidades hostiles en el Schema público.** `MercatumRoom.sendSightings` envía la lista completa de criaturas activas y su HP a cada jugador como mensajes `sightings`, sin filtro por PER. Tras un ataque, el servidor actualiza la salud/heridas del personaje, su Schema y el inventario privado. Las criaturas persiguen también a personajes desconectados, cuya situación continúa en PostgreSQL.
 
 El estado `dead` es irreversible. Tras fallecimiento, los objetos `carried` pasan al suelo, los del depósito `stash` se conservan; un sucesor explícito puede heredar este depósito, sin recuperar el cuerpo ni las pertenencias perdidas. `docs/v2.md` contiene reglas detalladas y pruebas.
 
@@ -135,3 +135,11 @@ La pantalla no es un dashboard monolítico de tres columnas. `app/page.tsx` mant
 `ChatGateway.ts` recibe paquetes `chat_send` y consulta las posiciones de sesión almacenadas por `MercatumRoom`, sin aceptar coordenadas del navegador. `domain/chatRules.ts` define alcance (2 hex), línea de visión, validación de caracteres y ritmo por cuenta. El servidor entrega `chat_message` únicamente a clientes cercanos, no como evento global. `chat_peers` es un resumen privado de interlocutores cercanos y preferencias propias.
 
 `chat_relationships` persiste restricciones por cuenta; `chat_reports` persiste exclusivamente mensajes denunciados cuya recepción real consta en memoria durante cinco minutos. El historial normal no se guarda en la base. La vista `NearbyChat` permanece plegada y está integrada en el panel de exploración, sin abrir un modal que impida movimiento. [Detalles del sprint](v4-sprint1.md).
+
+## V4 — Ecología de criaturas visible y autónoma
+
+`creaturePositions()` devuelve todas las criaturas vivas, incluida salud actual. `MercatumRoom.sendSightings` entrega esa lista a cada sesión tanto dentro como fuera; esto no filtra su ubicación por Percepción, una decisión deliberada de diseño. El mapa muestra marcadores y salud sin un canal global de estado Schema. Las alertas de proximidad sí se calculan usando el hexágono del usuario, para no marcar toda la pantalla como emergencia.
+
+En `advanceCreature()` se bloquea el conjunto de criaturas vivas en orden estable. La función pura `decideCreatureMove()` excluye casillas ocupadas y prefiere avanzar en vez de retroceder si puede. Un índice SQL parcial de ocupación garantiza que dos criaturas vivas no compartan hexágono incluso ante actualizaciones externas. `chooseCreatureRival()` habilita ataques ocasionales por adyacencia; se registran en `event_log.kind='creature_clash'`. Salud, derrota y botín perdido se guardan en transacciones atómicas. El scheduler sigue basado en tiempos, no en frames.
+
+La muerte de un monstruo es persistente en esta versión: **no hay respawn ni ciclos de población**. Esto es una limitación de la alfa prototipo a resolver antes de un mundo continuo. [Ver reglas completas](ecology-sprint.md).

@@ -68,7 +68,7 @@ El backend conserva las capas `MercatumRoom` / `MarketGateway` / `storage` /
 - Las reglas se prueban sin necesidad de montar componentes React.
 - La reconexión y el estado del jugador están centralizados en un hook.
 - Los tres temas mantienen la misma jugabilidad.
-- PostgreSQL persiste personajes y mercancías; las criaturas se filtran por visión en mensajes privados. Aún falta filtrar la posición de otros exploradores.
+- PostgreSQL persiste personajes, mercancías y criaturas. El mapa recibe todas las posiciones de criaturas activas con salud mediante mensajes, sin filtro por PER. Aún falta la política de visibilidad de otros exploradores.
 
 ## Verificación
 
@@ -99,9 +99,9 @@ El servidor ahora necesita PostgreSQL. La credencial local no sustituye la auten
 - `apps/server/src/storage/creatures.ts`: transacciones SQL, ataques, robos y muertes, incluidas entidades actuando sin usuarios conectados.
 - `apps/server/src/storage/characters.ts`: admite personajes muertos para consultar el expediente, crea sucesores cuando se presenta una build explícita y transfiere solo objetos del depósito exterior.
 - `apps/server/src/smoke-v2.ts`: prueba de integración aislada de peligro offline, muerte irreversible y sucesión.
-- `apps/web/src/components/ThreatReport.tsx` y `app/styles/threat.css`: salud, heridas y avistamientos privados con estética documental.
+- `apps/web/src/components/ThreatReport.tsx` y `app/styles/threat.css`: salud, heridas y censo completo de criaturas vivas con estética documental.
 
-**Regla de privacidad:** añadir más criaturas a la base de datos, nunca a `MercatumState`. Su posición solo puede llegar al cliente a través del filtro de visión del servidor.
+**Regla actual:** añadir más criaturas a la base de datos, nunca a `MercatumState`. Todas las criaturas activas deben estar visibles en el mapa mediante mensajes privados por sesión, sin filtrar por Percepción.
 
 ## V3 — Mercado y registro externo
 
@@ -133,3 +133,13 @@ Para reglas económicas, precauciones de confianza y requisitos de despliegue: [
 - `apps/web/src/hooks/useMercatumRoom.ts`: recibe mensajes privados de la sesión y envía comandos con identidad ya admitida.
 
 No añadir mensajes de chat ni preferencias al Schema público ni convertir la hoja de voces en un feed global. [Guía de V4](v4-sprint1.md).
+
+## Ecología visible y enfrentamientos autónomos
+
+- `apps/server/src/domain/creatureLogic.ts`: rutas excluyendo otras criaturas vivas, vagabundeo sin vuelta inmediata, oportunidad de ataque a especies rivales.
+- `apps/server/src/storage/creatures.ts`: bloqueo ordenado de entidades y transacciones de movimiento, combate, estado de salud y caída de objetos robados al morir.
+- `apps/server/src/storage/migrations.ts`: salud persistente, siguiente momento de protección, posición anterior e índice SQL de casilla exclusiva para vivos.
+- `apps/server/src/smoke-ecology.ts`: integración de visibilidad total, exclusividad SQL, rivalidad y patrulla sin personas.
+- `apps/web/src/components/MarketMap.tsx`: marcadores constantes de entidades activas, con barra de HP.
+
+[Contrato y deuda de ecología](ecology-sprint.md). No existe repoblación de especies derrotadas; diseñarla antes de operar el mundo continuo.

@@ -64,6 +64,7 @@ pnpm --filter @mercatum/server smoke:v1  # Botín + reinicio PostgreSQL aislado
 pnpm --filter @mercatum/server smoke:v2  # Criaturas, muerte offline y sucesión
 pnpm --filter @mercatum/server smoke:v3  # Comercio, trueque y registro público
 pnpm --filter @mercatum/server smoke:v4  # Voces locales, mute, bloqueo, reportes
+pnpm --filter @mercatum/server smoke:ecology  # Casillas exclusivas, fauna autónoma y rivalidad
 ```
 
 ## Interfaz y temas visuales
@@ -104,7 +105,7 @@ El **anexo de aptitudes** de la interfaz permite registrar la build antes de con
 
 El cooldown de DES sigue la tabla `[1400, 1200, 1050, 900, 800, 700]` ms para valores 0–5. En la creación se permiten 1–3: **1200, 1050 y 900 ms por hexágono**. El servidor impide movimientos prematuros y la interfaz muestra la recuperación del paso. El jugador mueve **un solo hexágono por acción**.
 
-**Alcance actual (V3):** FUE determina carga y fuerza, DES el intervalo de movimiento, RES mitiga daño, PER permite observar criaturas, INT afecta aperturas y TRA modifica precios de comerciante. TEM permanece reservado para sistemas de tensión. Personajes, heridas, inventario, objetos y créditos persisten en PostgreSQL.
+**Alcance actual:** FUE determina carga y fuerza, DES el intervalo de movimiento, RES mitiga daño, PER queda para rastros/indicios (no oculta criaturas), INT afecta aperturas y TRA modifica precios de comerciante. TEM permanece reservado para sistemas de tensión. Personajes, heridas, inventario, objetos y créditos persisten en PostgreSQL.
 
 Consulta [docs/character-stats.md](docs/character-stats.md) para la especificación.
 
@@ -119,6 +120,8 @@ Las posiciones se sincronizan mediante `@colyseus/schema` 5; los comandos de mov
 **V1:** mapa, personaje, objetos únicos, mochila y extracción persistentes.
 
 **V2:** dos criaturas autónomas, persecución, heridas, robo de mercancía y muerte permanente sin desconexión segura. **Balance posterior a V3:** detección limitada, ataques con recuperación individual y umbral de acceso protegido; los cambios se guardan sin borrar partidas.
+
+**V4 Ecología:** criaturas activas visibles siempre con su salud, patrulla autónoma, hexágonos exclusivos y enfrentamientos entre especies; derrotas persistentes sin repoblación automática. [Guía de ecología](docs/ecology-sprint.md).
 
 **V4 Sprint 1:** comunicación local de texto con filtrado por servidor, mute/bloqueo de cuenta, limitación de spam y evidencia de reporte. No hay chat global ni voz real, y no implica que el juego esté listo para publicación. [Guía de V4](docs/v4-sprint1.md).
 

@@ -98,9 +98,9 @@ Primer vertical slice: entrar, inspeccionar, obtener algo, transportarlo, salir 
 
 | ID | Estado V2 | Evidencia / pendiente |
 | --- | --- | --- |
-| X-018 | Parcial | Entidades hostiles filtradas por mensaje privado y línea de visión; falta ocultar posiciones de otros jugadores en el Schema público |
+| X-018 | Parcial revisado | Hostiles activos visibles siempre por decisión de diseño; falta una política independiente para visibilidad de otros jugadores |
 | H-019 | Implementado V2 | Planificador de acciones por timestamps; criaturas no requieren jugadores conectados ni bucle de 60 FPS |
-| H-020 | Implementado V2 | Dos entidades con posición, intervalos y memoria persistentes |
+| H-020 | Implementado V2 + ecología | Entidades con posición, salud, intervalo, memoria y derrota persistentes; exclusión de casillas y rivalidad autónoma |
 | H-021 | Parcial | Detección por proximidad/visión y persecución con memoria; ruido todavía no modelado |
 | H-022 | Implementado V2 | Salud, daño reducido por RES y heridas que penalizan movimiento |
 | H-023 | Implementado V2 | El Rebuscador roba una instancia única y puede abandonarla dañada más tarde |
@@ -108,9 +108,22 @@ Primer vertical slice: entrar, inspeccionar, obtener algo, transportarlo, salir 
 | H-025 | Implementado V2 | Desconexión no elimina al personaje del mapa ni lo protege ante criaturas |
 | H-026 | Parcial | Escapar depende de rutas y velocidad; falta ocultarse activamente |
 | H-027 | Parcial | Se mantiene un reloj de referencia único sin bonificaciones nocturnas; faltan rutinas horarias propias |
-| H-028 | Implementado en código | Intervalos y daños reducidos, umbral de entrada y recuperación entre ataques; falta balance manual de sesiones largas |
+| H-028 | Implementado en código | Ritmos moderados, entrada protegida, recuperación y peleas entre especies; falta balance manual de sesiones largas |
 
-**Prueba de aceptación del corte:** `smoke:v2` usa PostgreSQL temporal, comprueba peligro offline, muerte persistente, botín único, avistamientos filtrados y sucesión sin resurrección. Para reglas y limitaciones: [docs/v2.md](v2.md).
+**Prueba de aceptación del corte:** `smoke:v2` usa PostgreSQL temporal, comprueba peligro offline, muerte persistente, botín único, posiciones de criaturas activas y sucesión sin resurrección. Para reglas y limitaciones: [docs/v2.md](v2.md).
+
+## Ecología posterior a V4 — fauna activa y conflictos entre criaturas
+
+| ID | Estado | Resultado y deuda |
+| --- | --- | --- |
+| ECO-051 | Implementado | Todas las criaturas vivas siempre visibles con HP en mapa, sin filtro por PER |
+| ECO-052 | Implementado | Casillas exclusivas entre criaturas vivas por decisión + índice único SQL |
+| ECO-053 | Implementado | Patrulla sin jugadores, con preferencia por evitar retrocesos |
+| ECO-054 | Implementado | Combates ocasionales entre especies en hexes adyacentes, daño/derrota registrados |
+| ECO-055 | Parcial | Botín robado abandonado al caer una criatura; falta repoblación o migración de fauna |
+| ECO-056 | Pendiente | Ecología persistente sostenible, densidades de población, balance manual a largo plazo |
+
+Prueba automática: `smoke:ecology`. [Diseño y límites](ecology-sprint.md).
 
 ## H · Criaturas, daño y permadeath
 
