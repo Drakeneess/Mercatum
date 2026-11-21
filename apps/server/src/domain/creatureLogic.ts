@@ -25,6 +25,14 @@ export interface CreatureDecision {
   searchLeft: number;
   victimId: string | null;
 }
+export interface CreatureRival {
+  id:string;
+  kind:CreatureKind;
+  q:number;
+  r:number;
+  health:number;
+}
+
 const tiles = makeDemoMap();
 const walls = new Set(tiles.filter(t => t.kind === "wall").map(hexKey));
 const existing = new Set(tiles.map(hexKey));
@@ -44,8 +52,11 @@ export function inProtectedThreshold(tile: HexCoordinate): boolean {
   return hexDistance(tile, ENTRY) <= ENTRY_THRESHOLD_RADIUS;
 }
 
-function creaturePassable(tile: HexCoordinate, doorOpen: boolean): boolean {
-  return passable(tile, doorOpen) && !inProtectedThreshold(tile);
+function creaturePassable(
+  tile: HexCoordinate, doorOpen: boolean, occupied?:ReadonlySet<string>,
+): boolean {
+  return passable(tile, doorOpen) && !inProtectedThreshold(tile) &&
+    !occupied?.has(hexKey(tile));
 }
 
 export function passable(tile: HexCoordinate, doorOpen: boolean): boolean {
@@ -86,6 +97,7 @@ export function visibleToExplorer(
 
 function nextStepToward(
   from: HexCoordinate, target: HexCoordinate, doorOpen: boolean,
+  occupied:ReadonlySet<string>,
 ): HexCoordinate | null {
   if (hexKey(from)===hexKey(target)) return from;
   const visited = new Set([hexKey(from)]);
@@ -94,7 +106,7 @@ function nextStepToward(
     const current=queue[i];
     for(const neighbor of hexNeighbors(current.tile)){
       const key=hexKey(neighbor);
-      if(visited.has(key)||!creaturePassable(neighbor,doorOpen))continue;
+      if(visited.has(key)||!creaturePassable(neighbor,doorOpen,occupied))continue;
       const first=current.first??neighbor;
       if(key===hexKey(target))return first;
       visited.add(key);
@@ -109,15 +121,18 @@ export function decideCreatureMove(
   creature: CreatureMind,
   characters: readonly Prey[],
   doorOpen: boolean,
+  occupied:readonly HexCoordinate[]=[],
+  previous:HexCoordinate|null=null,
 ): CreatureDecision {
   const from={q:creature.q,r:creature.r};
   const behaviour=CREATURE_BEHAVIOUR[creature.kind];
+  const occupiedHexes=new Set(occupied.map(hexKey));
 
   // On upgrading a running world, a creature may already stand inside the
   // protected threshold. It must leave it rather than camp at the doorway.
   if(inProtectedThreshold(from)){
     const away=hexNeighbors(from).filter(neighbor=>
-      passable(neighbor,doorOpen) &&
+      creaturePassable(neighbor,doorOpen,occupiedHexes) &&
       hexDistance(neighbor,ENTRY)>hexDistance(from,ENTRY)
     );
     const to=away[creature.steps%Math.max(1,away.length)] ?? from;
@@ -145,7 +160,7 @@ export function decideCreatureMove(
     search--;
   }
 
-  let to:HexCoordinate|null=goal?nextStepToward(from,goal,doorOpen):null;
+  let to:HexCoordinate|null=goal?nextStepToward(from,goal,doorOpen,occupiedHexes):null;
   // If a creature and its prey already share a hex, it attacks here instead
   // of accidentally wandering away before resolving the contact.
   if(prey && prey.q===from.q && prey.r===from.r){
@@ -156,10 +171,15 @@ export function decideCreatureMove(
   }
   if(!to||hexKey(to)===hexKey(from)){
     // Rotation is deterministic and persisted (steps). No random global ticks.
-    const neighbors=hexNeighbors(from).filter(n=>creaturePassable(n,doorOpen));
+    const neighbors=hexNeighbors(from).filter(n=>creaturePassable(n,doorOpen,occupiedHexes));
     if(neighbors.length){
+      // Even with no human prey, creatures keep walking. Prefer not to turn
+      // around immediately so a corridor feels inhabited, not jittery.
+      const forward=previous&&neighbors.length>1
+        ? neighbors.filter(n=>hexKey(n)!==hexKey(previous))
+        : neighbors;
       const seed=[...creature.id].reduce((n,c)=>n+c.charCodeAt(0),0);
-      to=neighbors[(seed+creature.steps)%neighbors.length];
+      to=forward[(seed+creature.steps)%forward.length];
     }
     if(!prey&&search===0){knownQ=null;knownR=null;}
   }
@@ -198,4 +218,23 @@ export function canDealContactDamage(
 ):boolean {
   return !inProtectedThreshold(position) &&
     now>=nextAttackAt && now>=nextHarmAt && now>=protectedUntil;
+}
+
+/** Opposing species can attack across adjacent tiles, without overlapping.
+ * The tick cadence intentionally makes clashes occasional, not every step. */
+export function chooseCreatureRival(
+  attacker:CreatureMind,
+  rivals:readonly CreatureRival[],
+  now:number,
+  nextAttackAt:number,
+):CreatureRival|null {
+  if(now<nextAttackAt || attacker.steps%3!==0)return null;
+  const from={q:attacker.q,r:attacker.r};
+  return rivals.filter(r=>
+    r.id!==attacker.id && r.kind!==attacker.kind && r.health>0 &&
+    !inProtectedThreshold(r) && hexDistance(from,r)===1
+  ).sort((a,b)=>a.id.localeCompare(b.id))[0]??null;
+}
+export function clashDamage(kind:CreatureKind):number {
+  return kind==="stalker"?14:9;
 }
