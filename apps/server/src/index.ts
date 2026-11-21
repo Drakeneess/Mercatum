@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { monitorEventLoopDelay } from "node:perf_hooks";
 import { createEndpoint, createRouter, defineRoom, defineServer, matchMaker } from "colyseus";
 import { MERCATUM_ROOM_NAME } from "@mercatum/shared";
 import { MercatumRoom } from "./MercatumRoom.js";
@@ -47,3 +48,35 @@ if (!world.roomId) {
 
 console.log(`[Mercatum] Colyseus listening on http://localhost:${port}`);
 console.log(`[Mercatum] Canonical room: ${world.roomId}`);
+
+/**
+ * Opt-in diagnostics for local load testing ONLY. They are written to stdout,
+ * never served by a public health endpoint, and disabled in production.
+ * CPU percentage is per process (100% = one CPU core fully occupied).
+ */
+if(process.env.MERCATUM_LOAD_METRICS==="1" && process.env.NODE_ENV!=="production"){
+  const lag=monitorEventLoopDelay({resolution:20});
+  lag.enable();
+  let previousCpu=process.cpuUsage();
+  let previousNs=process.hrtime.bigint();
+  const sampler=setInterval(()=>{
+    const now=process.hrtime.bigint();
+    const elapsedMs=Number(now-previousNs)/1e6;
+    const cpu=process.cpuUsage(previousCpu);
+    const memory=process.memoryUsage();
+    const cpuPercent=elapsedMs>0
+      ? ((cpu.user+cpu.system)/1000/elapsedMs)*100 : 0;
+    console.log("[MercatumLoad] "+JSON.stringify({
+      at:Date.now(),
+      rssMB:Math.round(memory.rss/1048576*100)/100,
+      heapMB:Math.round(memory.heapUsed/1048576*100)/100,
+      cpuPercent:Math.round(cpuPercent*100)/100,
+      eventLoopP95Ms:Math.round(lag.percentile(95)/1e6*100)/100,
+      eventLoopMaxMs:Math.round(lag.max/1e6*100)/100,
+    }));
+    previousCpu=process.cpuUsage();
+    previousNs=now;
+    lag.reset();
+  },1000);
+  sampler.unref();
+}
