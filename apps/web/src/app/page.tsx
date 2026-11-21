@@ -36,6 +36,8 @@ export default function Home() {
     identity, groundItems, doorOpen, action, clock, requestAction, cancelAction,
     dropItem, reenter, sightings,
     market, provenance, operateMarket, requestMarket, requestProvenance,
+    chatMessages, chatPeers, chatPreferences, chatNotice,
+    sendChat, chatPreference, reportChat,
   } = useMercatumRoom(committedBuild, draftStats, createSuccessor);
 
   // Keep the game surface and the Colyseus connection mounted while a modal
@@ -123,6 +125,9 @@ export default function Home() {
                 />
                 <SectorNotes map={map} players={players} events={events}
                   identity={identity} sightings={sightings}
+                  chatMessages={chatMessages} chatPeers={chatPeers}
+                  chatPreferences={chatPreferences} chatNotice={chatNotice}
+                  sendChat={sendChat} chatPreference={chatPreference} reportChat={reportChat}
                   actions={{connection,identity,position:currentPosition,groundItems,doorOpen,
                     onNewCharacter:prepareSuccessor,action,clock,requestAction,
                     cancelAction,dropItem,reenter}}
