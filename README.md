@@ -65,7 +65,14 @@ pnpm --filter @mercatum/server smoke:v2  # Criaturas, muerte offline y sucesión
 pnpm --filter @mercatum/server smoke:v3  # Comercio, trueque y registro público
 pnpm --filter @mercatum/server smoke:v4  # Voces locales, mute, bloqueo, reportes
 pnpm --filter @mercatum/server smoke:ecology  # Casillas exclusivas, fauna autónoma y rivalidad
+pnpm --filter @mercatum/server load:20  # 20 clientes simulados y métricas de carga local
 ```
+
+## Probar 20 jugadores al mismo tiempo
+
+`pnpm --filter @mercatum/server load:20` inicia un servidor y esquema PostgreSQL **aislados** y simula 20 cuentas/clients WebSocket reales, 120 movimientos simultáneos y 400 entregas de chat local, con latencia y métricas optativas de CPU/RAM/event loop. **Antes ejecuta `pnpm build` y `docker compose up -d db`.** No hace falta abrir 20 pestañas ni ejecutar `pnpm dev`.
+
+[Guía de la prueba de carga, sus límites y la interpretación del informe](docs/load-testing.md).
 
 ## Interfaz y temas visuales
 

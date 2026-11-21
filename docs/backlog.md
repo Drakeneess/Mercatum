@@ -187,11 +187,11 @@ Objetos con historia auténtica, afirmaciones disputables y comercio donde la de
 | S-041 | Implementado | Mensajes de texto en radio de 2 hexágonos, línea de visión y audiencia privada por servidor; fuera no hay canal global |
 | S-042 | Parcial | Silencio y bloqueo persistentes por cuenta, spam acotado, reporte con evidencia; falta revisión y moderación operativa |
 | S-043 | Parcial | Hoja comunicativa desplegable accesible con teclado y móvil; pendiente auditoría visual y accesibilidad con usuarios |
-| S-045 | Pendiente | Medir carga, red y latencia con 20 clientes |
+| S-045 | Parcial — ensayo reproducible | 20 clientes, 120 movimientos, 400 mensajes y métricas CPU/RAM/latencia en esquema temporal; faltan WAN y tráfico de red real |
 | S-046 | Pendiente | Staging, copias, restauración y observabilidad operativa |
 | S-047 | Pendiente | Pruebas de alfa cerrada y telemetría |
 
-[Reglas y guía del sprint de V4](v4-sprint1.md). Prueba de aceptación: `smoke:v4` en PostgreSQL temporal, además de los smoke tests anteriores.
+[Reglas y guía del sprint de V4](v4-sprint1.md). [Prueba de carga local de 20 clientes](load-testing.md). Prueba de aceptación: `smoke:v4` en PostgreSQL temporal, además de los smoke tests anteriores.
 
 ## S · Social, experiencia y alfa privada
 
