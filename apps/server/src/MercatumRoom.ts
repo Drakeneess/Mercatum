@@ -9,7 +9,7 @@ import { mercatumClock } from "./domain/clock.js";
 import { MarketGateway } from "./MarketGateway.js";
 import { ChatGateway } from "./ChatGateway.js";
 import { pool } from "./storage/db.js";
-import { ENTRY_GRACE_MS, inProtectedThreshold, visibleToExplorer } from "./domain/creatureLogic.js";
+import { ENTRY_GRACE_MS, inProtectedThreshold } from "./domain/creatureLogic.js";
 import { CreatureScheduler } from "./CreatureScheduler.js";
 import { creaturePositions, type CreatureTick } from "./storage/creatures.js";
 import { resolveMovement } from "./domain/movement.js";
@@ -161,21 +161,11 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
     else this.broadcast("world_items",world);
   }
 
-  /** The creature set is never a public synchronized Schema field. */
+  /** All active hostiles are always visible on the map, including outside
+   * or after death; they are never hidden behind Perception. */
   private async sendSightings(client:Client,all?:readonly CreatureSighting[]):Promise<void>{
-    const player=this.state.players.get(client.sessionId);
-    if(!player||!player.inside||player.health<=0){
-      client.send("sightings",{creatures:[]});
-      return;
-    }
-    const creatures=all??await creaturePositions();
-    const visible=creatures.filter(creature=>
-      visibleToExplorer(
-        {q:creature.q,r:creature.r},{q:player.q,r:player.r},
-        player.perception,this.state.doorOpen,
-      ),
-    );
-    client.send("sightings",{creatures:visible});
+    if(!this.session(client))return;
+    client.send("sightings",{creatures:all??await creaturePositions()});
   }
 
   private async onCreatureTick(tick:CreatureTick):Promise<void>{
@@ -206,6 +196,9 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
     }
     const positions=await creaturePositions();
     await Promise.all(this.clients.map(client=>this.sendSightings(client,positions)));
+    for(const clash of tick.clashes){
+      this.broadcast("creature_clash",clash);
+    }
     if(changedInventory){await this.sendWorld();this.broadcast("market_update",{});}
     if(tick.attacks.length)this.chat?.notifyPeers();
   }
