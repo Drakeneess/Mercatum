@@ -271,6 +271,52 @@ const migrations: ReadonlyArray<string> = [
   );
   CREATE INDEX IF NOT EXISTS chat_reports_reported_at ON chat_reports(reported_at);
   `,
+
+  `
+  -- V4.2 autonomous ecology. Defeated creatures remain in history, not the map.
+  ALTER TABLE creatures ADD COLUMN IF NOT EXISTS health INTEGER NOT NULL DEFAULT 120
+    CHECK (health BETWEEN 0 AND 120);
+  ALTER TABLE creatures ADD COLUMN IF NOT EXISTS next_harm_at BIGINT NOT NULL DEFAULT 0;
+  ALTER TABLE creatures ADD COLUMN IF NOT EXISTS previous_q INTEGER;
+  ALTER TABLE creatures ADD COLUMN IF NOT EXISTS previous_r INTEGER;
+
+  -- Repair old overlapping positions BEFORE enforcing uniqueness. Candidate
+  -- hexes are legal floor tiles of sector 01, not the protected entrance.
+  DO $repair$
+  DECLARE mob RECORD; free_cell RECORD;
+  BEGIN
+    FOR mob IN SELECT id,q,r FROM creatures WHERE health>0 ORDER BY id LOOP
+      IF EXISTS(
+        SELECT 1 FROM creatures other
+        WHERE other.health>0 AND other.id<mob.id
+          AND other.q=mob.q AND other.r=mob.r
+      ) THEN
+        SELECT coords.q,coords.r INTO free_cell
+        FROM generate_series(-4,4) q CROSS JOIN generate_series(-4,4) r
+        CROSS JOIN LATERAL (SELECT q AS q,r AS r) coords
+        WHERE GREATEST(ABS(coords.q),ABS(coords.r),ABS(coords.q+coords.r))<=4
+          AND GREATEST(ABS(coords.q),ABS(coords.r),ABS(coords.q+coords.r))>=2
+          AND (coords.q,coords.r) NOT IN
+            ((-2,0),(-2,1),(-1,2),(0,-3),(1,-2),(2,-2),(3,1),(1,0))
+          AND NOT EXISTS (
+            SELECT 1 FROM creatures used
+            WHERE used.health>0 AND used.q=coords.q AND used.r=coords.r
+          )
+        ORDER BY GREATEST(ABS(coords.q),ABS(coords.r),ABS(coords.q+coords.r)) DESC,
+          coords.q,coords.r
+        LIMIT 1;
+        IF NOT FOUND THEN RAISE EXCEPTION 'No free hex to relocate a creature'; END IF;
+        UPDATE creatures SET q=free_cell.q,r=free_cell.r,
+          previous_q=NULL,previous_r=NULL,
+          last_known_q=NULL,last_known_r=NULL,search_left=0
+        WHERE id=mob.id;
+      END IF;
+    END LOOP;
+  END $repair$;
+
+  CREATE UNIQUE INDEX IF NOT EXISTS creatures_unique_living_hex
+    ON creatures(q,r) WHERE health>0;
+  `,
 ];
 
 /** Run once per process startup. A failed migration rolls back completely. */
