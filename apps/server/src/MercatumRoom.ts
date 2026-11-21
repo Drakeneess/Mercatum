@@ -7,6 +7,7 @@ import {
 } from "@mercatum/shared";
 import { mercatumClock } from "./domain/clock.js";
 import { MarketGateway } from "./MarketGateway.js";
+import { ChatGateway } from "./ChatGateway.js";
 import { pool } from "./storage/db.js";
 import { ENTRY_GRACE_MS, inProtectedThreshold, visibleToExplorer } from "./domain/creatureLogic.js";
 import { CreatureScheduler } from "./CreatureScheduler.js";
@@ -38,6 +39,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
   private readonly busy=new Set<string>();
   private creatures:CreatureScheduler|null=null;
   private market:MarketGateway|null=null;
+  private chat:ChatGateway|null=null;
 
   async onCreate():Promise<void>{
     this.state.mercatumTime=mercatumClock();
@@ -64,6 +66,22 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
     this.onMessage("market_request",(client)=>void this.market?.snapshot(client));
     this.onMessage("market_operation",(client,payload:unknown)=>void this.market?.operate(client,payload));
     this.onMessage("provenance_request",(client,payload:unknown)=>void this.market?.provenance(client,payload));
+    this.chat=new ChatGateway(
+      ()=>this.clients.flatMap(client=>{
+        const session=this.sessions.get(client.sessionId);
+        if(!session)return [];
+        const {character:c,accountId}=session;
+        return [{
+          client,accountId,characterId:c.id,name:c.displayName,
+          phase:c.phase,health:c.health,q:c.q,r:c.r,
+        }];
+      }),
+      ()=>this.state.doorOpen,
+    );
+    this.onMessage("chat_peers_request",(client)=>void this.chat?.snapshot(client));
+    this.onMessage("chat_send",(client,payload:unknown)=>this.chat?.send(client,payload));
+    this.onMessage("chat_preference",(client,payload:unknown)=>this.chat?.preference(client,payload));
+    this.onMessage("chat_report",(client,payload:unknown)=>this.chat?.report(client,payload));
     // Local V1 smoke exercises extraction without external threats. Normal
     // gameplay keeps the creatures running even when nobody is connected.
     if(process.env.MERCATUM_DISABLE_CREATURES!=="1"){
@@ -91,6 +109,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
         inside:character.phase==="inside",health:character.health,wounds:character.wounds,
         ...character.stats,
       }));
+      this.chat?.notifyPeers();
     } finally {
       if(typeof token==="string")this.joiningTokens.delete(token);
     }
@@ -99,6 +118,8 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
   onLeave(client:Client):void{
     this.cancelAction(client,"Acción cancelada al perder la conexión.");
     this.sessions.delete(client.sessionId);
+    this.chat?.onLeave(client);
+    this.chat?.notifyPeers();
     this.broadcast("market_update",{});
     this.busy.delete(client.sessionId);
     this.state.players.delete(client.sessionId);
@@ -186,6 +207,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
     const positions=await creaturePositions();
     await Promise.all(this.clients.map(client=>this.sendSightings(client,positions)));
     if(changedInventory){await this.sendWorld();this.broadcast("market_update",{});}
+    if(tick.attacks.length)this.chat?.notifyPeers();
   }
 
   private async move(client:Client,payload:unknown):Promise<void>{
@@ -212,6 +234,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
       }
       await this.sendSightings(client);
       this.broadcast("market_update",{});
+      this.chat?.notifyPeers();
     }catch(error){
       console.error("[Mercatum] Movement:",error);this.message(client,"No se pudo registrar el movimiento.");
     }finally{this.busy.delete(client.sessionId);}
@@ -290,6 +313,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
         actor.inside=false;
         await this.sendIdentity(client);
         this.broadcast("market_update",{});
+        this.chat?.notifyPeers();
         message="Extracción registrada. El botín ha pasado al depósito seguro.";
       }
       client.send("action_result",{kind:request.kind,message});
@@ -330,6 +354,7 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
       await this.sendIdentity(client);
       await this.sendSightings(client);
       this.broadcast("market_update",{});
+      this.chat?.notifyPeers();
       client.send("operation_ok",{message:"Regreso registrado. El depósito permanece fuera del edificio."});
     }catch(error){console.error("[Mercatum] Reentry:",error);this.message(client,"No se pudo registrar la entrada.");}
     finally{this.busy.delete(client.sessionId);}
