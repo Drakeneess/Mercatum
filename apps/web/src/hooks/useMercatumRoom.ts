@@ -4,7 +4,7 @@ import { Client, type Room } from "@colyseus/sdk";
 import {
   hexDistance, hexKey, makeDemoMap, MERCATUM_ROOM_NAME, getMovementDelayMs,
   type ActionRequest, type ActionResult, type CharacterStats, type HexTile,
-  type CreatureSighting, type HarmReport, type IdentityReply, type MarketItem, type MercatumState, type MoveAccepted,
+  type CreatureClash, type CreatureSighting, type HarmReport, type IdentityReply, type MarketItem, type MercatumState, type MoveAccepted,
   type MoveRejected, type MoveRequest, type PlayerSnapshot, type TimedActionReply,
   type MarketOperation, type MarketReply, type ProvenanceReply,
   type ChatMessage, type ChatPeer, type ChatPreference, type ChatPreferenceMode, type ChatReportReason,
@@ -130,6 +130,12 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
         });
         room.onMessage("sightings",(reply:SightingsReply)=>{
           if(mounted)setSightings(reply.creatures);
+        });
+        room.onMessage("creature_clash",(fight:CreatureClash)=>{
+          if(!mounted)return;
+          const sentence=fight.attackerName+" atacó a "+fight.defenderName+
+            " ("+fight.damage+" daño)"+(fight.defeated?". Criatura derrotada.":".");
+          record(sentence);
         });
         room.onMessage("harm",(report:HarmReport)=>{
           if(!mounted)return;

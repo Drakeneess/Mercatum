@@ -1,6 +1,6 @@
 "use client";
 
-import type {CreatureSighting, HexCoordinate, IdentityReply, TimedActionReply} from "@mercatum/shared";
+import { hexDistance, type CreatureSighting, type HexCoordinate, type IdentityReply, type TimedActionReply } from "@mercatum/shared";
 import type {Connection} from "../hooks/useMercatumRoom";
 import type {WorkspaceView} from "./WorkspaceNavigation";
 
@@ -19,7 +19,9 @@ export function ExpeditionStatus({
 }:ExpeditionStatusProps){
   const phase=identity?.phase;
   const health=identity?.health??0;
-  const danger=phase==="inside"&&creatures.length>0;
+  const dangerCount=phase==="inside"&&position
+    ? creatures.filter(c=>hexDistance(c,position)<=2).length : 0;
+  const danger=dangerCount>0;
   return (
     <div className={"expedition-quickbar"+(danger?" expedition-quickbar--danger":"")}
       aria-label="Resumen de la incursión">
@@ -46,14 +48,14 @@ export function ExpeditionStatus({
         <button type="button" className="expedition-quickbar__warning expedition-quickbar__warning--link"
           aria-label="Amenazas visibles, volver al plano de exploración"
           onClick={()=>onNavigate("explore")}>
-          {creatures.length} FIGURA{creatures.length===1?"":"S"} A LA VISTA · VER PLANO
+          {dangerCount} FIGURA{dangerCount===1?"":"S"} CERCA · VER PLANO
         </button>
       ) : (
         <div className="expedition-quickbar__warning" role="status">
           {connection!=="online"?"SIN CONEXIÓN":
             action?"ACCIÓN EN CURSO: "+action.kind.toUpperCase():
             phase==="dead"?"REGISTRO CERRADO":
-            phase==="outside"?"DEPÓSITO SEGURO":"SIN AMENAZAS VISIBLES"}
+            phase==="outside"?"DEPÓSITO SEGURO":creatures.length+" CRIATURAS EN MAPA"}
         </div>
       )}
     </div>

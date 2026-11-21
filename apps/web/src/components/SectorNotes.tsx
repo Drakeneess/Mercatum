@@ -35,7 +35,7 @@ export function SectorNotes({
         notice={chatNotice} onSend={sendChat}
         onPreference={chatPreference} onReport={reportChat}/>
       <details className="expedition-drawer">
-        <summary>INFORME MÉDICO Y AVISTAMIENTOS
+        <summary>INFORME MÉDICO Y ENTIDADES ACTIVAS
           <span>{identity?.wounds??0} HERIDAS / {sightings.length} FIGURAS</span>
         </summary>
         <ThreatReport identity={identity} sightings={sightings}

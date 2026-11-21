@@ -142,8 +142,14 @@ export function MarketMap(props: MarketMapProps) {
                   <g className="hostile-marker" key={creature.id}
                     transform={`translate(${position.x} ${position.y})`}>
                     <path d="M0 -18 L13 -6 L10 10 L0 17 L-11 9 L-13 -5 Z" />
-                    <text y="3" textAnchor="middle" className="hostile-glyph">?</text>
+                    <text y="3" textAnchor="middle" className="hostile-glyph">
+                      {creature.kind==="stalker"?"R":"B"}
+                    </text>
                     <text y="27" textAnchor="middle" className="hostile-name">{creature.name.toUpperCase()}</text>
+                    <rect x="-15" y="31" width="30" height="4" className="hostile-health-base"/>
+                    <rect x="-15" y="31" height="4" className="hostile-health-fill"
+                      width={30*Math.max(0,Math.min(1,creature.health/creature.maxHealth))}/>
+                    <title>{creature.name}: {creature.health}/{creature.maxHealth} de salud</title>
                   </g>
                 );
               })}

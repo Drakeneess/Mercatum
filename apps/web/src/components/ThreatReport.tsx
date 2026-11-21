@@ -7,7 +7,7 @@ interface ThreatReportProps {
   clock: number;
 }
 
-/** Only reports entities already filtered by the server for this explorer. */
+/** Every active hostile remains on the map, with server-authoritative health. */
 export function ThreatReport({identity,sightings,position,clock}:ThreatReportProps){
   const threshold=!!position && hexDistance(position,ENTRY)<=1;
   const grace=Math.max(0,Math.ceil((identity?.protectedUntil??0)-clock)/1000);
@@ -36,15 +36,15 @@ export function ThreatReport({identity,sightings,position,clock}:ThreatReportPro
             <p className="threshold-note">MARGEN DE INGRESO — {grace}s DE PROTECCIÓN TEMPORAL.
               LA PROTECCIÓN NO SE RENUEVA AL RECONECTAR.</p>
           ) : null}
-          <div className="expedition-subheading">AVISTAMIENTOS CONFIRMADOS</div>
+          <div className="expedition-subheading">ENTIDADES ACTIVAS / POSICIONES EN DIRECTO</div>
           {sightings.length===0
-            ? <p className="expedition-muted">Sin figuras visibles. Esto no confirma que el pasillo esté vacío.</p>
+            ? <p className="expedition-muted">No quedan criaturas activas en el sector.</p>
             : sightings.map(creature=><div className="threat-sighting" key={creature.id}>
                 <strong>{creature.name}</strong>
-                <small>ÚLTIMA OBSERVACIÓN / Q {creature.q} · R {creature.r}</small>
+                <small>POSICIÓN ACTUAL / Q {creature.q} · R {creature.r}</small>
+                <small>ESTADO / {creature.health} DE {creature.maxHealth}</small>
               </div>)}
-          <p className="expedition-fineprint">Una figura fuera de vista no aparece en el registro.
-            El silencio puede ocultar una presencia cercana.</p>
+          <p className="expedition-fineprint">Se muestran todas las criaturas activas. Pueden desplazarse sin exploradores y atacarse entre sí.</p>
         </>
       )}
     </section>

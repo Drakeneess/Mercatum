@@ -62,7 +62,7 @@ export function WorkspaceModal({
             role="status" aria-live="polite">
             <strong>{health === null ? "SIN DATOS" : "SALUD " + health + " / 100"}</strong>
             <span>{inside && sightings > 0
-              ? sightings + " FIGURA(S) A LA VISTA — EL MUNDO SIGUE ACTIVO"
+              ? sightings + " FIGURA(S) CERCA — EL MUNDO SIGUE ACTIVO"
               : inside ? "DENTRO / EL MERCADO NO SE DETIENE" : "FUERA DEL PERÍMETRO"}</span>
           </div>
           <button ref={closeRef} type="button"

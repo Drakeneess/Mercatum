@@ -33,3 +33,8 @@
   margin:12px 0 16px;
 }
 .app-shell[data-theme="phosphor"] .threshold-note { border-color:#8ba78a; }
+
+/* Server-authoritative vitality displayed under every persistent marker. */
+.hostile-health-base {fill:#24120e;stroke:#d0bd9a;stroke-width:.45;}
+.hostile-health-fill {fill:#b33d34;}
+.app-shell[data-theme="phosphor"] .hostile-health-fill {fill:#89b887;}

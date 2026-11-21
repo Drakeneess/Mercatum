@@ -44,6 +44,8 @@ export default function Home() {
   // shows character, trade or archived paperwork. Only one can be open.
   const [activeModal, setActiveModal] = useState<OverlayView|null>(null);
   const [commerceSection, setCommerceSection] = useState<"merchant"|"exchange">("merchant");
+  const nearThreats=currentPosition
+    ? sightings.filter(c=>hexDistance(currentPosition,c)<=2).length : 0;
   const nearShop=identity?.phase==="inside" && !!currentPosition &&
     hexDistance(currentPosition,SHOP)<=1;
   const view:WorkspaceView = !committedBuild ? "character" : activeModal ?? "explore";
@@ -144,7 +146,7 @@ export default function Home() {
           subtitle={overlayMeta[activeModal].subtitle}
           health={identity?.health??null}
           inside={identity?.phase==="inside"}
-          sightings={sightings.length}
+          sightings={identity?.phase==="inside"?nearThreats:0}
           onRequestClose={()=>setActiveModal(null)}>
           {activeModal==="character" && (
             <div className="workspace-character">
