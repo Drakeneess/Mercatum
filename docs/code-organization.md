@@ -122,3 +122,14 @@ Para reglas económicas, precauciones de confianza y requisitos de despliegue: [
 `WorkspaceNavigation` mantiene Explorar como superficie principal y abre Personaje, Comercio y Archivo en un `WorkspaceModal` nativo sin cerrar `useMercatumRoom` ni desmontar el mapa. El modal incorpora salud y amenazas en vivo. `ExpeditionStatus` permanece visible en el plano y sus avisos de peligro facilitan orientarse. El panel lateral `SectorNotes` se limita a acciones de exploración y extractos desplegables. Comercio y Archivo son expedientes superpuestos independientes, nunca modales anidados. Los estilos del espacio de trabajo están en `app/styles/workspace.css` y los de ventanas superpuestas en `app/styles/modals.css`, importados al final de `layout.tsx`.
 
 [Guía de navegación](ui-navigation.md). El refactor no altera el protocolo ni la autoridad del servidor.
+
+## V4 Sprint 1 — Comunicación sin canal global
+
+- `apps/server/src/ChatGateway.ts`: destinatarios por posición de servidor, mute/bloqueo, recibos breves para reportes y entrega privada.
+- `apps/server/src/domain/chatRules.ts` y `chatRules.test.ts`: proximidad, obstáculos, contenido y límite de frecuencia.
+- `apps/server/src/smoke-v4.ts`: varios clientes reales de Colyseus, cuenta bloqueada y reporte auditable en esquema PostgreSQL temporal.
+- `apps/web/src/components/NearbyChat.tsx`: hoja plegable de voces cercanas y acciones por mensaje.
+- `apps/web/src/app/styles/voice.css`: estilo para los tres temas con controles de teclado y móvil.
+- `apps/web/src/hooks/useMercatumRoom.ts`: recibe mensajes privados de la sesión y envía comandos con identidad ya admitida.
+
+No añadir mensajes de chat ni preferencias al Schema público ni convertir la hoja de voces en un feed global. [Guía de V4](v4-sprint1.md).

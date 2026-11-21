@@ -129,3 +129,9 @@ Las afirmaciones **no son certificaciones** y la base no implementa blockchain. 
 ## Presentación organizada después de V3
 
 La pantalla no es un dashboard monolítico de tres columnas. `app/page.tsx` mantiene una sola sesión `useMercatumRoom` y un mapa permanente. Personaje, comercio y archivo se abren mediante `WorkspaceModal` (`<dialog>` nativo), sin desmontar la exploración ni perder la conexión de red. La ventana muestra la salud y la alarma de amenazas en vivo; la interacción con el plano vuelve después de cerrarla. Comercio subdivide NPC y ofertas en componentes dentro de un mismo modal, sin alterar `MarketGateway`. Ver [docs/ui-navigation.md](ui-navigation.md).
+
+## V4 Sprint 1 — Proximidad como transporte de comunicación
+
+`ChatGateway.ts` recibe paquetes `chat_send` y consulta las posiciones de sesión almacenadas por `MercatumRoom`, sin aceptar coordenadas del navegador. `domain/chatRules.ts` define alcance (2 hex), línea de visión, validación de caracteres y ritmo por cuenta. El servidor entrega `chat_message` únicamente a clientes cercanos, no como evento global. `chat_peers` es un resumen privado de interlocutores cercanos y preferencias propias.
+
+`chat_relationships` persiste restricciones por cuenta; `chat_reports` persiste exclusivamente mensajes denunciados cuya recepción real consta en memoria durante cinco minutos. El historial normal no se guarda en la base. La vista `NearbyChat` permanece plegada y está integrada en el panel de exploración, sin abrir un modal que impida movimiento. [Detalles del sprint](v4-sprint1.md).

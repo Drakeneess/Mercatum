@@ -20,7 +20,7 @@ Mercatum/
 
 ## Backlog de desarrollo
 
-El plan de desarrollo por vertical slices, historias con IDs, prioridades, dependencias y criterios de aceptación está en [docs/backlog.md](docs/backlog.md). V1, V2 y V3 cuentan con pruebas de integración. El siguiente objetivo será una **alfa privada controlada** con chat de proximidad, moderación básica y pruebas de carga.
+El plan de desarrollo por vertical slices, historias con IDs, prioridades, dependencias y criterios de aceptación está en [docs/backlog.md](docs/backlog.md). V1, V2, V3 y el primer sprint social de V4 tienen pruebas de integración. Antes de una alfa privada faltan **pruebas de carga**, moderación operativa, staging y respaldos.
 
 ## Requisitos
 
@@ -63,6 +63,7 @@ pnpm --filter @mercatum/server smoke     # Prueba dos clientes reales (requiere 
 pnpm --filter @mercatum/server smoke:v1  # Botín + reinicio PostgreSQL aislado
 pnpm --filter @mercatum/server smoke:v2  # Criaturas, muerte offline y sucesión
 pnpm --filter @mercatum/server smoke:v3  # Comercio, trueque y registro público
+pnpm --filter @mercatum/server smoke:v4  # Voces locales, mute, bloqueo, reportes
 ```
 
 ## Interfaz y temas visuales
@@ -81,7 +82,7 @@ Consulta [docs/ui-themes.md](docs/ui-themes.md) para la guía de estilos.
 
 ## Navegación de la interfaz
 
-La interfaz usa **Explorar** como mapa permanente; **Personaje**, **Comercio** y **Archivo** se abren como modales documentales encima del plano, en vez de sustituir la pantalla de juego. La mochila y los informes secundarios siguen siendo desplegables situacionales.
+La interfaz usa **Explorar** como mapa permanente; en su panel lateral, **VOCES CERCANAS** permite hablar solo con jugadores a 2 hexágonos sin obstáculos, silenciar/bloquear cuentas y reportar mensajes realmente recibidos; **Personaje**, **Comercio** y **Archivo** se abren como modales documentales encima del plano, en vez de sustituir la pantalla de juego. La mochila y los informes secundarios siguen siendo desplegables situacionales.
 
 **Comercio** tiene dos apartados dentro del mismo modal: **Comerciante** (NPC fuera del edificio o frente a un puesto del mapa) e **Intercambios** (anuncios y ofertas P2P desde el exterior o a un hexágono de distancia). **Archivo** es otro modal, consultable solo después de extraer. Los modales muestran salud y alertas en vivo, se cierran con Escape o el botón Cerrar y **no pausan** el mundo.
 
@@ -118,6 +119,8 @@ Las posiciones se sincronizan mediante `@colyseus/schema` 5; los comandos de mov
 **V1:** mapa, personaje, objetos únicos, mochila y extracción persistentes.
 
 **V2:** dos criaturas autónomas, persecución, heridas, robo de mercancía y muerte permanente sin desconexión segura. **Balance posterior a V3:** detección limitada, ataques con recuperación individual y umbral de acceso protegido; los cambios se guardan sin borrar partidas.
+
+**V4 Sprint 1:** comunicación local de texto con filtrado por servidor, mute/bloqueo de cuenta, limitación de spam y evidencia de reporte. No hay chat global ni voz real, y no implica que el juego esté listo para publicación. [Guía de V4](docs/v4-sprint1.md).
 
 **V3:** 100 créditos ficticios por cuenta, mercado NPC finito en el exterior y en el puesto del primer sector, tasaciones por condición y Trato, publicaciones voluntarias de objetos, ofertas de intercambio con consentimiento, transacciones SQL atómicas, desgaste, historia de procedencia y testimonios atribuidos **no verificados**. Consultar el registro de objeto solo es posible **fuera del Mercado**.
 
