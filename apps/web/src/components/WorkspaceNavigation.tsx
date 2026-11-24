@@ -1,6 +1,6 @@
 "use client";
 
-export type WorkspaceView = "explore" | "character" | "commerce" | "registry";
+export type WorkspaceView = "explore" | "character" | "inventory" | "commerce" | "registry";
 
 interface WorkspaceNavigationProps {
   view: WorkspaceView;
@@ -12,8 +12,9 @@ interface WorkspaceNavigationProps {
 const routes: readonly {id:WorkspaceView;number:string;label:string;sub:string}[] = [
   {id:"explore",number:"01",label:"Explorar",sub:"Plano y acciones"},
   {id:"character",number:"02",label:"Personaje",sub:"Ficha y estado"},
-  {id:"commerce",number:"03",label:"Comercio",sub:"Compras y trueque"},
-  {id:"registry",number:"04",label:"Archivo",sub:"Procedencia pública"},
+  {id:"inventory",number:"03",label:"Mochila",sub:"Carga y depósito"},
+  {id:"commerce",number:"04",label:"Comercio",sub:"Compras y trueque"},
+  {id:"registry",number:"05",label:"Archivo",sub:"Procedencia pública"},
 ];
 
 /** Exploration stays in place; secondary destinations open native dialogs. */

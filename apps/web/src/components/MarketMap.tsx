@@ -1,8 +1,8 @@
 "use client";
 
-import { hexDistance, hexKey, type CharacterStats, type HexCoordinate,
+import { hexDistance, hexKey, WALL_EDGES, withinReach, type CharacterStats, type HexCoordinate,
   type CreatureClash, type CreatureSighting, type HexTile, type MarketItem, type PlayerSnapshot } from "@mercatum/shared";
-import { getTileName, hexCenter, hexPoints } from "../lib/hexMapView";
+import { getTileName, hexCenter, hexPoints, hexEdge } from "../lib/hexMapView";
 
 export interface MarketMapProps {
   map: readonly HexTile[];
@@ -29,14 +29,7 @@ export function MarketMap(props: MarketMapProps) {
   const canWalk=players.some(p=>p.id===playerId&&p.inside);
   return (
         <section className="map-panel" aria-label="Plano interactivo del Mercado">
-          <div className="map-header">
-            <div className="piece-meta"><span>LEVANTAMIENTO ENCONTRADO</span><span>SECTOR 01 / NIVEL 00</span></div>
-            <div className="map-title-line">
-              <h2>Plano <span>incompleto.</span></h2>
-              <div className="map-stamp" aria-hidden="true">NO VERIFICADO</div>
-            </div>
-            <p className="map-description">Papel recuperado junto a una entrada de servicio. Algunas marcas no coinciden con las observaciones.</p>
-          </div>
+          <div className="map-header"><div className="map-title-line"><h2>Sector 01 <span>/ Nivel 00</span></h2><span className="map-stamp">PLANO ACTIVO</span></div></div>
           <div className="map-stage">
             <div className="map-grit" aria-hidden="true" />
             <div className="map-tape map-tape--top" aria-hidden="true" />
@@ -77,18 +70,18 @@ export function MarketMap(props: MarketMapProps) {
                     <polygon
                       points={hexPoints(tile)}
                       className={`hex-tile tile-${tile.kind}${available ? " tile-available" : ""}${occupied ? " tile-occupied" : ""}`}
-                      onClick={() => requestMove(tile)}
+                      onClick={() => {if(available)requestMove(tile);}}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
-                          requestMove(tile);
+                          if(available)requestMove(tile);
                         }
                       }}
                       tabIndex={available ? 0 : -1}
-                      role="button"
+                      role="button" aria-disabled={!available}
                       aria-label={`${getTileName(tile.kind)}, ${tile.q}, ${tile.r}${available ? ", accesible" : ""}`}
                     />
-                    {tile.kind === "wall" && <polygon points={hexPoints(tile)} className="hex-wall-fill" />}
+                    {tile.kind === "wall" && <g className="obstacle-marker" transform={`translate(${center.x} ${center.y})`}><rect x="-17" y="-15" width="34" height="30" rx="1"/><path d="M-13 -7 H13 M-13 0 H13 M-13 7 H13"/></g>}
                     {tile.kind === "shop" && (
                       <g className="map-icon" transform={`translate(${center.x} ${center.y})`}>
                         <text textAnchor="middle" dominantBaseline="middle" className="shop-glyph">◇</text>
@@ -107,10 +100,16 @@ export function MarketMap(props: MarketMapProps) {
                 );
               })}
 
+              <g className="architecture-walls" aria-hidden="true">
+                {WALL_EDGES.map(({a,b})=><g key={hexKey(a)+"/"+hexKey(b)}>
+                  <line {...hexEdge(a,b)} className="architecture-wall-shadow"/>
+                  <line {...hexEdge(a,b)} className="architecture-wall"/>
+                </g>)}
+              </g>
               {/* This button exists on the floor plan only while the explorer
                   stands directly in front of a mapped storefront. */}
               {canWalk && currentPosition && map.filter(tile=>
-                tile.kind==="shop" && hexDistance(tile,currentPosition)<=1
+                tile.kind==="shop" && withinReach(tile,currentPosition)
               ).map(shop=>{
                 const center=hexCenter(shop);
                 const activate=()=>onOpenShop();
@@ -141,11 +140,9 @@ export function MarketMap(props: MarketMapProps) {
                 const position=hexCenter({q:creature.q,r:creature.r});
                 return (
                   <g className="hostile-marker" key={creature.id}
-                    transform={`translate(${position.x} ${position.y})`}>
-                    <path d="M0 -18 L13 -6 L10 10 L0 17 L-11 9 L-13 -5 Z" />
-                    <text y="3" textAnchor="middle" className="hostile-glyph">
-                      {creature.kind==="stalker"?"R":"B"}
-                    </text>
+                    style={{transform:`translate(${position.x}px, ${position.y}px)`}}>
+                    <path d="M0 -14 L15 12 H-15 Z" />
+                    <text y="8" textAnchor="middle" className="hostile-glyph">!</text>
                     <text y="27" textAnchor="middle" className="hostile-name">{creature.name.toUpperCase()}</text>
                     <rect x="-15" y="31" width="30" height="4" className="hostile-health-base"/>
                     <rect x="-15" y="31" height="4" className="hostile-health-fill"
@@ -169,14 +166,13 @@ export function MarketMap(props: MarketMapProps) {
               {players.filter(p=>p.inside).map((player, index, visiblePlayers) => {
                 const center = hexCenter(player.position);
                 const sameCellIndex = visiblePlayers.slice(0, index).filter((other) => hexKey(other.position) === hexKey(player.position)).length;
-                const x = center.x + (sameCellIndex % 3 - 1) * 13;
+                const x = center.x + (sameCellIndex===0?0:((sameCellIndex-1)%3-1)*13);
                 const y = center.y - Math.floor(sameCellIndex / 3) * 13;
                 const isMe = player.id === playerId;
                 return (
-                  <g key={player.id} className={isMe ? "player-marker player-me" : "player-marker player-other"} transform={`translate(${x} ${y})`}>
-                    <path d="M-12 -12 L12 12 M12 -12 L-12 12" className="player-scratch" />
+                  <g key={player.id} className={isMe ? "player-marker player-me" : "player-marker player-other"} style={{transform:`translate(${x}px, ${y}px)`}}>
                     <circle r="10" className="player-ring" />
-                    <circle r="3.5" className="player-core" />
+                    <path d="M0 -7 L6 6 L0 3 L-6 6 Z" className="player-core" />
                     <text textAnchor="middle" y="-20" className="player-caption">
                       {isMe ? "TÚ" : player.name.replace("Explorador-", "")}
                     </text>
@@ -191,7 +187,10 @@ export function MarketMap(props: MarketMapProps) {
             <div className="map-legend">
               <span><i className="legend-icon legend-available" /> Paso posible</span>
               <span><i className="legend-icon legend-shop" /> Puesto</span>
-              <span><i className="legend-icon legend-wall" /> Sin paso</span>
+              <span><i className="legend-icon legend-wall" /> Pared</span>
+              <span><i className="legend-icon legend-obstacle" /> Obstáculo</span>
+              <span><i className="legend-icon legend-hostile" /> Criatura</span>
+              <span><i className="legend-icon legend-loot" /> Mercancía</span>
               <span><i className="legend-icon legend-player" /> Explorador</span>
             </div>
             {hasBuild && (

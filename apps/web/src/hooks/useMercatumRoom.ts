@@ -2,7 +2,7 @@
 
 import { Client, type Room } from "@colyseus/sdk";
 import {
-  hexDistance, hexKey, makeDemoMap, MERCATUM_ROOM_NAME, getMovementDelayMs,
+  hexDistance, hexKey, isWallBetween, makeDemoMap, MERCATUM_ROOM_NAME, getMovementDelayMs,
   type ActionRequest, type ActionResult, type CharacterStats, type HexTile,
   type CreatureClash, type CreatureSighting, type HarmReport, type IdentityReply, type MarketItem, type MercatumState, type MoveAccepted,
   type MoveRejected, type MoveRequest, type PlayerSnapshot, type TimedActionReply,
@@ -289,8 +289,9 @@ export function useMercatumRoom(committedBuild:CharacterStats|null,draftStats:Ch
   const me=useMemo(()=>players.find(p=>p.id===playerId),[players,playerId]);
   const currentPosition=me?.position;
   const walkable=useMemo(()=>new Set(map.filter(tile=>
-    tile.kind!=="wall" && (tile.kind!=="door" || doorOpen)
-  ).map(hexKey)),[map,doorOpen]);
+    tile.kind!=="wall" && (tile.kind!=="door" || doorOpen) &&
+    (!currentPosition || !isWallBetween(currentPosition,tile))
+  ).map(hexKey)),[map,doorOpen,currentPosition]);
   const characterStats=me?.stats??committedBuild??draftStats;
   const movementDelayMs=getMovementDelayMs(characterStats.dexterity) + (me?.wounds??0)*80;
   const cooldownRemaining=Math.max(0,cooldownUntil-clock);

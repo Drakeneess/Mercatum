@@ -23,8 +23,17 @@ export function getTileName(kind: HexTile["kind"]): string {
   switch (kind) {
     case "entry": return "Punto de entrada";
     case "shop": return "Puesto comercial";
-    case "wall": return "Zona bloqueada";
+    case "wall": return "Obstáculo físico";
     case "door": return "Puerta de mantenimiento";
     default: return "Pasillo";
   }
+}
+
+/** Exact shared edge of two pointy-top axial hexes. */
+export function hexEdge(a:HexCoordinate,b:HexCoordinate){
+  const p=hexCenter(a),q=hexCenter(b);
+  const dx=q.x-p.x,dy=q.y-p.y,len=Math.hypot(dx,dy);
+  const x=(p.x+q.x)/2,y=(p.y+q.y)/2;
+  const nx=-dy/len*HEX_SIZE/2,ny=dx/len*HEX_SIZE/2;
+  return {x1:x-nx,y1:y-ny,x2:x+nx,y2:y+ny};
 }

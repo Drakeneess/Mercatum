@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SHOP, hexDistance } from "@mercatum/shared";
+import { SHOP, hexDistance, withinReach } from "@mercatum/shared";
 import { useCharacterBuild } from "../hooks/useCharacterBuild";
 import { useMercatumRoom } from "../hooks/useMercatumRoom";
 import { useTheme } from "../hooks/useTheme";
 import { MarketHeader } from "../components/MarketHeader";
 import { ExplorerColumn } from "../components/ExplorerColumn";
 import { MarketMap } from "../components/MarketMap";
+import { InventoryPanel } from "../components/InventoryPanel";
+import { MarketActions } from "../components/MarketActions";
 import { SectorNotes } from "../components/SectorNotes";
 import { MarketBoard } from "../components/MarketBoard";
 import { ProvenanceBoard } from "../components/ProvenanceBoard";
@@ -19,8 +21,9 @@ type OverlayView = Exclude<WorkspaceView, "explore">;
 
 const overlayMeta:Record<OverlayView,{title:string;subtitle:string}> = {
   character:{title:"Ficha del explorador",subtitle:"02 / REGISTRO PERSONAL"},
-  commerce:{title:"Comercio y trueque",subtitle:"03 / TRANSACCIONES"},
-  registry:{title:"Archivo de procedencia",subtitle:"04 / REGISTRO EXTERIOR"},
+  inventory:{title:"Mochila y depósito",subtitle:"03 / INVENTARIO"},
+  commerce:{title:"Comercio y trueque",subtitle:"04 / TRANSACCIONES"},
+  registry:{title:"Archivo de procedencia",subtitle:"05 / REGISTRO EXTERIOR"},
 };
 
 export default function Home() {
@@ -47,7 +50,7 @@ export default function Home() {
   const nearThreats=currentPosition
     ? sightings.filter(c=>hexDistance(currentPosition,c)<=2).length : 0;
   const nearShop=identity?.phase==="inside" && !!currentPosition &&
-    hexDistance(currentPosition,SHOP)<=1;
+    withinReach(currentPosition,SHOP);
   const view:WorkspaceView = !committedBuild ? "character" : activeModal ?? "explore";
   const incomingOffers = market?.offers.filter(o=>o.direction==="incoming").length ?? 0;
 
@@ -83,7 +86,7 @@ export default function Home() {
   };
 
   return (
-    <div className="app-shell app-shell--organized app-shell--modal" data-theme={theme}>
+    <div className={"app-shell app-shell--organized app-shell--modal app-shell--redesign"+(committedBuild?" app-shell--playing":"")} data-theme={theme}>
       <div className="filth" aria-hidden="true" />
       <div className="screen-damage" aria-hidden="true" />
       <MarketHeader
@@ -112,11 +115,8 @@ export default function Home() {
               time={marketTime} connection={connection} creatures={sightings}
               action={action} onNavigate={navigate}/>
             <section className="workspace-route" aria-label="Exploración activa">
-              <header className="workspace-route__heading">
-                <div><span>01 / OPERACIONES DE INCURSIÓN</span><h1>Exploración <em>activa.</em></h1></div>
-                <p>El mapa permanece disponible. Otros expedientes se consultan sin pausar la incursión.</p>
-              </header>
               <div className="workspace-expedition">
+                <div className="world-surface">
                 <MarketMap
                   map={map} currentPosition={currentPosition} walkable={walkable}
                   requestMove={requestMove} players={players} playerId={playerId}
@@ -126,6 +126,11 @@ export default function Home() {
                   latestClash={latestClash}
                   onOpenShop={openShop}
                 />
+                <MarketActions connection={connection} identity={identity} position={currentPosition}
+                  groundItems={groundItems} doorOpen={doorOpen} onNewCharacter={prepareSuccessor}
+                  action={action} clock={clock} requestAction={requestAction} cancelAction={cancelAction}
+                  dropItem={dropItem} reenter={reenter}/>
+                </div>
                 <SectorNotes map={map} players={players} events={events}
                   identity={identity} sightings={sightings}
                   chatMessages={chatMessages} chatPeers={chatPeers}
@@ -154,6 +159,8 @@ export default function Home() {
               <ExplorerColumn {...explorerProps}/>
             </div>
           )}
+          {activeModal==="inventory" && <InventoryPanel identity={identity} strength={characterStats.strength}
+            disabled={connection!=="online"||!!action} onDrop={dropItem}/>}
           {activeModal==="commerce" && (
             identity?.phase==="dead" ? (
               <div className="workspace-gate" role="status">

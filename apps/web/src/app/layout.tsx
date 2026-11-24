@@ -14,6 +14,7 @@ import "./styles/commerce.css";
 import "./styles/workspace.css";
 import "./styles/modals.css";
 import "./styles/voice.css";
+import "./styles/redesign.css";
 
 export const metadata: Metadata = {
   title: "Mercatum | Registro de incursiones",

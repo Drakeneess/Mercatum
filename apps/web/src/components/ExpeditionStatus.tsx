@@ -33,7 +33,10 @@ export function ExpeditionStatus({
           phase==="outside"?"FUERA DEL MERCADO":"EN EL INTERIOR"}</strong>
       </button>
       <div className="expedition-quickbar__metric" aria-label="Salud">
-        <span>SALUD</span><strong>{identity?health+"/100":"—"}</strong>
+        <span>SALUD · {identity?.wounds??0} HERIDAS</span><strong>{identity?health+"/100":"—"}</strong>
+        <div className="hud-health-track" role="progressbar" aria-label="Salud" aria-valuemin={0} aria-valuemax={100} aria-valuenow={health}>
+          <i style={{width:Math.max(0,Math.min(100,health))+"%"}}/>
+        </div>
       </div>
       <div className="expedition-quickbar__metric">
         <span>POSICIÓN</span><strong>{position?"Q "+position.q+" · R "+position.r:"— / —"}</strong>
