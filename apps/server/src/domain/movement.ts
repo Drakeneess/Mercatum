@@ -1,5 +1,5 @@
 import {
-  getMovementDelayMs, hexKey, isNeighbor, makeDemoMap, SERVICE_DOOR,
+  getMovementDelayMs, hexKey, isNeighbor, isWallBetween, makeDemoMap, SERVICE_DOOR,
   type HexCoordinate, type MercatumPlayer,
   type MoveAccepted, type MoveRejected,
 } from "@mercatum/shared";
@@ -37,6 +37,9 @@ export function resolveMovement(
   if (!player.inside) return { ok: false, response: { reason: "Debes reingresar al Mercado." } };
   if (!doorOpen && hexKey(to) === hexKey(SERVICE_DOOR)) {
     return { ok: false, response: { reason: "La puerta de mantenimiento sigue cerrada." } };
+  }
+  if (isWallBetween(player,to)) {
+    return { ok: false, response: { reason: "Una pared bloquea ese paso." } };
   }
   if (!walkableTiles.has(hexKey(to))) {
     return { ok: false, response: { reason: "Esta casilla está bloqueada." } };

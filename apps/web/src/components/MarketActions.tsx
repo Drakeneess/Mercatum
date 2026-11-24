@@ -1,6 +1,6 @@
 "use client";
 
-import { ENTRY, SERVICE_DOOR, hexDistance,
+import { ENTRY, SERVICE_DOOR, hexDistance, withinReach,
   type ActionRequest, type HexCoordinate, type IdentityReply,
   type MarketItem, type TimedActionReply } from "@mercatum/shared";
 import type { Connection } from "../hooks/useMercatumRoom";
@@ -21,7 +21,7 @@ export interface MarketActionsProps {
 }
 
 function closeTo(a:HexCoordinate|undefined,b:HexCoordinate):boolean {
-  return Boolean(a&&hexDistance(a,b)<=1);
+  return Boolean(a&&withinReach(a,b));
 }
 
 export function MarketActions(props:MarketActionsProps){
@@ -41,8 +41,7 @@ export function MarketActions(props:MarketActionsProps){
   ):[];
   return (
     <section className="paper-piece expedition-sheet" aria-label="Acciones e inventario">
-      <div className="piece-meta"><span>HOJA DE RECUPERACIÓN</span><span>V1 / INCURSIÓN</span></div>
-      <h3>Lo que <em>queda.</em></h3>
+      <h3>Acciones <em>disponibles</em></h3>
       {!ready ? <p className="expedition-muted">Esperando identificación del explorador...</p> : (
         <>
           <div className="expedition-status">
@@ -96,24 +95,9 @@ export function MarketActions(props:MarketActionsProps){
                   </div>
                 </div>
               ))}
-              <details className="expedition-inventory">
-                <summary>MOCHILA <span>{identity.inventory.length} OBJETOS / EN RIESGO</span></summary>
-                {identity.inventory.length===0 ?
-                  <p className="expedition-muted">No llevas ningún objeto.</p> :
-                  identity.inventory.map(item=>(
-                    <div key={item.id} className="expedition-object">
-                      <strong>{item.label}</strong>
-                      <span className="expedition-muted">PESO {item.weight} · ESTADO {item.condition}/100</span>
-                      <button type="button" disabled={blocked}
-                        onClick={()=>dropItem(item.id)}>DEJAR EN EL SUELO</button>
-                    </div>
-                  ))
-                }
-              </details>
-              <div className="expedition-subheading">SALIDA / ENTRADA 00</div>
-              <p className="expedition-muted">Solo aquí puedes depositar de forma segura lo que llevas.</p>
-              <button className="expedition-primary" type="button" disabled={blocked||!canExtract}
-                onClick={()=>requestAction({kind:"extract"})}>EXTRAER Y DEPOSITAR</button>
+
+              {canExtract && <button className="expedition-primary" type="button" disabled={blocked}
+                onClick={()=>requestAction({kind:"extract"})}>EXTRAER Y DEPOSITAR</button>}
             </>
           ) : (
             <>
@@ -123,15 +107,7 @@ export function MarketActions(props:MarketActionsProps){
               </p>
               <button className="expedition-primary" type="button" disabled={blocked}
                 onClick={reenter}>VOLVER A INGRESAR</button>
-              <details className="expedition-inventory">
-                <summary>DEPÓSITO EXTERIOR <span>{identity.stash.length} OBJETOS A SALVO</span></summary>
-                {identity.stash.length===0 ? <p className="expedition-muted">Depósito vacío.</p> :
-                  identity.stash.map(item=><div className="expedition-object" key={item.id}>
-                    <strong>{item.label}</strong>
-                    <span className="expedition-muted">ESTADO {item.condition}/100 · RESGUARDADO</span>
-                  </div>)
-                }
-              </details>
+
             </>
           )}
           <div className="expedition-fineprint">SIN SEGURO. SIN DEVOLUCIONES. CERRAR LA PESTAÑA NO DETIENE A LAS CRIATURAS.</div>

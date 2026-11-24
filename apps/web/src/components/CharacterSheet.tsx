@@ -50,6 +50,7 @@ export function CharacterSheet(props: CharacterSheetProps) {
                         onClick={() => adjustStat(stat.key, -1)}>−</button>
                     )}
                     <strong className="attribute-number">{characterStats[stat.key]}</strong>
+                    {committedBuild&&<span className="attribute-meter" aria-hidden="true">{Array.from({length:5},(_,i)=><i key={i} className={i<characterStats[stat.key]?"attribute-meter--filled":""}/>)}</span>}
                     {!committedBuild && (
                       <button type="button" aria-label={"Aumentar " + stat.name}
                         disabled={draftStats[stat.key] >= CREATION_MAX_STAT || pointsLeft <= 0}
@@ -63,7 +64,7 @@ export function CharacterSheet(props: CharacterSheetProps) {
               {committedBuild ? (
                 <>
                   <div className="attribute-seal">FICHA FIRMADA / SIN ENMIENDAS</div>
-                  <p>DES {characterStats.dexterity}: <strong>{movementDelayMs} ms por hexágono.</strong> FUE limita la carga y permite forzar; INT permite analizar puertas. RES reduce el daño y PER permite observar amenazas. TRA y TEM aún no tienen efectos.</p>
+                  <p>DES {characterStats.dexterity}: <strong>{movementDelayMs} ms por hexágono.</strong> FUE limita la carga y permite forzar; INT permite analizar puertas. RES reduce el daño; TRA modifica las tasaciones del comerciante. PER queda reservado para indicios y TEM para tensión; las criaturas activas son visibles para todos.</p>
                 </>
               ) : (
                 <>

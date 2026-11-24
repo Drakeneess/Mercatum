@@ -1,5 +1,5 @@
 import {
-  ENTRY, hexDistance, hexKey, hexNeighbors, makeDemoMap, SERVICE_DOOR,
+  ENTRY, hexDistance, hexKey, hexNeighbors, isWallBetween, makeDemoMap, SERVICE_DOOR,
   type CreatureKind, type HexCoordinate,
 } from "@mercatum/shared";
 
@@ -77,12 +77,17 @@ function roundCube(x: number, y: number, z: number): HexCoordinate {
 export function hasLineOfSight(a: HexCoordinate, b: HexCoordinate, open: boolean): boolean {
   const distance = hexDistance(a,b);
   if (distance === 0) return true;
-  for (let i=1; i<distance; i++) {
-    const t=i/distance;
-    const x=a.q + (b.q-a.q)*t;
-    const z=a.r + (b.r-a.r)*t;
-    const y= -x-z;
-    if (!passable(roundCube(x,y,z), open)) return false;
+  for (const epsilon of [-1e-6,1e-6]) {
+    let previous=a;
+    for (let i=1; i<=distance; i++) {
+      const t=i/distance;
+      const x=a.q + (b.q-a.q)*t + epsilon;
+      const z=a.r + (b.r-a.r)*t + epsilon;
+      const y= -x-z;
+      const next=i===distance?b:roundCube(x,y,z);
+      if(isWallBetween(previous,next) || !passable(next,open)) return false;
+      previous=next;
+    }
   }
   return true;
 }
@@ -106,7 +111,7 @@ function nextStepToward(
     const current=queue[i];
     for(const neighbor of hexNeighbors(current.tile)){
       const key=hexKey(neighbor);
-      if(visited.has(key)||!creaturePassable(neighbor,doorOpen,occupied))continue;
+      if(visited.has(key)||isWallBetween(current.tile,neighbor)||!creaturePassable(neighbor,doorOpen,occupied))continue;
       const first=current.first??neighbor;
       if(key===hexKey(target))return first;
       visited.add(key);
@@ -132,7 +137,7 @@ export function decideCreatureMove(
   // protected threshold. It must leave it rather than camp at the doorway.
   if(inProtectedThreshold(from)){
     const away=hexNeighbors(from).filter(neighbor=>
-      creaturePassable(neighbor,doorOpen,occupiedHexes) &&
+      !isWallBetween(from,neighbor) && creaturePassable(neighbor,doorOpen,occupiedHexes) &&
       hexDistance(neighbor,ENTRY)>hexDistance(from,ENTRY)
     );
     const to=away[creature.steps%Math.max(1,away.length)] ?? from;
@@ -171,7 +176,7 @@ export function decideCreatureMove(
   }
   if(!to||hexKey(to)===hexKey(from)){
     // Rotation is deterministic and persisted (steps). No random global ticks.
-    const neighbors=hexNeighbors(from).filter(n=>creaturePassable(n,doorOpen,occupiedHexes));
+    const neighbors=hexNeighbors(from).filter(n=>!isWallBetween(from,n)&&creaturePassable(n,doorOpen,occupiedHexes));
     if(neighbors.length){
       // Even with no human prey, creatures keep walking. Prefer not to turn
       // around immediately so a corridor feels inhabited, not jittery.
@@ -227,12 +232,13 @@ export function chooseCreatureRival(
   rivals:readonly CreatureRival[],
   now:number,
   nextAttackAt:number,
+  doorOpen=true,
 ):CreatureRival|null {
   if(now<nextAttackAt || attacker.steps%3!==0)return null;
   const from={q:attacker.q,r:attacker.r};
   return rivals.filter(r=>
     r.id!==attacker.id && r.kind!==attacker.kind && r.health>0 &&
-    !inProtectedThreshold(r) && hexDistance(from,r)===1
+    !inProtectedThreshold(r) && hexDistance(from,r)===1 && hasLineOfSight(from,r,doorOpen)
   ).sort((a,b)=>a.id.localeCompare(b.id))[0]??null;
 }
 export function clashDamage(kind:CreatureKind):number {

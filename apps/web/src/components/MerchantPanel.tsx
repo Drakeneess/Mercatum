@@ -29,7 +29,7 @@ export function MerchantPanel({identity,market,operate}:MerchantPanelProps){
       {inside&&<p className="commerce-section-note">Estás comprando dentro del Mercado.
         Las compras van a tu mochila y pueden perderse si mueres. La capacidad de carga
         se comprueba antes de confirmar.</p>}
-      <div className="expedition-subheading">01 / MERCANCÍA DEL MOSTRADOR</div>
+      <div className="merchant-columns"><section className="merchant-stock"><div className="expedition-subheading">01 / MERCANCÍA DEL MOSTRADOR</div>
       <p className="expedition-muted">El stock es finito. Alguien puede llevarse una pieza antes que tú.</p>
       {!market?<p className="expedition-muted">Consultando inventario del comerciante...</p>:
         market.stock.length===0?<p className="expedition-muted">No quedan artículos a la venta.</p>:
@@ -44,7 +44,7 @@ export function MerchantPanel({identity,market,operate}:MerchantPanelProps){
             </div>
           </div>
         ))}
-      <div className="expedition-subheading">02 / VENDER DESDE {inside?"MI MOCHILA":"MI DEPÓSITO"}</div>
+      </section><section className="merchant-own"><div className="expedition-subheading">02 / VENDER DESDE {inside?"MI MOCHILA":"MI DEPÓSITO"}</div>
       {items.length===0?<p className="expedition-muted">No tienes objetos disponibles para vender aquí.</p>:
         items.map(item=>(
           <div className="commerce-entry" key={item.id}>
@@ -56,6 +56,7 @@ export function MerchantPanel({identity,market,operate}:MerchantPanelProps){
             </div>
           </div>
         ))}
+      </section></div>
     </div>
   );
 }

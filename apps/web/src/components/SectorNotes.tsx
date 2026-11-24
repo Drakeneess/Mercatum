@@ -4,7 +4,7 @@ import type {
 } from "@mercatum/shared";
 import { ThreatReport } from "./ThreatReport";
 import { NearbyChat } from "./NearbyChat";
-import { MarketActions, type MarketActionsProps } from "./MarketActions";
+import type { MarketActionsProps } from "./MarketActions";
 
 interface SectorNotesProps {
   map: readonly HexTile[];
@@ -29,7 +29,6 @@ export function SectorNotes({
 }:SectorNotesProps){
   return (
     <aside className="expedition-sidebar" aria-label="Acciones y observaciones de exploración">
-      <MarketActions {...actions} />
       <NearbyChat identity={identity} connected={actions.connection==="online"}
         peers={chatPeers} messages={chatMessages} preferences={chatPreferences}
         notice={chatNotice} onSend={sendChat}

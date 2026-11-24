@@ -35,6 +35,15 @@ export function ExplorerColumn(props: ExplorerColumnProps) {
               : me?.inside ? <>Está<br />usted <em>dentro.</em></>
               : <>Está<br /><em>a salvo.</em></>}</h1>
             <p className="smudged-copy">{committedBuild ? "La entrada está registrada. No siempre se puede volver." : "Complete el registro antes de atravesar la puerta."}</p>
+            {committedBuild&&me&&<div className="character-condition">
+              <svg viewBox="0 0 96 134" role="img" aria-label="Silueta humana; el registro no indica una ubicación anatómica de las heridas">
+                <circle cx="48" cy="17" r="12"/><path d="M36 34 Q48 29 60 34 L67 53 L80 78 L71 83 L57 61 L57 78 L62 123 H50 L48 91 L46 123 H34 L39 78 V61 L25 83 L16 78 L29 53 Z"/>
+              </svg>
+              <div><span>ESTADO FÍSICO</span><strong>{me.health}/100</strong>
+                <div className="hud-health-track" role="progressbar" aria-label="Salud" aria-valuemin={0} aria-valuemax={100} aria-valuenow={me.health}><i style={{width:Math.max(0,Math.min(100,me.health))+"%"}}/></div>
+                <small>{me.wounds} heridas registradas</small>
+              </div>
+            </div>}
             <div className="torn-rule" aria-hidden="true" />
             <div className="field">
               <span className="field-label">NOMBRE ANOTADO</span>

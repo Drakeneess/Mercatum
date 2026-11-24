@@ -39,3 +39,10 @@ test("rate limiter enforces spacing and total messages in rolling window",()=>{
   assert.equal(throttle.allowed("b",107_000),true);
   assert.equal(throttle.allowed("a",112_010),true);
 });
+
+test("an edge wall stops even adjacent voices",()=>{
+  const a={phase:"inside" as const,health:100,q:0,r:-3};
+  const b={...a,r:-2};
+  assert.equal(chatReachable(a,b,true),false);
+  assert.equal(chatReachable(b,a,true),false);
+});

@@ -49,3 +49,16 @@ test("the locked maintenance door rejects an otherwise adjacent step",()=>{
   assert.equal(decision.ok,false);
   if(!decision.ok)assert.match(decision.response.reason,/puerta/);
 });
+
+test("solid edges block movement in both directions without occupying floor",()=>{
+  const a={q:0,r:-3},b={q:0,r:-2};
+  for(const [from,to] of [[a,b],[b,a]]){
+    assert.equal(makeDemoMap().find(t=>t.q===from.q&&t.r===from.r)?.kind,"floor");
+    const actor=new MercatumPlayer({name:"Test",...from});
+    const result=resolveMovement(actor,{to},1000,0,true);
+    assert.equal(result.ok,false);
+    if(!result.ok)assert.match(result.response.reason,/pared/);
+  }
+  const actor=new MercatumPlayer({name:"Test",...a});
+  assert.equal(resolveMovement(actor,{to:{q:0,r:-4}},1000,0,true).ok,true);
+});

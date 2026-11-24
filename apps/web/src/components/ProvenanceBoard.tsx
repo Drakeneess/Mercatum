@@ -28,7 +28,7 @@ export function ProvenanceBoard({identity,market,record,inspect,operate}:Provena
       <h3>Consta, <em>dicen.</em></h3>
       <p className="expedition-muted">El registro distingue hechos del sistema y declaraciones de personas.
         Una afirmación puede ser falsa hasta que aparezca una prueba que la contradiga.</p>
-      <label htmlFor="object-register">IDENTIFICADOR PÚBLICO DEL OBJETO</label>
+      <div className="archive-columns"><section className="archive-search"><label htmlFor="object-register">IDENTIFICADOR PÚBLICO DEL OBJETO</label>
       <input id="object-register" type="text" spellCheck={false} value={id}
         placeholder="UUID del objeto..." onChange={e=>setId(e.target.value.trim())}/>
       <select aria-label="Seleccionar objeto conocido" value={known.some(x=>x.id===id)?id:""}
@@ -38,6 +38,8 @@ export function ProvenanceBoard({identity,market,record,inspect,operate}:Provena
       </select>
       <button className="commerce-register-button" type="button" disabled={!id}
         onClick={()=>inspect(id)}>CONSULTAR ANOTACIONES</button>
+      </section><section className="archive-record">
+      {!selected&&<p className="archive-empty">Selecciona un objeto y consulta su expediente.</p>}
       {selected&&(
         <div className="provenance-history">
           <strong>REGISTRO CONSULTADO / {selected.itemId.slice(0,8)}</strong>
@@ -53,7 +55,8 @@ export function ProvenanceBoard({identity,market,record,inspect,operate}:Provena
           ))}
         </div>
       )}
-      <div className="expedition-subheading">DEJAR CONSTANCIA</div>
+      </section></div>
+      <section className="archive-testimony"><div className="expedition-subheading">DEJAR CONSTANCIA</div>
       <label htmlFor="registry-statement">TESTIMONIO / HASTA 240 CARACTERES</label>
       <textarea id="registry-statement" rows={3} maxLength={240} value={statement}
         placeholder="Este cuchillo participó en una expedición legendaria..."
@@ -66,7 +69,7 @@ export function ProvenanceBoard({identity,market,record,inspect,operate}:Provena
         }}>PUBLICAR TESTIMONIO ATRIBUIDO</button>
       <p className="expedition-fineprint">Tu identidad de cuenta queda unida a la declaración.
         No podrá editarse ni eliminarse desde el juego. Puedes publicar otra que la contradiga.
-        Máximo tres testimonios por hora.</p>
+        Máximo tres testimonios por hora.</p></section>
     </section>
   );
 }
