@@ -7,3 +7,5 @@ The prototype has five solid wall edges in the north of Sector 01 and four remai
 
 ## Verification
 Run `pnpm build`, `pnpm typecheck`, `pnpm test`, existing smoke tests (especially V1, V2, V3, V4 and ecology), and load:20 with PostgreSQL active. Verify all three supports at 375, 768 and 1440px, keyboard navigation, theme persistence, movement through newly accessible cells, wall collisions from both sides, nearby chat, merchant proximity, item pickup, death and extraction. No new gameplay abilities or production auth are included.
+
+The perimeter is drawn as a solid outline because out-of-map movement is already prohibited. The character sheet shows aggregate health and wounds, without inventing a location; archive search, records and testimony are separated visually. Damage feedback and animated health/movement respect reduced motion. Additional custom item art, dedicated transaction animations and personalized entity files remain follow-up visual work.

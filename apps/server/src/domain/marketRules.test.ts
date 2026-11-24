@@ -34,3 +34,10 @@ test("a mapped shop is a spatial merchant, not an anywhere menu",()=>{
   assert.equal(canVisitMerchant({...visitor,phase:"outside",q:0,r:0}),true);
   assert.equal(canVisitMerchant({...visitor,phase:"dead"}),false);
 });
+
+test("a solid partition prevents adjacent interior trade",()=>{
+  const a={q:0,r:-3,health:100,phase:"inside" as const};
+  const b={...a,r:-2};
+  assert.equal(tradeAllowed(a,b),false);
+  assert.equal(tradeAllowed(b,a),false);
+});

@@ -155,3 +155,32 @@
 @media(prefers-reduced-motion:reduce){
   .app-shell--redesign *, .app-shell--redesign *::before,.app-shell--redesign *::after {animation:none!important;transition:none!important}
 }
+
+/* Distinct materials, common interaction states. */
+.app-shell--redesign[data-theme="vigil"] .brand-name {font-family:Impact,'Arial Narrow',Arial,sans-serif}
+.app-shell--redesign[data-theme="oxide"] .map-stage {background:repeating-linear-gradient(96deg,transparent 0 60px,#6c5a3b16 61px 62px),radial-gradient(ellipse at center,#e4d8b7,#b7a887)}
+.app-shell--redesign[data-theme="phosphor"] .map-stage::before {opacity:.13}
+.app-shell--redesign[data-theme="phosphor"] .hex-map {filter:none}
+.app-shell--redesign[data-theme="vigil"] .map-stage::before {opacity:.14}
+.app-shell--redesign[data-theme="vigil"] .map-header,.app-shell--redesign[data-theme="vigil"] .map-bottom {background:var(--ui-panel)}
+.app-shell--redesign[data-theme="vigil"] .map-legend span {color:var(--ui-text)}
+.app-shell--redesign[data-theme="vigil"] .inventory-sheet {background:var(--ui-panel);color:var(--ui-text)}
+.app-shell--redesign .workspace-modal__live--danger {border-color:var(--ui-danger)}
+.hud-damage-pulse {position:fixed;inset:0;z-index:7;pointer-events:none;box-shadow:inset 0 0 90px 30px var(--ui-danger);opacity:0;animation:hud-damage .5s ease-out}
+@keyframes hud-damage {0%{opacity:.72}100%{opacity:0}}
+.character-condition {display:grid;grid-template-columns:70px minmax(0,1fr);gap:12px;align-items:center;margin:14px 0;padding:10px;border:1px solid var(--hairline);color:var(--ink)}
+.character-condition svg {width:100%;height:94px;fill:var(--blood);opacity:.7}
+.character-condition>div {display:grid;gap:5px}
+.character-condition span,.character-condition small {font:10px var(--machine-type)}
+.character-condition strong {font:900 23px var(--machine-type)}
+.attribute-meter {display:flex;gap:3px;align-items:center}
+.attribute-meter i {width:6px;height:14px;border:1px solid var(--hairline)}
+.attribute-meter--filled {background:var(--blood)}
+.archive-columns {display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:16px;margin:15px 0}
+.archive-search,.archive-record,.archive-testimony {min-width:0;border:1px solid var(--hairline);padding:13px}
+.archive-record .provenance-history {margin:0;padding:0;border:0}
+.archive-empty {font:12px/1.5 var(--machine-type);color:var(--smudge)}
+.archive-record .provenance-event {transform:none}
+.archive-testimony {margin-top:16px}
+@media(max-width:680px){.archive-columns{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.hud-damage-pulse{animation:none!important;opacity:0}}

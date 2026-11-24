@@ -1,6 +1,6 @@
 "use client";
 
-import { hexDistance, hexKey, WALL_EDGES, withinReach, type CharacterStats, type HexCoordinate,
+import { hexDistance, hexKey, hexNeighbors, WALL_EDGES, withinReach, type CharacterStats, type HexCoordinate,
   type CreatureClash, type CreatureSighting, type HexTile, type MarketItem, type PlayerSnapshot } from "@mercatum/shared";
 import { getTileName, hexCenter, hexPoints, hexEdge } from "../lib/hexMapView";
 
@@ -27,6 +27,8 @@ export function MarketMap(props: MarketMapProps) {
   const { map, currentPosition, walkable, requestMove, players, playerId,
     hasBuild, characterStats, cooldownRemaining, recoveryPercentage, notice, doorOpen, groundItems, sightings, latestClash, onOpenShop } = props;
   const canWalk=players.some(p=>p.id===playerId&&p.inside);
+  const mapKeys=new Set(map.map(hexKey));
+  const perimeter=map.flatMap(a=>hexNeighbors(a).filter(b=>!mapKeys.has(hexKey(b))).map(b=>({a,b})));
   return (
         <section className="map-panel" aria-label="Plano interactivo del Mercado">
           <div className="map-header"><div className="map-title-line"><h2>Sector 01 <span>/ Nivel 00</span></h2><span className="map-stamp">PLANO ACTIVO</span></div></div>
@@ -101,7 +103,7 @@ export function MarketMap(props: MarketMapProps) {
               })}
 
               <g className="architecture-walls" aria-hidden="true">
-                {WALL_EDGES.map(({a,b})=><g key={hexKey(a)+"/"+hexKey(b)}>
+                {[...perimeter,...WALL_EDGES].map(({a,b})=><g key={hexKey(a)+"/"+hexKey(b)}>
                   <line {...hexEdge(a,b)} className="architecture-wall-shadow"/>
                   <line {...hexEdge(a,b)} className="architecture-wall"/>
                 </g>)}
@@ -163,11 +165,13 @@ export function MarketMap(props: MarketMapProps) {
                   </text>
                 </g>;
               })()}
-              {players.filter(p=>p.inside).map((player, index, visiblePlayers) => {
+              {players.filter(p=>p.inside).sort((a,b)=>Number(b.id===playerId)-Number(a.id===playerId)||a.id.localeCompare(b.id)).map((player, index, visiblePlayers) => {
                 const center = hexCenter(player.position);
                 const sameCellIndex = visiblePlayers.slice(0, index).filter((other) => hexKey(other.position) === hexKey(player.position)).length;
-                const x = center.x + (sameCellIndex===0?0:((sameCellIndex-1)%3-1)*13);
-                const y = center.y - Math.floor(sameCellIndex / 3) * 13;
+                const angle=(sameCellIndex-1)*Math.PI/3;
+                const radius=sameCellIndex===0?0:Math.min(29,13+Math.floor((sameCellIndex-1)/6)*8);
+                const x=center.x+Math.cos(angle)*radius;
+                const y=center.y+Math.sin(angle)*radius;
                 const isMe = player.id === playerId;
                 return (
                   <g key={player.id} className={isMe ? "player-marker player-me" : "player-marker player-other"} style={{transform:`translate(${x}px, ${y}px)`}}>

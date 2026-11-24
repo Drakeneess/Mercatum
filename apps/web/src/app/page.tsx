@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SHOP, hexDistance, withinReach } from "@mercatum/shared";
 import { useCharacterBuild } from "../hooks/useCharacterBuild";
 import { useMercatumRoom } from "../hooks/useMercatumRoom";
@@ -46,6 +46,14 @@ export default function Home() {
   // Keep the game surface and the Colyseus connection mounted while a modal
   // shows character, trade or archived paperwork. Only one can be open.
   const [activeModal, setActiveModal] = useState<OverlayView|null>(null);
+  const [damagePulse,setDamagePulse]=useState(0);
+  const previousHealth=useRef<number|null>(null);
+  useEffect(()=>{
+    const health=identity?.health??null;
+    if(health!==null&&previousHealth.current!==null&&health<previousHealth.current&&
+       (identity?.phase==="inside"||identity?.phase==="dead"))setDamagePulse(n=>n+1);
+    previousHealth.current=health;
+  },[identity?.health,identity?.phase]);
   const [commerceSection, setCommerceSection] = useState<"merchant"|"exchange">("merchant");
   const nearThreats=currentPosition
     ? sightings.filter(c=>hexDistance(currentPosition,c)<=2).length : 0;
@@ -89,6 +97,7 @@ export default function Home() {
     <div className={"app-shell app-shell--organized app-shell--modal app-shell--redesign"+(committedBuild?" app-shell--playing":"")} data-theme={theme}>
       <div className="filth" aria-hidden="true" />
       <div className="screen-damage" aria-hidden="true" />
+      {damagePulse>0&&<div key={damagePulse} className="hud-damage-pulse" aria-hidden="true"/>}
       <MarketHeader
         activeTheme={activeTheme} theme={theme} menuRef={themeMenuRef}
         onThemeChange={selectTheme} connection={connection} hasBuild={Boolean(committedBuild)}
