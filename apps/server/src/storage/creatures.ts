@@ -79,7 +79,7 @@ export async function advanceCreature(now:number): Promise<CreatureTick> {
     };
     // Attack an adjacent rival when an opportunity arises. It is NOT a
     // collision: enemies strike from their own hex, and never overlap.
-    const target=chooseCreatureRival(mind,rivals,now,Number(creature.next_attack_at));
+    const target=chooseCreatureRival(mind,rivals,now,Number(creature.next_attack_at),doorOpen);
     if(target){
       const defender=rivals.find(row=>row.id===target.id);
       if(defender && now>=Number(defender.next_harm_at)){

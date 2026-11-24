@@ -1,5 +1,5 @@
 import {
-  ENTRY, SERVICE_DOOR, hexDistance,
+  ENTRY, SERVICE_DOOR, hexDistance, withinReach,
   type ActionRequest, type MercatumPlayer, type MarketItem,
 } from "@mercatum/shared";
 
@@ -20,7 +20,7 @@ export function planAction(
   if(kind==="open") {
     if(value.method!=="force"&&value.method!=="intellect")return {ok:false,reason:"Método no reconocido."};
     if(doorOpen)return {ok:false,reason:"La puerta ya está abierta."};
-    if(hexDistance(position,SERVICE_DOOR)>1)return {ok:false,reason:"Debes acercarte a la puerta."};
+    if(!withinReach(position,SERVICE_DOOR))return {ok:false,reason:"Debes acercarte a la puerta."};
     const method=value.method;
     const duration=method==="force"
       ? Math.max(750,2200-400*player.strength)
@@ -35,7 +35,7 @@ export function planAction(
     if(typeof value.itemId!=="string" || !/^[0-9a-f]{8}-[0-9a-f-]{27,}$/.test(value.itemId))
       return {ok:false,reason:"Identificador de objeto inválido."};
     const item=ground.find(x=>x.id===value.itemId);
-    if(!item || item.q===undefined || item.r===undefined || hexDistance(position,{q:item.q,r:item.r})>1)
+    if(!item || item.q===undefined || item.r===undefined || !withinReach(position,{q:item.q,r:item.r}))
       return {ok:false,reason:"La mercancía no está al alcance."};
     return {ok:true,duration:kind==="inspect"?650:1100,request:{kind,itemId:value.itemId}};
   }

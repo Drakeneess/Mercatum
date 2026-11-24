@@ -120,3 +120,12 @@ test("rivals only clash on adjacent hexes, if their cooldown permits it",()=>{
   assert.equal(clashDamage("stalker"),14);
   assert.equal(clashDamage("scavenger"),9);
 });
+
+test("solid partition blocks sight, roaming and rival attacks",()=>{
+  const a={q:0,r:-3},b={q:0,r:-2};
+  assert.equal(hasLineOfSight(a,b,true),false);
+  assert.equal(hasLineOfSight(b,a,true),false);
+  const actor={id:"stalker-01",kind:"stalker" as const,...a,steps:3,lastKnownQ:null,lastKnownR:null,searchLeft:0};
+  assert.equal(chooseCreatureRival(actor,[{id:"scavenger-01",kind:"scavenger",health:120,...b}],1000,0),null);
+  for(let steps=0;steps<20;steps++)assert.notDeepEqual(decideCreatureMove({...actor,steps},[],true).to,b);
+});

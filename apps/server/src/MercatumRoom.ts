@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Room, ServerError, type Client } from "colyseus";
 import {
-  ENTRY, MercatumPlayer, MercatumState, hexDistance, SERVICE_DOOR,
+  ENTRY, MercatumPlayer, MercatumState, withinReach, SERVICE_DOOR,
   type ActionRequest, type CreatureSighting, type IdentityReply,
   type TimedActionReply, type WorldItemsReply,
 } from "@mercatum/shared";
@@ -280,14 +280,14 @@ export class MercatumRoom extends Room<{state:MercatumState}> {
       }
       let message:string;
       if(request.kind==="open"){
-        if(this.state.doorOpen||hexDistance(origin,SERVICE_DOOR)>1){this.message(client,"Ya no puedes abrir esa puerta.");return;}
+        if(this.state.doorOpen||!withinReach(origin,SERVICE_DOOR)){this.message(client,"Ya no puedes abrir esa puerta.");return;}
         await openDoor(session.character.id);
         this.state.doorOpen=true;
         await this.sendWorld();
         message="La puerta metálica ha cedido.";
       }else if(request.kind==="inspect"){
         const item=await inspectItem(request.itemId);
-        if(!item||item.q===undefined||item.r===undefined||hexDistance(origin,{q:item.q,r:item.r})>1){
+        if(!item||item.q===undefined||item.r===undefined||!withinReach(origin,{q:item.q,r:item.r})){
           this.message(client,"El objeto ya no está aquí.");return;
         }
         message=`${item.label}: condición ${item.condition}/100, peso ${item.weight}.`;

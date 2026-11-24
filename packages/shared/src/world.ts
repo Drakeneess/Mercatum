@@ -1,4 +1,4 @@
-import { hexKey, type HexCoordinate } from "./hex.js";
+import { hexDistance, hexKey, type HexCoordinate } from "./hex.js";
 import { SECTOR_01 } from "./sectors.js";
 
 export type TileKind = "floor" | "wall" | "entry" | "shop" | "door";
@@ -12,7 +12,20 @@ export const SHOP: HexCoordinate = SECTOR_01.shop;
 export const SERVICE_DOOR: HexCoordinate = SECTOR_01.door;
 
 /** Static demo layout. The authoritative server validates against these tiles. */
-const WALLS = new Set(SECTOR_01.walls.map(hexKey));
+// Legacy tile kind "wall" is kept for physical obstacles.
+const OBSTACLES = new Set(SECTOR_01.obstacles.map(hexKey));
+export const WALL_EDGES = SECTOR_01.walls;
+function edgeKey(a: HexCoordinate,b: HexCoordinate): string {
+  return [hexKey(a),hexKey(b)].sort().join("|");
+}
+const EDGE_KEYS = new Set(WALL_EDGES.map(({a,b})=>edgeKey(a,b)));
+export function isWallBetween(a: HexCoordinate,b: HexCoordinate): boolean {
+  return EDGE_KEYS.has(edgeKey(a,b));
+}
+/** Same tile or adjacent without a solid partition. Door rules remain separate. */
+export function withinReach(a: HexCoordinate,b: HexCoordinate): boolean {
+  return hexDistance(a,b)<=1 && !isWallBetween(a,b);
+}
 
 export function makeDemoMap(radius = SECTOR_01.radius): HexTile[] {
   if (!Number.isInteger(radius) || radius < 2 || radius > 12) {
@@ -30,7 +43,7 @@ export function makeDemoMap(radius = SECTOR_01.radius): HexTile[] {
         key === hexKey(ENTRY) ? "entry"
         : key === hexKey(SHOP) ? "shop"
         : key === hexKey(SERVICE_DOOR) ? "door"
-        : WALLS.has(key) ? "wall"
+        : OBSTACLES.has(key) ? "wall"
         : "floor";
       tiles.push({ ...position, kind });
     }

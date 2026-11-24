@@ -1,4 +1,4 @@
-import { hexDistance, type HexCoordinate, type MarketItem } from "@mercatum/shared";
+import { withinReach, type HexCoordinate, type MarketItem } from "@mercatum/shared";
 import { pool, transaction } from "./db.js";
 import type { StoredObject } from "./models.js";
 
@@ -35,7 +35,7 @@ export async function pickItem(characterId:string,itemId:string,position:HexCoor
       SELECT * FROM market_objects WHERE id=$1 AND state='ground' FOR UPDATE
     `,[itemId]);
     const ground=item.rows[0];
-    if(!ground||ground.q===null||ground.r===null||hexDistance(position,{q:ground.q,r:ground.r})>1)return false;
+    if(!ground||ground.q===null||ground.r===null||!withinReach(position,{q:ground.q,r:ground.r}))return false;
     const weight=await client.query<{total:string}>(`
       SELECT COALESCE(SUM(weight),0)::text AS total FROM market_objects
       WHERE owner_character_id=$1 AND state='carried'
